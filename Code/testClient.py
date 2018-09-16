@@ -2,6 +2,8 @@ import socket
 import dataOverStream as DataStream
 import keyExchange
 
+import encryption
+
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 clientSocket.connect(("127.0.0.1", 4242))
@@ -24,3 +26,6 @@ with DataStream.DataStreamOut(clientSocket) as stream:
 key = exchange.getSharedKey(otherMixed)
 
 print ("Settled Key: " + str(key))
+
+with DataStream.DataStreamIn(clientSocket) as stream:
+    print(encryption.decrypt(stream.getData(DataStream.DATA_TYPE_STRING), key))

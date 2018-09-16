@@ -6,6 +6,8 @@ import keyExchange
 import primes as Primes
 import dataOverStream as DataStream
 
+import encryption
+
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 port = 4242
@@ -42,11 +44,16 @@ def doKeyExchange(conn):
 
     print ("Settled Key: " + str(key))
 
+    return key
+
 def connectionHandler(conn, addr):
     print ("Connection Recieved From " + str(addr[0]))
 
     doHandshake(conn, addr)
-    doKeyExchange(conn)
+    key = doKeyExchange(conn)
+
+    with DataStream.DataStreamOut(conn) as stream:
+        stream.sendData(DataStream.DATA_TYPE_STRING, encryption.encrypt("Hello World!", key))
 
 def listener(sock):
     while True:
