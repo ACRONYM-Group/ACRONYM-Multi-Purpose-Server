@@ -5,16 +5,8 @@ import keyExchange
 
 import primes as Primes
 
-pair = Primes.getPrimePair()
+serverSocket = socket.socekt(socket.AF_INET, socket.SOCK_STREAM)
 
-alice = keyExchange.KeyExchange(pair)
-bob = keyExchange.KeyExchange(pair)
+port = 4242
+hostName = ""
 
-alice.randomSecret()
-bob.randomSecret()
-
-A = alice.calculateMixed()
-B = bob.calculateMixed()
-
-print (alice.getSharedKey(B))
-print (bob.getSharedKey(A))
