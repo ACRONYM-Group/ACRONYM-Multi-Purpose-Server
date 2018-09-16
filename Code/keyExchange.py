@@ -1,8 +1,13 @@
 import random
+import primes
 
 class KeyExchange:
     def __init__(self,primes):
         self.p, self.g = primes
+
+        if self.g > self.p:
+            self.g,self.p = self.p, self.g
+
         self.secret = 0
 
     def setSecret(self,secret):

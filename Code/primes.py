@@ -22,3 +22,6 @@ def getRandomPrime(low, high=None):
         p = random.randint(low, high)
 
     return p
+
+def getPrimePair():
+    return (getRandomPrime(0,1000000),getRandomPrime(0,1000000))

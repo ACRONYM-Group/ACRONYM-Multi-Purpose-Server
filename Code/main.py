@@ -3,8 +3,12 @@ import threading
 
 import keyExchange
 
-alice = keyExchange.KeyExchange((337, 11))
-bob = keyExchange.KeyExchange((337, 11))
+import primes as Primes
+
+pair = Primes.getPrimePair()
+
+alice = keyExchange.KeyExchange(pair)
+bob = keyExchange.KeyExchange(pair)
 
 alice.randomSecret()
 bob.randomSecret()
