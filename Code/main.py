@@ -9,4 +9,3 @@ serverSocket = socket.socekt(socket.AF_INET, socket.SOCK_STREAM)
 
 port = 4242
 hostName = ""
-
