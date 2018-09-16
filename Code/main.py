@@ -12,8 +12,17 @@ hostName = ""
 
 serverSocket = socket.bind((hostName, port))
 
+def doHandshake(conn):
+    conn.sendall([3,1,4,1,5])
+
+    data = conn.recv(5)
+
+    print (data)
+
 def connectionHandler(conn, addr):
     print ("Connection Recieved From " + str(addr))
+
+    doHandshake(conn)
 
 def listener(sock):
     while True:
