@@ -23,7 +23,7 @@ def doHandshake(conn, addr):
         print ("Handshake with " + str(addr[0]) + " failed!")
 
 def doKeyExchange(conn):
-    
+
 
 def connectionHandler(conn, addr):
     print ("Connection Recieved From " + str(addr[0]))

@@ -3,7 +3,7 @@ DATA_TYPE_SHORT = 1     #2 Bytes
 DATA_TYPE_STRING = 2    #n Bytes
 DATA_TYPE_LONG = 3       #4 Bytes
 
-class DataStream:
+class DataStreamOut:
     def __init__(self, conn, header = None, ending = None):
         self.conn = conn
 
@@ -42,8 +42,44 @@ class DataStream:
             data = data - (int(data/256)*256)
             array.append(int(data) % 256)
 
+            self.conn.sendall(bytearray(array))
+
     def __exit__(self):
         if self.ending != None:
             self.conn.sendall(bytearray(self.ending))
 
-    
+class DataStreamIn:
+    def __init__(self, conn):
+        self.conn = conn
+
+    def __enter__(self):
+        pass
+        
+    def getData(self, dataType):
+        if dataType == DATA_TYPE_BYTE:
+            return int(list(self.conn.recv(1))[0])
+
+        elif dataType == DATA_TYPE_SHORT:
+            array = list(self.conn.recv(2))
+
+            return array[0]*256 + array[1]
+
+        elif dataType == DATA_TYPE_STRING:
+            array = list(self.conn.recv(1024))
+
+            strOut = ""
+
+            for v in array:
+                strOut += chr(v)
+
+            return strOut
+
+        elif dataType == DATA_TYPE_LONG:
+            array = list(self.conn.recv(4))
+
+           intOut = array[0]*256*256*256 + array[1]*256*256 + array[2]*256 + array[3]
+
+           return intOut
+
+    def __exit__(self):
+        pass
