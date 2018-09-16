@@ -10,19 +10,22 @@ serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 port = 4242
 hostName = ""
 
-serverSocket = socket.bind((hostName, port))
+serverSocket.bind((hostName, port))
 
-def doHandshake(conn):
-    conn.sendall([3,1,4,1,5])
+def doHandshake(conn, addr):
+    conn.sendall(bytearray([3,1,4,1,5]))
 
     data = conn.recv(5)
 
-    print (data)
+    if list(data) == [3,1,4,1,5]:
+        print ("Handshake with " + str(addr[0]) + " sucessful!")
+    else:
+        print ("Handshake with " + str(addr[0]) + " failed!")
 
 def connectionHandler(conn, addr):
-    print ("Connection Recieved From " + str(addr))
+    print ("Connection Recieved From " + str(addr[0]))
 
-    doHandshake(conn)
+    doHandshake(conn, addr)
 
 def listener(sock):
     while True:
@@ -33,3 +36,5 @@ def listener(sock):
 
 def startListener(sock):
     threading.Thread(target=listener, args=(sock,)).start()
+
+startListener(serverSocket)
