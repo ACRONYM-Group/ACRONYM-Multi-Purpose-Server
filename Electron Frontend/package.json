@@ -1,0 +1,24 @@
+{
+  "name": "acronym_file_transfer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^2.0.9"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+	"start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ACRONYM-Group/ACRONYM-File-Transfer-System.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ACRONYM-Group/ACRONYM-File-Transfer-System/issues"
+  },
+  "homepage": "https://github.com/ACRONYM-Group/ACRONYM-File-Transfer-System#readme"
+}
