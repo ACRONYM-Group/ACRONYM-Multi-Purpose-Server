@@ -4,6 +4,7 @@ import threading
 import keyExchange
 
 import primes as Primes
+import dataOverStream as DataStream
 
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -23,12 +24,29 @@ def doHandshake(conn, addr):
         print ("Handshake with " + str(addr[0]) + " failed!")
 
 def doKeyExchange(conn):
+    primePair = Primes.getPrimePair()
+    exchange = keyExchange.KeyExchange(primePair)
+    exchange.randomSecret()
 
+    mixed = exchange.calculateMixed()
+
+    with DataStream.DataStreamOut(conn) as stream:
+        stream.sendData(DataStream.DATA_TYPE_LONG, primePair[0])
+        stream.sendData(DataStream.DATA_TYPE_LONG, primePair[1])
+        stream.sendData(DataStream.DATA_TYPE_LONG, mixed)
+
+    with DataStream.DataStreamIn(conn) as stream:
+        otherMixed = stream.getData(DataStream.DATA_TYPE_LONG)
+
+    key = exchange.getSharedKey(otherMixed)
+
+    print ("Settled Key: " + str(key))
 
 def connectionHandler(conn, addr):
     print ("Connection Recieved From " + str(addr[0]))
 
     doHandshake(conn, addr)
+    doKeyExchange(conn)
 
 def listener(sock):
     while True:
