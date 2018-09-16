@@ -7,20 +7,76 @@
                   margin: 0; 
                   padding: 0;
                 }
+
+                body
+                {
+                    font-family: arial;
+                }
+
+                div#mainText {
+                    padding: 15px;
+                }
+
+                div#CloseButton {
+                    color: white;
+                    font-family: "Segoe MDL2 Assets";
+                    -webkit-app-region: no-drag;
+                }
+
+                div#CloseButton:hover{
+                    background-color: #f71d1d;
+                    color:white;
+                    font-family: "Segoe MDL2 Assets";
+                }
+
+                div#MaxButton {
+                    color: white;
+                    font-family: "Segoe MDL2 Assets";
+                    -webkit-app-region: no-drag;
+                }
+
+                div#MaxButton:hover{
+                    background-color:dimgray;
+                    color:white;
+                    font-family: "Segoe MDL2 Assets";
+                }
+
+                div#RestoreButton {
+                    color: white;
+                    font-family: "Segoe MDL2 Assets";
+                    -webkit-app-region: no-drag;
+                    display:none;
+                }
+
+                div#RestoreButton:hover{
+                    background-color:dimgray;
+                    color:white;
+                    font-family: "Segoe MDL2 Assets";
+                }
+
+                div#MinButton {
+                    color: white;
+                    font-family: "Segoe MDL2 Assets";
+                    -webkit-app-region: no-drag;
+                }
+
+                div#MinButton:hover{
+                    background-color: dimgray;
+                    color:white;
+                    font-family: "Segoe MDL2 Assets";
+                }
            
                 div#banner { 
-                  position: absolute; 
-                  top: 0; 
-                  left: 0; 
-                  background-color: #DDEEEE; 
-                  width: 100%; 
+                  width: 20%;
+                  height: 25px;
+                  float: right;
+                  
+                  background-color:#3e4444;
                 }
-                div#banner-content { 
-                  width: 10%;
-                  float: left;
-                  margin: 0 auto; 
-                  padding: 10px; 
-                  border: 1px solid #000;
+
+                div#banner-content {
+                  height: 25px; 
+                 
                 }
                 div#main-content { 
                   padding-top: 70px;
@@ -31,18 +87,33 @@
       <meta charset="UTF-8">
       <title>Hello World!</title>
     </head>
-    <body>
+    <body style="background-color:white;">
 
-        <div id="banner style=" style="-webkit-app-region: drag; background-color:whitesmoke";>
+        <div id="banner" style="-webkit-app-region: drag;";>
             <div id="banner-content">
-                <h1 style="text-align: center;">Title Bar</h1>
+                <h4 style="text-align: center; color:white; padding-top:5px; float: left; padding-left: 80px;">AcroFTP</h4>
+                <div id="CloseButton" style="float: right; padding-bottom: 4px; padding-right; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center;">&#xE8BB;</div>
+                <div id="MaxButton" style="float: right; padding-bottom: 4px; padding-right; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE922;</div>
+                <div id="RestoreButton" style="float: right; padding-bottom: 4px; padding-right; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE923</div>
+                <div id="MinButton" style=" float: right; padding-bottom: 4px; padding-right; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE921;</div>
             </div>
         </div>
 
+        <div id="banner" style="-webkit-app-region: drag; height:10px; width:80%; background-color: #82b74b;";>
+                <div id="banner-content">
+                </div>
+            </div>
+      
+      <div id="mainText">
       <h1>Hello World!</h1>
-      <h1>A.C.R.O.N.Y.M. File Transfer System Front End</h1>
       We are using node <script>document.write(process.versions.node)</script>,
       Chrome <script>document.write(process.versions.chrome)</script>,
       and Electron <script>document.write(process.versions.electron)</script>.
+      </div>
+
     </body>
+
+    <script>
+         require('./renderer.js')
+    </script>
   </html>
