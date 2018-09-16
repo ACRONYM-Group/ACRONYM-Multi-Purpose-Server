@@ -1,5 +1,4 @@
 import random
-import primes
 
 class KeyExchange:
     def __init__(self,primes):
