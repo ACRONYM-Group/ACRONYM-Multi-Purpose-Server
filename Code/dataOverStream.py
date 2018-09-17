@@ -44,6 +44,7 @@ class DataStreamOut:
             data = data - (int(int(data/256)*256))
             array.append(int(int(data) % 256))
 
+
             self.conn.sendall(bytearray(array))
 
     def __exit__(self,*args):
@@ -64,7 +65,7 @@ class DataStreamIn:
         elif dataType == DATA_TYPE_SHORT:
             array = list(self.conn.recv(2))
 
-            return array[0]*256 + array[1]
+            return int(array[0])*256 + int(array[1])
 
         elif dataType == DATA_TYPE_STRING:
             array = list(self.conn.recv(1024))
@@ -79,7 +80,10 @@ class DataStreamIn:
         elif dataType == DATA_TYPE_LONG:
             array = list(self.conn.recv(4))
 
-            intOut = array[0]*256*256*256 + array[1]*256*256 + array[2]*256 + array[3]
+            intOut = array[0]*256*256*256 
+            intOut += array[1]*256*256
+            intOut += array[2]*256 
+            intOut += array[3]
 
             return intOut
 

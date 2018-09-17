@@ -18,12 +18,13 @@ serverSocket.bind((hostName, port))
 def doHandshake(conn, addr):
     conn.sendall(bytearray([3,1,4,1,5]))
 
-    data = conn.recv(5)
+    data = list(conn.recv(5))
 
     if list(data) == [3,1,4,1,5]:
         print ("Handshake with " + str(addr[0]) + " sucessful!")
     else:
         print ("Handshake with " + str(addr[0]) + " failed!")
+        print (data)
 
 def doKeyExchange(conn):
     primePair = Primes.getPrimePair()
@@ -46,14 +47,22 @@ def doKeyExchange(conn):
 
     return key
 
+def sendEncrypted(conn, data, key):
+    with DataStream.DataStreamOut(conn) as stream:
+        stream.sendData(DataStream.DATA_TYPE_STRING, encryption.encrypt(data, key))
+
+def readEncrypted(conn, key):
+    with DataStream.DataStreamIn(conn) as stream:
+        data = stream.getData(DataStream.DATA_TYPE_STRING)
+        return encryption.decrypt(data, key)
+
 def connectionHandler(conn, addr):
     print ("Connection Recieved From " + str(addr[0]))
 
     doHandshake(conn, addr)
     key = doKeyExchange(conn)
 
-    with DataStream.DataStreamOut(conn) as stream:
-        stream.sendData(DataStream.DATA_TYPE_STRING, encryption.encrypt("Hello World!", key))
+    sendEncrypted(conn, "Hello World", key)
 
 def listener(sock):
     while True:
