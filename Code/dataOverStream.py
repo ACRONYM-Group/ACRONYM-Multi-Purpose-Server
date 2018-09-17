@@ -12,18 +12,18 @@ class DataStreamOut:
 
     def __enter__(self):
         if self.header != None:
-            self.conn.sendall(bytearray(self.header))
+            self.conn.send(bytearray(self.header))
 
         return self
         
     def sendData(self, dataType, data):
         if dataType == DATA_TYPE_BYTE:
-            self.conn.sendall(bytearray([data%256]))
+            self.conn.send(bytearray([data%256]))
 
         elif dataType == DATA_TYPE_SHORT:
             array = [int(data/256) % 256, int(data) % 256]
 
-            self.conn.sendall(bytearray(array))
+            self.conn.send(bytearray(array))
 
         elif dataType == DATA_TYPE_STRING:
             array = []
@@ -31,7 +31,7 @@ class DataStreamOut:
             for c in data:
                 array.append(ord(c) % 256)
 
-            self.conn.sendall(bytearray(array))
+            self.conn.send(bytearray(array))
 
         elif dataType == DATA_TYPE_LONG:
             array = []
@@ -45,11 +45,11 @@ class DataStreamOut:
             array.append(int(int(data) % 256))
 
 
-            self.conn.sendall(bytearray(array))
+            self.conn.send(bytearray(array))
 
     def __exit__(self,*args):
         if self.ending != None:
-            self.conn.sendall(bytearray(self.ending))
+            self.conn.send(bytearray(self.ending))
 
 class DataStreamIn:
     def __init__(self, conn):

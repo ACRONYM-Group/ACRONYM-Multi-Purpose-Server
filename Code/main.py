@@ -70,6 +70,15 @@ def connectionHandler(conn, addr):
         if command == "END_COMMS":
             connectionAlive = False
 
+        if command == "LOGIN":
+            sendEncrypted(conn ,"GO" ,key)
+            username = readEncrypted(conn, key)
+            sendEncrypted(conn ,"GO" ,key)
+            passwordHash = readEncrypted(conn, key)
+
+            print (username)
+            print (passwordHash)
+
     conn.close()
 
 def listener(sock):

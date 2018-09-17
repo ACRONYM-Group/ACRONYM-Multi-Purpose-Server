@@ -1,8 +1,11 @@
 import random
 import math
+import time
 
 def encrypt(data, key):
     newData = ""
+
+    key = key%2560
 
     key = key*2
 
@@ -17,6 +20,8 @@ def encrypt(data, key):
 
 def decrypt(data, key):
     newData = ""
+
+    key = key%2560
 
     key = key*2
 
@@ -36,3 +41,7 @@ def decrypt(data, key):
 
 
     return newData
+
+oldTime = time.time()
+decrypt("Hello WORLD", 10000000)
+print (time.time() - oldTime)

@@ -36,4 +36,8 @@ key = exchange.getSharedKey(otherMixed)
 
 print ("Settled Key: " + str(key))
 
-print (readEncrypted(clientSocket, key))
+sendEncrypted(clientSocket, "LOGIN", key)
+readEncrypted(clientSocket, key)
+sendEncrypted(clientSocket, "Username", key)
+readEncrypted(clientSocket, key)
+sendEncrypted(clientSocket, "Password", key)
