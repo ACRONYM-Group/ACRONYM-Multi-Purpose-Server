@@ -62,7 +62,15 @@ def connectionHandler(conn, addr):
     doHandshake(conn, addr)
     key = doKeyExchange(conn)
 
-    sendEncrypted(conn, "Hello World", key)
+    connectionAlive = True
+
+    while connectionAlive:
+        command = readEncrypted(conn, key)
+
+        if command == "END_COMMS":
+            connectionAlive = False
+
+    conn.close()
 
 def listener(sock):
     while True:
