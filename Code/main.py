@@ -76,9 +76,6 @@ def connectionHandler(conn, addr):
             sendEncrypted(conn ,"GO" ,key)
             passwordHash = readEncrypted(conn, key)
 
-            print (username)
-            print (passwordHash)
-
     conn.close()
 
 def listener(sock):
