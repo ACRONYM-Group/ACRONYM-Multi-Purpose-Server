@@ -1,0 +1,164 @@
+* {
+    margin: 0; 
+    padding: 0;
+  }
+
+  body
+  {
+      font-family: arial;
+  }
+
+  div#mainText {
+      padding: 15px;
+  }
+
+  div#CloseButton {
+      color: white;
+      font-family: "Segoe MDL2 Assets";
+      -webkit-app-region: no-drag;
+  }
+
+  div#CloseButton:hover{
+      background-color: #f71d1d;
+      color:white;
+      font-family: "Segoe MDL2 Assets";
+  }
+
+  div#MaxButton {
+      color: white;
+      font-family: "Segoe MDL2 Assets";
+      -webkit-app-region: no-drag;
+  }
+
+  div#MaxButton:hover{
+      background-color:dimgray;
+      color:white;
+      font-family: "Segoe MDL2 Assets";
+  }
+
+  div#RestoreButton {
+      color: white;
+      font-family: "Segoe MDL2 Assets";
+      -webkit-app-region: no-drag;
+      display:none;
+  }
+
+  div#RestoreButton:hover{
+      background-color:dimgray;
+      color:white;
+      font-family: "Segoe MDL2 Assets";
+  }
+
+  div#MinButton {
+      color: white;
+      font-family: "Segoe MDL2 Assets";
+      -webkit-app-region: no-drag;
+  }
+
+  div#MinButton:hover{
+      background-color: dimgray;
+      color:white;
+      font-family: "Segoe MDL2 Assets";
+  }
+
+  div#banner { 
+    width: 20%;
+    height: 25px;
+    float: right;
+    
+    background-color:#3e4444;
+  }
+
+  div#banner-content {
+    height: 25px; 
+   
+  }
+  div#main-content { 
+    padding-top: 70px;
+ }
+
+ .Card {
+     background-color:white;
+     width: 65%;
+     height: 125px;
+     padding: 0px;
+     margin: 35px;
+
+ }
+
+ .TopBar {
+     background-color:#82b74b;
+     padding: 0px;
+     margin: 0px;
+     width: 88%;
+     height: 7px;
+     float: left;
+ }
+
+ .TopBarTitle {
+     background-color: #3e4444;
+     width:12%;
+     height:19px;
+     float: left;
+ }
+
+ div#FilesList {
+     color: black;
+ }
+
+ div#FilesList {
+     margin-left: 35px;
+     border: 2px solid #82b74b;
+     width: 65%;
+ }
+
+ .FileDeleteButton {
+     width: 47px;
+     height: 17px;
+     background-color:whitesmoke;
+     font-size: 15px;
+     color: black;
+     float: left;
+     margin-bottom: 0px;
+ }
+
+ .FileDeleteButton:hover {
+      width: 47px;
+      height: 17px;
+      background-color:red;
+      font-size: 15px;
+      color: white;
+      float: left;
+      cursor: pointer;
+ }
+
+ .fileListItem {
+     background-color:white;
+ }
+
+ div#UserFileSystemInfo {
+      border: 2px solid black;
+      width: 30%;
+      height: 80px;
+      float: left;
+ }
+
+ div#ServerFileSystemInfo {
+     border: 2px solid black;
+     width: 30%;
+     height: 80px;
+     float: left;
+ }
+
+ div#UploadFileButton {
+     background-color:whitesmoke;
+     width: 90px;
+     padding:3px;
+     color:black;
+ }
+
+ div#UploadFileButton:hover{
+     background-color:black;
+     color:white;
+     cursor: pointer;
+ }

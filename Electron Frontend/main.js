@@ -1,7 +1,6 @@
 const {app, BrowserWindow, dialog, ipcMain} = require('electron')
 var seedrandom = require('seedrandom');
-var rng = seedrandom(1000);
-console.log(rng()*256);
+var fs = require('fs');
   
   // Keep a global reference of the window object, if you don't, the window will
   // be closed automatically when the JavaScript object is garbage collected.
@@ -27,6 +26,21 @@ console.log(rng()*256);
         loginWin.center()
 
     })
+
+    ipcMain.on('requestFiles', (event, arg) => {
+      console.log("User Requested File Directory Data")
+
+      var path = "z:/AcroFTP/";
+ 
+      fs.readdir(path, function(err, items) {
+        for (i = 0; i < items.length; i++) {
+          currentFileName = items[i]
+          items[i] = {'name': currentFileName, 'size': fs.statSync(path + currentFileName).size/1000000.0}
+        }
+        event.sender.send('FileList', JSON.stringify(items))
+      });
+
+  })
 
     loginWin.on('closed', () => {
         // Dereference the window object, usually you would store windows
