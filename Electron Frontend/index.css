@@ -134,6 +134,7 @@
 
  .fileListItem {
      background-color:white;
+     cursor: pointer;
  }
 
  div#UserFileSystemInfo {
@@ -162,3 +163,25 @@
      color:white;
      cursor: pointer;
  }
+
+ div#DirectoryBackButton {
+     background-color:#82b74b;
+     width: 5%;
+     height: 25px;
+     margin-left: 35px;
+     color:black;
+     cursor: pointer;
+     float: left;
+ }
+
+ div#DirectoryBackButton:hover {
+    background-color:black;
+    color:white;
+}
+
+div#dirDisplay {
+    background-color:#3e4444;
+    color:white;
+    height: 25px;
+    float: left;
+}
