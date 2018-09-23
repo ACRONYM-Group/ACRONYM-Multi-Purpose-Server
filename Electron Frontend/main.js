@@ -65,7 +65,16 @@ client.on('data', function(data) {
   ipcMain.on('requestPacketSend', (event, arg) => {
     console.log("Window is asking to send packet")
     sendPacket(arg)
-    })
+    });
+
+  ipcMain.on('requestPage', (event, arg) => {
+    if (arg == "ProgramStatus") {
+      loginWin.loadFile("template.html");
+    } else if (arg == "FileSystem") {
+      loginWin.loadFile("index.html");
+    }
+
+  });
 
     ipcMain.on('requestDirectory', (event, arg) => {
       path = arg;
@@ -84,14 +93,14 @@ client.on('data', function(data) {
         dataToSend = {currentDir: path, files: items}
         event.sender.send('FileList', JSON.stringify(dataToSend))
       });
-      })
+      });
 
 
 
     loginWin.on('closed', () => {
         loginWin = null
 
-      })
+      });
     
   }
 

@@ -1,6 +1,10 @@
 require('./renderer.js')
 currentFileSystemDirectory = "";
-        const {ipcRenderer} = require('electron')
+const {ipcRenderer} = require('electron')
+
+        function navigateToPage(buttonID) {
+            ipcRenderer.send('requestPage', buttonID.substring(3));
+        }
 
         function generateDeleteButton() {
             return '<div id="FileDeleteButton" class="FileDeleteButton">Delete</div><br>'
