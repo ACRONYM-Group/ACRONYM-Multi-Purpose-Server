@@ -35,12 +35,14 @@ client.on('data', function(data) {
     // Open the DevTools.
     loginWin.webContents.openDevTools()
 
-    loginWin.loadFile('login.html')
+    loginWin.loadFile('blank.html')
+    pageToLoad = "login.html";
 
     ipcMain.on('loginButtonPressed', (event, arg) => {
         console.log(arg)
         sendPacket("User has logged in.")
-        loginWin.loadFile('index.html')
+        loginWin.loadFile('blank.html')
+        pageToLoad = "index.html";
         loginWin.setSize(1280, 600)
         loginWin.center()
 
@@ -68,12 +70,43 @@ client.on('data', function(data) {
     });
 
   ipcMain.on('requestPage', (event, arg) => {
+    loginWin.loadFile("blank.html");
     if (arg == "ProgramStatus") {
-      loginWin.loadFile("template.html");
-    } else if (arg == "FileSystem") {
-      loginWin.loadFile("index.html");
-    }
+      pageToLoad = "ProgramStatus.html";
 
+    } else if (arg == "FileSystem") {
+      pageToLoad = "index.html";
+
+    } else if (arg == "Settings") {
+      pageToLoad = "settings.html";
+
+    }
+  });
+
+  ipcMain.on('requestPageNameToLoad', (event, arg) => {
+    event.sender.send('commandLoadPage', pageToLoad);
+  });
+
+  ipcMain.on('requestPageData', (event, arg) => {
+    path = "z:/files/projects/ACRONYM-File-Transfer-System/Electron Frontend/pages/" + arg;
+    console.log(path);
+    file = fs.readFileSync(path, 'utf8');
+    event.sender.send('pageLoadData', file);
+  });
+
+  ipcMain.on('requestStandardElements', (event, arg) => {
+    console.log("Client is requesting Standard Elements");
+    path = "z:/files/projects/ACRONYM-File-Transfer-System/Electron Frontend/standardElements/"
+    standardElements = {};
+    fs.readdir(path, function(err, items) {
+      for (i = 0; i < items.length; i++) {
+        currentFileName = items[i];
+        console.log("Reading " + currentFileName);
+        standardElements[currentFileName] = {'name': currentFileName, 'data': fs.readFileSync(path + currentFileName, 'utf8')}
+      }
+      dataToSend = standardElements;
+      event.sender.send('standardElements', JSON.stringify(dataToSend))
+    });
   });
 
     ipcMain.on('requestDirectory', (event, arg) => {

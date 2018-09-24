@@ -1,12 +1,16 @@
 const remote = require('electron').remote;
 
-(function handleWindowControls() {
-    // When document has loaded, initialise
+function test() {
+    console.log("Hello");
+}
+
+//(function handleWindowControls() {
+    /* When document has loaded, initialise
     document.onreadystatechange = () => {
         if (document.readyState == "complete") {
             init();
         }
-    };
+    };*/
 
     function init() {
         let window = remote.getCurrentWindow();
@@ -56,4 +60,6 @@ const remote = require('electron').remote;
             }
         }
     }
-})();
+
+module.exports.init = init;
+//})();

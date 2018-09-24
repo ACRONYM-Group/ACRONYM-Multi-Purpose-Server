@@ -1,0 +1,28 @@
+<div id="mainText" style="background-color:white;">
+    <div id="FileSystemCard" class="Card">
+        <div id="FileSystemCardTopTitle" class="TopBarTitle"><h5 style="color:white;">File System</h5></div>
+        <div id="FileSystemCardTop" class="TopBar"></div><br><br>
+        <div id="ServerFileSystemInfo">
+            <div id="TotalFileSize"></div>
+        </div>
+
+        <div id="UserFileSystemInfo">
+            <div id="UserFileSystemInfoText">
+                Storage Allowance: 1 GB<br>
+                Access Level: Nymph<br>
+                <div id="UploadFileButton" onclick="uploadFile()">Upload File</div>
+            </div>
+        </div><br><br><br><br><br><br>
+        
+        
+
+        <div class="cardEndBar"></div>
+    </div><br><br>
+
+    <div onclick="goBackDir()" id="DirectoryBackButton"><p style="padding: 8px;">Back</p></div>
+    <div id="dirDisplay"><p id="dirDisplayPara" style="padding: 8px;"></p></div><br><br>
+    <div id="FilesList"></div>
+
+    <script src="./index.js"></script>
+    <script src="./FileControl.js"></script>
+</div>
