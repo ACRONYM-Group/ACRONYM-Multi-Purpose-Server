@@ -4,10 +4,12 @@
   "description": "",
   "main": "main.js",
   "dependencies": {
+    "microstats": "^0.1.2",
     "net": "^1.0.2",
     "node-gyp": "^3.8.0",
     "rebuild": "^0.1.2",
-    "seedrandom": "^2.4.4"
+    "seedrandom": "^2.4.4",
+    "systeminformation": "^3.45.6"
   },
   "devDependencies": {
     "electron": "^2.0.9"
