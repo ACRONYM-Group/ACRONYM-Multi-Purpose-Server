@@ -27,6 +27,10 @@ def doHandshake(conn, addr):
         print (data)
 
 def checkUserPass(user, password):
+    import os 
+
+    print (os.getcwd())
+
     f = open("credit.csv","r")
 
     for line in f.readlines():
