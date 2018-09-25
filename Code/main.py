@@ -26,6 +26,19 @@ def doHandshake(conn, addr):
         print ("Handshake with " + str(addr[0]) + " failed!")
         print (data)
 
+def checkUserPass(user, password):
+    f = open("credit.csv","r")
+
+    for line in f.readlines():
+        items = line.split(",")
+        items = [i.strip() for i in items]
+
+        if items == [user, password]:
+            print ("User Accepted")
+            return True
+            
+    return False
+
 def doKeyExchange(conn):
     primePair = Primes.getPrimePair()
     exchange = keyExchange.KeyExchange(primePair)
@@ -75,6 +88,13 @@ def connectionHandler(conn, addr):
             username = readEncrypted(conn, key)
             sendEncrypted(conn ,"GO" ,key)
             passwordHash = readEncrypted(conn, key)
+
+            print ("Got Username: " + str(username))
+            print ("Got Password: " + str(passwordHash))
+
+            if not checkUserPass(username, passwordHash):
+                conn.close()
+                connectionAlive = False
 
     conn.close()
 

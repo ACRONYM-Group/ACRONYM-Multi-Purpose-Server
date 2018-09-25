@@ -38,6 +38,6 @@ print ("Settled Key: " + str(key))
 
 sendEncrypted(clientSocket, "LOGIN", key)
 readEncrypted(clientSocket, key)
-sendEncrypted(clientSocket, "Username", key)
+sendEncrypted(clientSocket, "user", key)
 readEncrypted(clientSocket, key)
-sendEncrypted(clientSocket, "Password", key)
+sendEncrypted(clientSocket, "pass", key)
