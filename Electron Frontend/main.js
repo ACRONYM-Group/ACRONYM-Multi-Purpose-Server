@@ -1,6 +1,7 @@
 const {app, BrowserWindow, dialog, ipcMain} = require('electron')
 var seedrandom = require('seedrandom');
 var fs = require('fs');
+var latestMinecraftData = {};
 let win
 let loginWin
   
@@ -38,27 +39,42 @@ function charToInt(char) {
 var net = require('net');
 
 var client = new net.Socket();
-client.connect(4242, '74.127.159.15', function() {
+client.connect(12345, '192.168.1.11', function() {
   console.log('Connected');
   //client.write(String.fromCharCode(3) + String.fromCharCode(1) + String.fromCharCode(4) + String.fromCharCode(1) + String.fromCharCode(5));
+  client.write('{"clientType": "electron"}')
 });
 
 function sendPacket(data) {
   var client = new net.Socket();
   client.connect(12345, '192.168.1.11', function() {
-    console.log('Connected');
+    //console.log('Connected');
     client.write(data);
+  });
+
+  client.on('data', function(data) {
+    //var dataArr = data.split('')
+    console.log('Received: ');
+    //for (var i = 0; i < data.length; i++) {
+    //  console.log(charToInt(dataArr[i]))
+    //}
+    console.log(data.toString());
+    latestMinecraftData = JSON.parse(data.toString());
+    //console.log(Array.apply([], data).join(","));
+    //client.write(data);
   });
 }
 
 client.on('data', function(data) {
   //var dataArr = data.split('')
   console.log('Received: ');
- // for (var i = 0; i < data.length; i++) {
+  //for (var i = 0; i < data.length; i++) {
   //  console.log(charToInt(dataArr[i]))
   //}
-  console.log(Array.apply([], data).join(","));
-  client.write(data);
+  console.log(data.toString());
+  latestMinecraftData = JSON.parse(data.toString());
+  //console.log(Array.apply([], data).join(","));
+  //client.write(data);
 });
 
   function createLoginWindow () {
@@ -73,12 +89,17 @@ client.on('data', function(data) {
 
     ipcMain.on('loginButtonPressed', (event, arg) => {
         console.log(arg)
-        sendPacket("User has logged in.")
+        //sendPacket("User has logged in.")
         loginWin.loadFile('blank.html')
         pageToLoad = "index.html";
         loginWin.setSize(1280, 600)
         loginWin.center()
 
+    })
+
+    ipcMain.on('requestMinecraftServerData', (event, arg) => {
+      sendPacket('{"clientType": "electron"}');
+      event.sender.send("MinecraftServerData", latestMinecraftData);
     })
 
     ipcMain.on('requestFiles', (event, arg) => {

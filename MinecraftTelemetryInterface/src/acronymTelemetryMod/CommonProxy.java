@@ -33,7 +33,7 @@ public abstract class CommonProxy {
    * Run before anything else. Read your config, create blocks, items, etc, and register them with the GameRegistry
    */
 	
-	public int tickCount = 0;
+	/*public int tickCount = 0;
 	@SubscribeEvent
 	 public void onServerTick(TickEvent.ServerTickEvent event) {
 		tickCount += 1;
@@ -45,7 +45,12 @@ public abstract class CommonProxy {
 	    	//new GreetClient().startConnection(server.getCurrentPlayerCount());
 	    	tickCount = 0;
 		}
-	}
+	}*/
+	
+	public boolean isFirstConnectionRun = true;
+	public GreetClient connection = new GreetClient();
+	public PrintWriter out;
+	public BufferedReader in;
 	
 	public class GreetClient {
 	    private Socket clientSocket;
@@ -60,22 +65,32 @@ public abstract class CommonProxy {
 	        clientSocket = new Socket("192.168.1.11", 12345);
 	        out = new PrintWriter(clientSocket.getOutputStream(), true);
 	        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-	        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
-	        out.println(server.getBuildLimit() );
-	        String resp = in.readLine();
-	        System.out.println(resp);
 		    } catch(IOException e) {
 				throw new RuntimeException(e);
 			}
 	    }
-	 
-	    public void sendMessage(String msg) {
+	    
+	    public void sendMessage() {
 	    	try {
+    		MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+    		if (server.isServerRunning()) {
+    			out.println(
+    					"{\"clientType\": \"mcServer\""
+    					+ ", \"connectedPlayers\":" + server.getCurrentPlayerCount() 
+    					+ ", \"maxConnectedPlayers\":" + server.getMaxPlayers() 
+    					+ ", \"minecraftVersion\":\"" + server.getMinecraftVersion() + "\""
+    					+ ", \"MOTD\":\"" + server.getMOTD() + "\""
+    					+ ", \"port\":" + server.getServerPort() + "}");	
+    		} else {
+    			//out.println("SERVER IS STARTING!");
+    		}
+	        String resp = in.readLine();
+	        System.out.println(resp);
 	        //out.println("Minecraft Data String");
 	        //String resp = in.readLine();
 	        //return resp;
-	    	//} catch(IOException e) {
-				//throw new RuntimeException(e);
+	    	} catch(IOException e) {
+				throw new RuntimeException(e);
 			} finally {}
 	    }
 	 
@@ -92,9 +107,15 @@ public abstract class CommonProxy {
 	
 	class SayHello extends TimerTask {
 	    public void run() {
-	    	System.out.println("A.C.R.O.N.Y.M. Telemetry Loop");
-	    	new GreetClient().startConnection();
-	    	new GreetClient().sendMessage("Minecraft Data");
+	    	if ( isFirstConnectionRun ) {
+	    		isFirstConnectionRun = false;
+	    		connection = new GreetClient();
+	    		connection.startConnection();
+	    	} else {
+	    		System.out.println("A.C.R.O.N.Y.M. Telemetry Loop");
+	    		connection.startConnection();
+		    	connection.sendMessage();	
+	    	}
 	    	//new GreetClient().stopConnection();
 			
 	    }

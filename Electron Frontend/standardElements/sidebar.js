@@ -46,12 +46,12 @@ function drawCPUGraph() {
     var CPULoad = 0;
     si.currentLoad(function(data) {
         CPULoad = data.currentload;
-        console.log(CPULoad);
+        //console.log(CPULoad);
         drawCPUArc(convertPercentToRadianCoords(CPULoad/100));
     });
 
     si.mem(function(data) {
-        console.log(data);
+        //console.log(data);
         memoryUsage = data.used/data.total;
         drawMemUsage(memoryUsage*100);
         

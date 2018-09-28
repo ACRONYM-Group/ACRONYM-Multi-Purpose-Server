@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
-@Mod(modid = acronymTelemetryMod.MODID, version = acronymTelemetryMod.VERSION)
+@Mod(modid = acronymTelemetryMod.MODID, version = acronymTelemetryMod.VERSION, acceptableRemoteVersions = "*")
 public class acronymTelemetryMod
 {
     public static final String MODID = "acronymTelemetryMod";
