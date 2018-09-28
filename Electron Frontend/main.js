@@ -8,12 +8,39 @@ function openIndexPage() {
     
 }
 
+
+function stringToBytes(str) {
+  var ch, st, re = [];
+  for (var i = 0; i < str.length; i++ ) {
+	ch = str.charCodeAt(i);  // get char 
+	st = [];                 // set up "stack"
+	do {
+	  st.push( ch & 0xFF );  // push byte to stack
+	  ch = ch >> 8;          // shift value down by 1 byte
+	}  
+	while ( ch );
+	// add stack contents to result
+	// done because chars have "wrong" endianness
+	re = re.concat( st.reverse() );
+  }
+  // return an array of bytes
+  return re;
+}
+
+function intToChar(integer) {
+  return String.fromCharCode(integer)
+}
+
+function charToInt(char) {
+  return char.charCodeAt(0)
+}
+
 var net = require('net');
 
 var client = new net.Socket();
-client.connect(12345, '192.168.1.11', function() {
+client.connect(4242, '74.127.159.15', function() {
   console.log('Connected');
-  client.write('Hello, server! Love, Client.');
+  //client.write(String.fromCharCode(3) + String.fromCharCode(1) + String.fromCharCode(4) + String.fromCharCode(1) + String.fromCharCode(5));
 });
 
 function sendPacket(data) {
@@ -25,7 +52,13 @@ function sendPacket(data) {
 }
 
 client.on('data', function(data) {
-  console.log('Received: ' + data);
+  //var dataArr = data.split('')
+  console.log('Received: ');
+ // for (var i = 0; i < data.length; i++) {
+  //  console.log(charToInt(dataArr[i]))
+  //}
+  console.log(Array.apply([], data).join(","));
+  client.write(data);
 });
 
   function createLoginWindow () {
