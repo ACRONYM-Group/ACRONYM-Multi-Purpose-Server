@@ -9,6 +9,65 @@ function openIndexPage() {
     
 }
 
+function constructPacket(type, payload) {
+  var packet = {"packetType":type, "payload":payload};
+  console.log("Packet Constructed:")
+  console.log(packet);
+  return JSON.stringify(packet);
+}
+
+function packetReceiveHander(data) {
+  //var dataArr = data.split('')
+  console.log('Received: ');
+  //for (var i = 0; i < data.length; i++) {
+  //  console.log(charToInt(dataArr[i]))
+  //}
+  console.log(data.toString());
+  var packet = JSON.parse(data.toString());
+  if (packet["packetType"] == "__DAT__") {
+    var rawBinary = stringToBytes(packet["payload"]);
+    //console.log(rawBinary[0].toString());
+    //console.log(rawBinary[1].toString());
+    //console.log(rawBinary[2].toString());
+    //console.log(rawBinary[3].toString());
+
+    console.log("Whole Binary received:");
+    console.log(rawBinary);
+    var dataID = rawBinary[0] * 256 + rawBinary[1];
+    console.log("Server wants talk about raw Data ID " + dataID);
+    rawBinary = rawBinary.splice(2,rawBinary.length - 2);
+    console.log("Whole Binary Minus DataID received:");
+    console.log(rawBinary);
+    var dataLength = rawBinary[0];
+    console.log("Server is sending " + dataLength + " Bytes");
+    rawBinary = rawBinary.splice(1,rawBinary.length-1);
+    console.log("Binary Data received:");
+    console.log(rawBinary);
+    console.log("Received Integer: " + convertCharListToInt(rawBinary));
+    console.log(" ")
+
+  } else if (packet["packetType"] == "__RAW__") {
+
+  } else if (packet["packetType"] == "__CMD__") {
+
+  } else if (packet["packetType"] == "__HDS__") {
+    client.write(constructPacket("__HDS__", packet["payload"]));
+  }
+
+  //latestMinecraftData = 
+  //console.log(Array.apply([], data).join(","));
+  //client.write(data);
+}
+
+function convertCharListToInt(charList) {
+  var result = 0;
+  for (var i = 0; i < charList.length; i++) {
+    result *= 256;
+    result += charList[i];
+  }
+
+  return result;
+}
 
 function stringToBytes(str) {
   var ch, st, re = [];
@@ -39,43 +98,23 @@ function charToInt(char) {
 var net = require('net');
 
 var client = new net.Socket();
-client.connect(12345, '192.168.1.11', function() {
+client.connect(4242, '74.127.159.15', function() {
   console.log('Connected');
   //client.write(String.fromCharCode(3) + String.fromCharCode(1) + String.fromCharCode(4) + String.fromCharCode(1) + String.fromCharCode(5));
-  client.write('{"clientType": "electron"}')
+  //client.write('{"clientType": "electron"}')
 });
 
 function sendPacket(data) {
   var client = new net.Socket();
-  client.connect(12345, '192.168.1.11', function() {
+  client.connect(4242, '74.127.159.15', function() {
     //console.log('Connected');
     client.write(data);
   });
 
-  client.on('data', function(data) {
-    //var dataArr = data.split('')
-    console.log('Received: ');
-    //for (var i = 0; i < data.length; i++) {
-    //  console.log(charToInt(dataArr[i]))
-    //}
-    console.log(data.toString());
-    latestMinecraftData = JSON.parse(data.toString());
-    //console.log(Array.apply([], data).join(","));
-    //client.write(data);
-  });
+  client.on('data', packetReceiveHander);
 }
 
-client.on('data', function(data) {
-  //var dataArr = data.split('')
-  console.log('Received: ');
-  //for (var i = 0; i < data.length; i++) {
-  //  console.log(charToInt(dataArr[i]))
-  //}
-  console.log(data.toString());
-  latestMinecraftData = JSON.parse(data.toString());
-  //console.log(Array.apply([], data).join(","));
-  //client.write(data);
-});
+client.on('data', packetReceiveHander);
 
   function createLoginWindow () {
     // Create the browser window.
@@ -210,56 +249,3 @@ client.on('data', function(data) {
       createLoginWindow()
     }
   })
-
-
-  /*
-
-
-  function createMainWindow() {
-    win = new BrowserWindow({width: 1280, height: 600, frame: false})
-  
-    // and load the index.html of the app.
-    win.loadFile('index.html')
-    
-  
-    // Open the DevTools.
-    //win.webContents.openDevTools()
-  
-    // Emitted when the window is closed.
-    win.on('closed', () => {
-      // Dereference the window object, usually you would store windows
-      // in an array if your app supports multi windows, this is the time
-      // when you should delete the corresponding element.
-      win = null
-    })
-  }
-  
-  // This method will be called when Electron has finished
-  // initialization and is ready to create browser windows.
-  // Some APIs can only be used after this event occurs.
-  
-  // In this file you can include the rest of your app's specific main process
-  // code. You can also put them in separate files and require them here.
-
-
-
-
-
-  /*dialog.showOpenDialog((fileNames) => {
-    // fileNames is an array that contains all the selected
-    if(fileNames === undefined){
-        console.log("No file selected");
-        return;
-    }
-
-    fs.readFile(filepath, 'utf-8', (err, data) => {
-        if(err){
-            alert("An error ocurred reading the file :" + err.message);
-            return;
-        }
-
-        // Change how to handle the file content
-        console.log("The file content is : " + data);
-    });
-    
-});*/
