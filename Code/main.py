@@ -8,6 +8,8 @@ import dataOverStream as DataStream
 
 import encryption
 
+import packet as Packet
+
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 port = 4242
@@ -24,13 +26,10 @@ def doHandshake(conn, addr):
         print ("Handshake with " + str(addr[0]) + " sucessful!")
     else:
         print ("Handshake with " + str(addr[0]) + " failed!")
+        print (str(bytearray(data)))
         print (data)
 
 def checkUserPass(user, password):
-    import os 
-
-    print (os.getcwd())
-
     f = open("credit.csv","r")
 
     for line in f.readlines():
@@ -76,29 +75,9 @@ def readEncrypted(conn, key):
 def connectionHandler(conn, addr):
     print ("Connection Recieved From " + str(addr[0]))
 
-    doHandshake(conn, addr)
-    key = doKeyExchange(conn)
+    Packet.Packet('31415', "__HDS__").send(conn)
 
-    connectionAlive = True
-
-    while connectionAlive:
-        command = readEncrypted(conn, key)
-
-        if command == "END_COMMS":
-            connectionAlive = False
-
-        if command == "LOGIN":
-            sendEncrypted(conn ,"GO" ,key)
-            username = readEncrypted(conn, key)
-            sendEncrypted(conn ,"GO" ,key)
-            passwordHash = readEncrypted(conn, key)
-
-            print ("Got Username: " + str(username))
-            print ("Got Password: " + str(passwordHash))
-
-            if not checkUserPass(username, passwordHash):
-                conn.close()
-                connectionAlive = False
+    print (Packet.readPacket(conn))
 
     conn.close()
 
