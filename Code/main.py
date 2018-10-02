@@ -9,6 +9,9 @@ import dataOverStream as DataStream
 import encryption
 
 import packet as Packet
+import dataOverString as DataString
+
+import time
 
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -18,16 +21,18 @@ hostName = ""
 serverSocket.bind((hostName, port))
 
 def doHandshake(conn, addr):
-    conn.sendall(bytearray([3,1,4,1,5]))
+    Packet.Packet('31415', "__HDS__").send(conn)
 
-    data = list(conn.recv(5))
+    data = Packet.readPacket(conn)
 
-    if list(data) == [3,1,4,1,5]:
+    if data.body == "31415":
         print ("Handshake with " + str(addr[0]) + " sucessful!")
+        return True
     else:
         print ("Handshake with " + str(addr[0]) + " failed!")
-        print (str(bytearray(data)))
+        print ("Responce Recieved: ")
         print (data)
+        return False
 
 def checkUserPass(user, password):
     f = open("credit.csv","r")
@@ -49,10 +54,16 @@ def doKeyExchange(conn):
 
     mixed = exchange.calculateMixed()
 
-    with DataStream.DataStreamOut(conn) as stream:
-        stream.sendData(DataStream.DATA_TYPE_LONG, primePair[0])
-        stream.sendData(DataStream.DATA_TYPE_LONG, primePair[1])
-        stream.sendData(DataStream.DATA_TYPE_LONG, mixed)
+    print (primePair)
+
+    for c in chr(0) + chr(1) + DataString.convertIntToData(primePair[0]):
+        print (ord(c))
+
+    Packet.Packet(chr(0) + chr(1) + DataString.convertIntToData(primePair[0]),"__DAT__").send(conn)
+    time.sleep(0.1)
+    Packet.Packet(chr(0) + chr(2) + DataString.convertIntToData(primePair[1]),"__DAT__").send(conn)
+    time.sleep(0.1)
+    Packet.Packet(chr(0) + chr(3) + DataString.convertIntToData(mixed),"__DAT__").send(conn)
 
     with DataStream.DataStreamIn(conn) as stream:
         otherMixed = stream.getData(DataStream.DATA_TYPE_LONG)
@@ -75,9 +86,8 @@ def readEncrypted(conn, key):
 def connectionHandler(conn, addr):
     print ("Connection Recieved From " + str(addr[0]))
 
-    Packet.Packet('31415', "__HDS__").send(conn)
-
-    print (Packet.readPacket(conn))
+    doHandshake(conn, addr)
+    key = doKeyExchange(conn)
 
     conn.close()
 

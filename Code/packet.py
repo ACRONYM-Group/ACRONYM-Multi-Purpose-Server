@@ -20,23 +20,19 @@ class Packet:
         if conn == None:
             conn = self.connection
 
-        data = {"packetType": self.type, "payloadLength":str(len(self.body)), "payload":self.body}
+        data = {"packetType": self.type, "payload":self.body}
 
         data = json.dumps(data).encode()
 
-        print (data.decode())
-
-        conn.send(data)
+        conn.sendall(data)
 
     def __repr__(self):
         return "self.body = " + '"' + str(self.body) + '"\n' + "self.type = " + '"' + str(self.type) + '"'
 
-def readPacket(self, connection):
+def readPacket(connection):
     data = connection.recv(1024)
     data = data.decode()
 
-    data = jsom.loads(data)
-
-    print (data)
+    data = json.loads(data)
 
     return Packet(data["payload"], data["packetType"], connection)
