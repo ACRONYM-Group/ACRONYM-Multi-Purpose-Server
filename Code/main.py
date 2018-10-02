@@ -56,19 +56,23 @@ def doKeyExchange(conn):
 
     print (primePair)
 
-    for c in chr(0) + chr(1) + DataString.convertIntToData(primePair[0]):
-        print (ord(c))
-
     Packet.Packet(chr(0) + chr(1) + DataString.convertIntToData(primePair[0]),"__DAT__").send(conn)
     time.sleep(0.1)
     Packet.Packet(chr(0) + chr(2) + DataString.convertIntToData(primePair[1]),"__DAT__").send(conn)
     time.sleep(0.1)
     Packet.Packet(chr(0) + chr(3) + DataString.convertIntToData(mixed),"__DAT__").send(conn)
 
-    with DataStream.DataStreamIn(conn) as stream:
-        otherMixed = stream.getData(DataStream.DATA_TYPE_LONG)
+    print ("My Mixed: " + str(mixed))
 
-    key = exchange.getSharedKey(otherMixed)
+    print ("Secret: " + str(exchange.secret))
+
+    packet = Packet.readPacket(conn)
+
+    val = DataString.convertDataToInt(packet.body[2:])
+
+    print ("Their Mixed: " + str(val))
+
+    key = exchange.getSharedKey(val)
 
     print ("Settled Key: " + str(key))
 

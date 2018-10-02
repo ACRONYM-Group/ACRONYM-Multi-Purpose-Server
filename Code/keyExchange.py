@@ -16,7 +16,8 @@ class KeyExchange:
         self.secret = random.randint(2,50)
 
     def calculateMixed(self):
-        return self.g ** self.secret % self.p
+        return (self.g ** self.secret) % self.p
 
     def getSharedKey(self,otherMix):
-        return otherMix ** self.secret % self.p
+        print ("P: " + str(self.p) + "\nG: " + str(self.g))
+        return (otherMix ** self.secret) % self.p
