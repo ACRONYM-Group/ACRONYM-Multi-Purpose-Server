@@ -2,17 +2,57 @@ const {app, BrowserWindow, dialog, ipcMain} = require('electron')
 var seedrandom = require('seedrandom');
 var fs = require('fs');
 var bigInt = require("big-integer");
+var aesjs = require("aes-js");
 var latestMinecraftData = {};
 var keyExchangeInts = [];
 var keyExchangeLargerPrime = 0;
 var keyExchangeSmallerPrime = 0;
-var key = 0;
+var key = bigInt(0);
 var theirMixed = 0;
+var ServerIP = "192.168.1.11";
+var ServerPort = 4242;
 let win
 let loginWin
+
+var testInt = bigInt("214325345634634");
+var keyArray = testInt.toArray(10)["value"];
+console.log(keyArray);
+
+if (keyArray.length < 16) {
+  for (i = keyArray.length; i < 16; i++) {
+    keyArray.unshift(0);
+  }
+}
+
+var textToEncrypt = "Encryption is cool!";
+var encryptedHex = encryptString(keyArray, 5, textToEncrypt);
+console.log(" ")
+console.log("The text:");
+console.log(textToEncrypt);
+console.log("Has been encrypted to:");
+console.log(encryptedHex);
+console.log(" ");
+console.log("The hex decrypts to:")
+var decryptedString = decryptString(keyArray, 5, encryptedHex);
+console.log(decryptedString);
+console.log(" ");
+
+
+function encryptString(keyArray, counterInt, string) {
+  var textBytes = aesjs.utils.utf8.toBytes(string);
+
+  var aesCtr = new aesjs.ModeOfOperation.ctr(keyArray, new aesjs.Counter(counterInt));
+  var encryptedBytes = aesCtr.encrypt(textBytes);
+
+  return aesjs.utils.hex.fromBytes(encryptedBytes);
+}
+
+function decryptString(keyArray, counterInt, string) {
+  var encryptedBytes = aesjs.utils.hex.toBytes(string);
+  var aesCtr = new aesjs.ModeOfOperation.ctr(keyArray, new aesjs.Counter(counterInt));
+  var decryptedString = aesCtr.decrypt(encryptedBytes);
   
-function openIndexPage() {
-    
+  return aesjs.utils.utf8.fromBytes(decryptedString);
 }
 
 function constructPacket(type, payload) {
@@ -158,7 +198,7 @@ function logCustomBase(num, logBase) {
 var net = require('net');
 
 var client = new net.Socket();
-client.connect(4242, '74.127.159.15', function() {
+client.connect(ServerPort, ServerIP, function() {
   console.log('Connected');
   //client.write(String.fromCharCode(3) + String.fromCharCode(1) + String.fromCharCode(4) + String.fromCharCode(1) + String.fromCharCode(5));
   //client.write('{"clientType": "electron"}')
@@ -166,7 +206,7 @@ client.connect(4242, '74.127.159.15', function() {
 
 function sendPacket(data) {
   var client = new net.Socket();
-  client.connect(4242, '74.127.159.15', function() {
+  client.connect(ServerPort, ServerIP, function() {
     //console.log('Connected');
     client.write(data);
   });
