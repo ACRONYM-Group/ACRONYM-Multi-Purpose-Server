@@ -1,7 +1,13 @@
 const {app, BrowserWindow, dialog, ipcMain} = require('electron')
 var seedrandom = require('seedrandom');
 var fs = require('fs');
+var bigInt = require("big-integer");
 var latestMinecraftData = {};
+var keyExchangeInts = [];
+var keyExchangeLargerPrime = 0;
+var keyExchangeSmallerPrime = 0;
+var key = 0;
+var theirMixed = 0;
 let win
 let loginWin
   
@@ -18,6 +24,7 @@ function constructPacket(type, payload) {
 
 function packetReceiveHander(data) {
   //var dataArr = data.split('')
+  console.log(" ");
   console.log('Received: ');
   //for (var i = 0; i < data.length; i++) {
   //  console.log(charToInt(dataArr[i]))
@@ -34,6 +41,8 @@ function packetReceiveHander(data) {
     console.log("Whole Binary received:");
     console.log(rawBinary);
     var dataID = rawBinary[0] * 256 + rawBinary[1];
+    var dataIDFirstByte = rawBinary[0];
+    var dataIDSecondByte = rawBinary[1];
     console.log("Server wants talk about raw Data ID " + dataID);
     rawBinary = rawBinary.splice(2,rawBinary.length - 2);
     console.log("Whole Binary Minus DataID received:");
@@ -44,7 +53,41 @@ function packetReceiveHander(data) {
     console.log("Binary Data received:");
     console.log(rawBinary);
     console.log("Received Integer: " + convertCharListToInt(rawBinary));
-    console.log(" ")
+
+    if (dataIDFirstByte == 0) {
+      console.log("-----");
+      console.log("Message is Key Exchange");
+      console.log("Key exchange step: " + dataIDSecondByte);
+      keyExchangeInts.push(convertCharListToInt(rawBinary));
+      if (keyExchangeInts.length == 3) {
+        if (keyExchangeInts[0] >= keyExchangeInts[1]) {
+          keyExchangeLargerPrime = keyExchangeInts[0];
+          keyExchangeSmallerPrime = keyExchangeInts[1];
+        } else {
+          keyExchangeLargerPrime = keyExchangeInts[1];
+          keyExchangeSmallerPrime = keyExchangeInts[0];
+        }
+        theirMixed = keyExchangeInts[2];
+
+        console.log("Larger Prime is: " + keyExchangeLargerPrime);
+        console.log("Smaller Prime is: " + keyExchangeSmallerPrime);
+        console.log("Their Mixed Number: " + theirMixed);
+
+        var g = keyExchangeSmallerPrime;
+        var p = keyExchangeLargerPrime;
+        var secret = Math.floor(Math.random()*48) + 2;
+        console.log("My Secret Number: " + secret);
+        var mixedNumber = bigInt(g).pow(secret).mod(p);
+
+        console.log("My Mixed Number: " + mixedNumber);
+
+        
+        client.write(constructPacket("__DAT__", intToChar(0) + intToChar(3) + intToRawBin(mixedNumber)));
+
+        key = bigInt(theirMixed).pow(secret).mod(p);
+        console.log("Got key: " + key);
+      }
+    }
 
   } else if (packet["packetType"] == "__RAW__") {
 
@@ -95,6 +138,23 @@ function charToInt(char) {
   return char.charCodeAt(0)
 }
 
+function intToRawBin(int) {
+  num = Math.ceil(logCustomBase(int, 256));
+
+  data = intToChar(num);
+
+  for (i = num; i >= 0; i--) {
+    var current = Math.floor(Math.floor(int/(Math.pow(256,i)))%256)
+
+    data += intToChar(current);
+  }
+
+  return data;
+}
+
+function logCustomBase(num, logBase) {
+  return Math.log(num)/Math.log(logBase);
+}
 var net = require('net');
 
 var client = new net.Socket();
