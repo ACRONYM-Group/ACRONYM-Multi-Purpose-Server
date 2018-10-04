@@ -25,4 +25,4 @@ def getRandomPrime(low, high=None):
 
 def getPrimePair():
     #1000000
-    return (getRandomPrime(0,100),getRandomPrime(0,100))
+    return (getRandomPrime(0,1000000),getRandomPrime(0,1000000))
