@@ -9,7 +9,7 @@ var keyExchangeLargerPrime = 0;
 var keyExchangeSmallerPrime = 0;
 var key = bigInt(0);
 var theirMixed = 0;
-var ServerIP = "192.168.1.11";
+var ServerIP = "192.168.1.10";
 var ServerPort = 4242;
 let win
 let loginWin
