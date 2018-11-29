@@ -14,6 +14,11 @@ import dataOverString as DataString
 import time
 import json
 
+import platform
+
+OSName = platform.platform()
+print("Current Software Platform: " + OSName)
+
 #print(chr(205))
 test = encryption.encrypt("AFTP", 123456789106576575675685678567)
 print(test)
@@ -28,7 +33,7 @@ hostName = ""
 
 serverSocket.bind((hostName, port))
 
-MOTD = "Welcome to the A.C.R.O.N.Y.M. Network."
+MOTD = "Welcome to the A.C.R.O.N.Y.M. Network.\nServer is Running on " + OSName
 
 def doHandshake(conn, addr):
     Packet.Packet('31415', "__HDS__").send(conn)
