@@ -86,6 +86,12 @@ ipcRenderer.on('FileList', (event, arg) => {
     document.getElementById("TotalFileSize").innerHTML = '<div id="TotalFileSize"> Current Dir Size: ' + Math.round(totalFileSize * 10)/10 + ' MB<br>Files in Parent Dir: ' + Math.round(totalNumberOfFiles * 10)/10 + '<br>Folders in Parent Dir: ' + Math.round(totalNumberOfFolders * 10)/10 + '</div>';
 })
 
+ipcRenderer.on('updateMOTD', (event, arg) => {
+    document.getElementById("MOTD").innerText = arg;
+})
+
 ipcRenderer.send('requestFiles', 'ping')
+
+ipcRenderer.send('requestMOTD', 'ping')
 
    

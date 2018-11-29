@@ -12,6 +12,14 @@ import packet as Packet
 import dataOverString as DataString
 
 import time
+import json
+
+#print(chr(205))
+test = encryption.encrypt("AFTP", 123456789106576575675685678567)
+print(test)
+testDecrypt = encryption.decrypt(test, 12345678910)
+print(testDecrypt)
+
 
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -19,6 +27,8 @@ port = 4242
 hostName = ""
 
 serverSocket.bind((hostName, port))
+
+MOTD = "Welcome to the A.C.R.O.N.Y.M. Network."
 
 def doHandshake(conn, addr):
     Packet.Packet('31415', "__HDS__").send(conn)
@@ -93,7 +103,29 @@ def connectionHandler(conn, addr):
     doHandshake(conn, addr)
     key = doKeyExchange(conn)
 
-    conn.close()
+    print(encryption.decrypt(chr(205), key))
+
+    while True:
+        packetRec = Packet.readPacket(conn)
+        if packetRec.type == "__CMD__":
+            print("Client sent Command, decrypting...")
+            commandRec = encryption.decryptWrapper(packetRec.body, key)
+            print("Decrypted Command: " + commandRec)
+
+            commandRec = json.loads(commandRec)
+
+            if commandRec["CMDType"] == "requestMOTD":
+                print("Sending the client the MOTD")
+                dataToSend = encryption.encryptWrapper(json.dumps({"CMDType":"updateMOTD", "data":MOTD}), key)
+                print(" ")
+                print("Data to send and data to send Decrypt:")
+                print(dataToSend)
+                dataToSendDecrypt = encryption.decryptWrapper(dataToSend, key)
+                print(dataToSendDecrypt)
+                Packet.Packet(dataToSend,"__CMD__").send(conn)
+
+
+
 
 def listener(sock):
     while True:

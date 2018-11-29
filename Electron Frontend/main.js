@@ -9,8 +9,9 @@ var keyExchangeLargerPrime = 0;
 var keyExchangeSmallerPrime = 0;
 var key = bigInt(0);
 var theirMixed = 0;
-var ServerIP = "192.168.1.10";
+var ServerIP = "192.168.1.104";
 var ServerPort = 4242;
+var MOTD = "Message Of The Day...";
 let win
 let loginWin
 
@@ -24,6 +25,7 @@ if (keyArray.length < 16) {
   }
 }
 
+/*
 var textToEncrypt = "Encryption is cool!";
 var encryptedHex = encryptString(keyArray, 5, textToEncrypt);
 console.log(" ")
@@ -36,6 +38,11 @@ console.log("The hex decrypts to:")
 var decryptedString = decryptString(keyArray, 5, encryptedHex);
 console.log(decryptedString);
 console.log(" ");
+*/
+
+console.log("!!!!!!!!!!!!!!!!!!!");
+console.log(intToChar(205))
+console.log(intToChar(205).length)
 
 
 function encryptString(keyArray, counterInt, string) {
@@ -54,6 +61,111 @@ function decryptString(keyArray, counterInt, string) {
   
   return aesjs.utils.utf8.fromBytes(decryptedString);
 }
+
+function CarterEncrypt(data, key) {
+  var newData = ""
+  key = key % 2560;
+  key = key*2;
+  key = bigInt(key);
+  var r = key.multiply(10);
+  r = r.pow(key).mod(123);
+
+  for (var c = 0; c < data.length; c++) {
+    var characterInt = utf16ToDig(data.charAt(c));
+    //console.log("Character Int: " + characterInt);
+    newData += intToChar(bigInt(characterInt).add(r.mod(256)).mod(256));
+    
+    var factor = key.add(1);
+    var factor2 = r.divide(key);
+    factor = factor.add(factor2);
+    factor = factor.mod(250);
+
+    r = r.multiply(factor)
+  }
+
+  return newData;
+}
+
+function CarterDecrypt(data, key) {
+  //console.log("decrypting...");
+  var newData = ""
+  key = key % 2560;
+  key = key*2;
+  key = bigInt(key);
+  var r = key.multiply(10);
+  r = r.pow(key).mod(123);
+  //r = (key*10)**key%123;
+  //console.log("Starting Decrypt. Mathed R:");
+  //console.log(r);
+
+  for (var c = 0; c < data.length; c++) {
+    //console.log("Decrypt Tick");
+    var oldVal = bigInt(utf16ToDig(data.charAt(c)));
+    oldVal = oldVal.minus(r.mod(bigInt(256)));
+    //console.log(r.mod(256).toJSNumber());
+    oldVal = Number(oldVal.toString());
+    //console.log(oldVal);
+
+    if (oldVal < 0) {
+      oldVal = oldVal+256;
+    }
+
+    //console.log(intToChar(oldVal));
+    newData = newData + intToChar(oldVal);
+   
+    //r = r.multiply(key.add(bigInt(1).add(bigInt(r.divide(key))).mod(250))); //(key + 1+utf16ToDig(r/key))%250;
+    var factor = key.add(1);
+    var factor2 = r.divide(key);
+    //console.log("DIVIDING")
+    //console.log(r);
+    //console.log(key);
+    //console.log(factor2);
+    factor = factor.add(factor2);
+    factor = factor.mod(250);
+
+    r = r.multiply(factor)
+    //(key + 1+int(r/key))%250
+  }
+
+  return newData;
+}
+
+function CarterEncryptWrapper(data, key) {
+  queue = "";
+  output = "";
+
+  i = 0
+  while (i < data.length) {
+    queue += data.charAt(0);
+    data = data.substr(1);
+
+    if (queue.length == 4 || data.length == 0) {
+      output += CarterEncrypt(queue, key);
+      queue = "";
+    }
+  }
+
+  return output;
+}
+
+function CarterDecryptWrapper(data, key) {
+  queue = "";
+  output = "";
+
+  i = 0
+  while (i < data.length) {
+    queue += data.charAt(0);
+    data = data.substr(1);
+
+    if (queue.length == 4 || data.length == 0) {
+      output += CarterDecrypt(queue, key);
+      queue = "";
+    }
+  }
+
+  return output;
+}
+
 
 function constructPacket(type, payload) {
   var packet = {"packetType":type, "payload":payload};
@@ -132,15 +244,26 @@ function packetReceiveHander(data) {
   } else if (packet["packetType"] == "__RAW__") {
 
   } else if (packet["packetType"] == "__CMD__") {
+    console.log("Got Command!");
+    var keyArray = key.toArray(10)["value"];
+    decryptedPacketData = CarterDecryptWrapper(packet["payload"], key)
+    console.log("Decrypted Command:");
+    console.log(decryptedPacketData);
+
+    command = JSON.parse(decryptedPacketData);
+
+    if (command["CMDType"] == "updateMOTD") {
+      MOTD = command["data"];
+    }
 
   } else if (packet["packetType"] == "__HDS__") {
     client.write(constructPacket("__HDS__", packet["payload"]));
   }
 
   //latestMinecraftData = 
+}
   //console.log(Array.apply([], data).join(","));
   //client.write(data);
-}
 
 function convertCharListToInt(charList) {
   var result = 0;
@@ -178,6 +301,18 @@ function charToInt(char) {
   return char.charCodeAt(0)
 }
 
+var utf16ToDig = function(s) {
+  var length = s.length;
+  var index = -1;
+  var result = "";
+  var hex;
+  while (++index < length) {
+      hex = s.charCodeAt(index).toString(16).toUpperCase();
+      result += ('0000' + hex).slice(-4);
+  }
+  return parseInt(result, 16);
+}
+
 function intToRawBin(int) {
   num = Math.ceil(logCustomBase(int, 256));
 
@@ -195,6 +330,17 @@ function intToRawBin(int) {
 function logCustomBase(num, logBase) {
   return Math.log(num)/Math.log(logBase);
 }
+
+/*
+console.log(" ")
+console.log("Encryption Test Results:");
+EncryptionTest = CarterEncryptWrapper("Welcome to the A.C.R.O.N.Y.M. Network.", 12345678910);
+console.log(EncryptionTest);
+DecryptionTest = CarterDecryptWrapper(EncryptionTest, 12345678910);
+console.log(DecryptionTest);
+console.log(" ")
+*/
+
 var net = require('net');
 
 var client = new net.Socket();
@@ -233,12 +379,19 @@ client.on('data', packetReceiveHander);
         pageToLoad = "index.html";
         loginWin.setSize(1280, 600)
         loginWin.center()
+        commandToSend = {CMDType:"requestMOTD"}
+        dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
+        client.write(constructPacket("__CMD__",dataToSend));
 
     })
 
     ipcMain.on('requestMinecraftServerData', (event, arg) => {
       sendPacket('{"clientType": "electron"}');
       event.sender.send("MinecraftServerData", latestMinecraftData);
+    })
+
+    ipcMain.on('requestMOTD', (event, arg) => {
+      event.sender.send("updateMOTD", MOTD);
     })
 
     ipcMain.on('requestFiles', (event, arg) => {
