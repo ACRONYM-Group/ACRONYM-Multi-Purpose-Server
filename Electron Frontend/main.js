@@ -9,9 +9,11 @@ var keyExchangeLargerPrime = 0;
 var keyExchangeSmallerPrime = 0;
 var key = bigInt(0);
 var theirMixed = 0;
+//var ServerIP = "172.25.76.132";
 var ServerIP = "192.168.1.104";
 var ServerPort = 4242;
 var MOTD = "Message Of The Day...";
+var loginButtonPushEvent;
 let win
 let loginWin
 
@@ -256,6 +258,27 @@ function packetReceiveHander(data) {
       MOTD = command["data"];
     }
 
+    if (command["CMDType"] == "AuthResult") {
+      if (command["data"] == true) {
+        loginWin.loadFile('blank.html')
+        pageToLoad = "index.html";
+        loginWin.setSize(1280, 600)
+        loginWin.center()
+
+        commandToSend = {CMDType:"requestMOTD"}
+        dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
+        client.write(constructPacket("__CMD__",dataToSend));
+      } else {
+        console.log("Authentication Result: " + command["data"]);
+        displayLoginError("Authentication Failed!", loginButtonPushEvent);
+      }
+    }
+
+    if (command["CMDType"] == "updateFiles") {
+      dataToSend = {currentDir: command["data"]["path"], files: command["data"]["files"]};
+      BrowserWindow.fromId(command["data"]["window"]).send('FileList', JSON.stringify(dataToSend));
+    }
+
   } else if (packet["packetType"] == "__HDS__") {
     client.write(constructPacket("__HDS__", packet["payload"]));
   }
@@ -341,6 +364,10 @@ console.log(DecryptionTest);
 console.log(" ")
 */
 
+function displayLoginError(txt, event) {
+  event.sender.send("displayLoginError", txt);
+}
+
 var net = require('net');
 
 var client = new net.Socket();
@@ -374,14 +401,10 @@ client.on('data', packetReceiveHander);
 
     ipcMain.on('loginButtonPressed', (event, arg) => {
         console.log(arg)
-        //sendPacket("User has logged in.")
-        loginWin.loadFile('blank.html')
-        pageToLoad = "index.html";
-        loginWin.setSize(1280, 600)
-        loginWin.center()
-        commandToSend = {CMDType:"requestMOTD"}
+        commandToSend = {CMDType:"login", data:arg}
         dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
         client.write(constructPacket("__CMD__",dataToSend));
+        loginButtonPushEvent = event;
 
     })
 
@@ -397,8 +420,14 @@ client.on('data', packetReceiveHander);
     ipcMain.on('requestFiles', (event, arg) => {
       console.log("User Requested File Directory Data")
 
-      var path = "z:/AcroFTP/";
+      var path = arg;
+
+      commandToSend = {CMDType:"requestFiles", data:{path: path, windowID: event.sender.getOwnerBrowserWindow().id}}
+      console.log(event.sender.getOwnerBrowserWindow().id);
+      dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
  
+      /*
       fs.readdir(path, function(err, items) {
         for (i = 0; i < items.length; i++) {
           currentFileName = items[i]
@@ -407,6 +436,7 @@ client.on('data', packetReceiveHander);
         dataToSend = {currentDir: path, files: items}
         event.sender.send('FileList', JSON.stringify(dataToSend))
       });
+      */
       });
 
 
@@ -457,12 +487,19 @@ client.on('data', packetReceiveHander);
 
     ipcMain.on('requestDirectory', (event, arg) => {
       path = arg;
+      
       if (path[path.length-1] == "/") {
         var path = arg;
       } else {
         var path = arg + "/";
       }
 
+      commandToSend = {CMDType:"requestFiles", data:{path: path, windowID: event.sender.getOwnerBrowserWindow().id}}
+      console.log(event.sender.getOwnerBrowserWindow().id);
+      dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+      
+      /*
       console.log("reading from " + path);
       fs.readdir(path, function(err, items) {
         for (i = 0; i < items.length; i++) {
@@ -471,7 +508,7 @@ client.on('data', packetReceiveHander);
         }
         dataToSend = {currentDir: path, files: items}
         event.sender.send('FileList', JSON.stringify(dataToSend))
-      });
+      });*/
       });
 
 

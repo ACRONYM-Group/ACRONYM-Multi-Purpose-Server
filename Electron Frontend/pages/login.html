@@ -1,8 +1,9 @@
 <div id="mainTextLogin">
     <img src="AcroFTP Splash.png" alt="Splashscreen" style="float: center;"></img>
+    <h1 id="ErrorDisplay" style="color:red; text-align:center;"></h1>
     <form>
-        <input type="text" name="username" placeholder="Username" style="margin: 25px; width:40%; margin-left: 30%;"><br>
-        <input type="text" name="password" placeholder="Password" style="margin: 25px; width:40%; margin-left: 30%;">
+        <input id="usernameForm" type="text" name="username" placeholder="Username" style="margin: 25px; width:40%; margin-left: 30%;"><br>
+        <input id="passwordForm" type="text" name="password" placeholder="Password" style="margin: 25px; width:40%; margin-left: 30%;">
     </form>
     <div id="LoginButton" onclick="switchToIndexPage()" style="float: center; width: 24%; margin-left:38%;"><h1>Login</h1></h1></div>
     <script src="./login.js"></script>

@@ -53,8 +53,10 @@ function removeLastDirectoryPartOf(the_url){
 }
 
 ipcRenderer.on('FileList', (event, arg) => {
+    console.log("Receiving Files...");
     dataRec = JSON.parse(arg);
     filesInDirectory = dataRec.files;
+    console.log(filesInDirectory);
     currentFileSystemDirectory = dataRec.currentDir; 
     
     text = '';
@@ -73,7 +75,7 @@ ipcRenderer.on('FileList', (event, arg) => {
 
     for (i = 0; i < filesInDirectory.length; i++) { 
         if (filesInDirectory[i]["name"].includes(".")) {
-            text += "<div id='FIL" + filesInDirectory[i]["name"] + "' class='fileListItem'>📰 - " + filesInDirectory[i]["name"] + " (" + Math.round(filesInDirectory[i]["size"] * 10)/10 + "MB)</div> " + generateDeleteButton() + "<br>";
+            text += "<div id='FIL" + filesInDirectory[i]["name"] + "' class='fileListItem'>📰 - " + filesInDirectory[i]["name"] + " (" + (Math.round(filesInDirectory[i]["size"]/1048576 * 10)/10) + "MB)</div> " + generateDeleteButton() + "<br>";
             totalFileSize += filesInDirectory[i]["size"];
             totalNumberOfFiles += 1;
         }
@@ -83,14 +85,14 @@ ipcRenderer.on('FileList', (event, arg) => {
     text += "";
     document.getElementById("FilesList").innerHTML = text;
     document.getElementById("dirDisplayPara").innerHTML = currentFileSystemDirectory;
-    document.getElementById("TotalFileSize").innerHTML = '<div id="TotalFileSize"> Current Dir Size: ' + Math.round(totalFileSize * 10)/10 + ' MB<br>Files in Parent Dir: ' + Math.round(totalNumberOfFiles * 10)/10 + '<br>Folders in Parent Dir: ' + Math.round(totalNumberOfFolders * 10)/10 + '</div>';
+    document.getElementById("TotalFileSize").innerHTML = '<div id="TotalFileSize"> Current Dir Size: ' + Math.round(totalFileSize/1048576 * 10)/10 + ' MB<br>Files in Parent Dir: ' + Math.round(totalNumberOfFiles * 10)/10 + '<br>Folders in Parent Dir: ' + Math.round(totalNumberOfFolders * 10)/10 + '</div>';
 })
 
 ipcRenderer.on('updateMOTD', (event, arg) => {
     document.getElementById("MOTD").innerText = arg;
 })
 
-ipcRenderer.send('requestFiles', 'ping')
+ipcRenderer.send('requestFiles', '/')
 
 ipcRenderer.send('requestMOTD', 'ping')
 

@@ -3,6 +3,10 @@
     padding: 0;
   }
 
+  ErrorDisplay {
+    color:red;
+  }
+
   .wrapper {
     display: flex;
     

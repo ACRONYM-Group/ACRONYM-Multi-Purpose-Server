@@ -15,6 +15,7 @@ import time
 import json
 
 import platform
+import os
 
 OSName = platform.platform()
 print("Current Software Platform: " + OSName)
@@ -34,6 +35,7 @@ hostName = ""
 serverSocket.bind((hostName, port))
 
 MOTD = "Welcome to the A.C.R.O.N.Y.M. Network.\nServer is Running on " + OSName
+masterPassword = "FSaP314"
 
 def doHandshake(conn, addr):
     Packet.Packet('31415', "__HDS__").send(conn)
@@ -61,6 +63,20 @@ def checkUserPass(user, password):
             return True
             
     return False
+
+def tempPassCheck(username, password):
+    print(" ")
+    print(username + " is attempting login.")
+    print("Checking against master Password..")
+    if password == masterPassword:
+        print("Authentication Successful!")
+        return True
+    else:
+        print("User failed Authentication!")
+        return False
+
+    print(" ")
+
 
 def doKeyExchange(conn):
     primePair = Primes.getPrimePair()
@@ -108,6 +124,8 @@ def connectionHandler(conn, addr):
     doHandshake(conn, addr)
     key = doKeyExchange(conn)
 
+    hasUserAuthenticated = False
+
     print(encryption.decrypt(chr(205), key))
 
     while True:
@@ -118,16 +136,35 @@ def connectionHandler(conn, addr):
             print("Decrypted Command: " + commandRec)
 
             commandRec = json.loads(commandRec)
-
-            if commandRec["CMDType"] == "requestMOTD":
-                print("Sending the client the MOTD")
-                dataToSend = encryption.encryptWrapper(json.dumps({"CMDType":"updateMOTD", "data":MOTD}), key)
-                print(" ")
-                print("Data to send and data to send Decrypt:")
-                print(dataToSend)
-                dataToSendDecrypt = encryption.decryptWrapper(dataToSend, key)
-                print(dataToSendDecrypt)
+            if commandRec["CMDType"] == "login":
+                userCredentials = json.loads(commandRec["data"])
+                hasUserAuthenticated = tempPassCheck(userCredentials["username"], userCredentials["password"])
+                dataToSend = encryption.encryptWrapper(json.dumps({"CMDType":"AuthResult", "data":hasUserAuthenticated}), key)
                 Packet.Packet(dataToSend,"__CMD__").send(conn)
+
+            if hasUserAuthenticated:
+                if commandRec["CMDType"] == "requestMOTD":
+                    print("Sending the client the MOTD")
+                    dataToSend = encryption.encryptWrapper(json.dumps({"CMDType":"updateMOTD", "data":MOTD}), key)
+                    print(" ")
+                    print("Data to send and data to send Decrypt:")
+                    print(dataToSend)
+                    dataToSendDecrypt = encryption.decryptWrapper(dataToSend, key)
+                    print(dataToSendDecrypt)
+                    Packet.Packet(dataToSend,"__CMD__").send(conn)
+                
+                if commandRec["CMDType"] == "requestFiles":
+                    print("Sending the client the File Structure...")
+                    filesDataToSend = []
+                    commandData = commandRec["data"]
+                    directory = os.listdir(commandData["path"])
+                    for s in directory:
+                        fileData = {"name":s,"size":os.stat(commandRec["data"]["path"] + s).st_size}
+                        filesDataToSend.append(fileData)
+                        print(filesDataToSend)
+                    
+                    dataToSend = encryption.encryptWrapper(json.dumps({"CMDType":"updateFiles", "data":{"files":filesDataToSend, "window":commandData["windowID"], "path": commandRec["data"]["path"]}}), key)
+                    Packet.Packet(dataToSend,"__CMD__").send(conn)
 
 
 
