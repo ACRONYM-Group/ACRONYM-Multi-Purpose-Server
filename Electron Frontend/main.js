@@ -17,6 +17,7 @@ var loginButtonPushEvent;
 let win
 let loginWin
 var partialLPWPacket = "";
+var partiallyReceivedPacket = "";
 
 var testInt = bigInt("214325345634634");
 var keyArray = testInt.toArray(10)["value"];
@@ -115,7 +116,7 @@ function CarterDecrypt(data, key) {
 
     //console.log(intToChar(oldVal));
     newData = newData + intToChar(oldVal);
-   
+  
     //r = r.multiply(key.add(bigInt(1).add(bigInt(r.divide(key))).mod(250))); //(key + 1+utf16ToDig(r/key))%250;
     var factor = key.add(1);
     var factor2 = r.divide(key);
@@ -177,9 +178,28 @@ function constructPacket(type, payload) {
   return JSON.stringify(packet);
 }
 
+function streamToPacketParser(data, alreadyDecrypted) {
+  data = data.toString();
+  if (partiallyReceivedPacket.length > 0) {
+    data = partiallyReceivedPacket + data;
+    partiallyReceivedPacket = "";
+  }
 
+  while (data.indexOf("\-ENDACROFTPPACKET-/") !== -1) {
+    console.log(data); 
+    firstPacket = data.substring(0, data.indexOf("\-ENDACROFTPPACKET-/") - 1);
+    console.log("Parsing Stream to: ")
+    console.log(firstPacket);
+    packetReceiveHander(firstPacket, alreadyDecrypted);
+    data = data.substring(data.indexOf("\-ENDACROFTPPACKET-/") - 1 + 20);
+  }
 
-function packetReceiveHander(data) {
+  if (data.length > 0) {
+    partiallyReceivedPacket = data;
+  }
+}
+
+function packetReceiveHander(data, alreadyDecrypted) {
   //var dataArr = data.split('')
   console.log(" ");
   console.log('Received: ');
@@ -255,7 +275,13 @@ function packetReceiveHander(data) {
   } else if (packet["packetType"] == "__CMD__") {
     console.log("Got Command!");
     var keyArray = key.toArray(10)["value"];
-    decryptedPacketData = CarterDecryptWrapper(packet["payload"], key)
+
+    if (alreadyDecrypted) {
+      decryptedPacketData = packet["payload"];
+    } else {
+      decryptedPacketData = CarterDecryptWrapper(packet["payload"], key);
+    }
+    
     console.log("Decrypted Command:");
     console.log(decryptedPacketData);
 
@@ -267,12 +293,12 @@ function packetReceiveHander(data) {
 
     if (command["CMDType"] == "AuthResult") {
       if (command["data"] == true) {
-        loginWin.loadFile('blank.html')
+        loginWin.loadFile('blank.html');
         pageToLoad = "index.html";
-        loginWin.setSize(1280, 600)
-        loginWin.center()
+        loginWin.setSize(1280, 600);
+        loginWin.center();
 
-        commandToSend = {CMDType:"requestMOTD"}
+        commandToSend = {CMDType:"requestMOTD"};
         dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
         client.write(constructPacket("__CMD__",dataToSend));
       } else {
@@ -280,10 +306,10 @@ function packetReceiveHander(data) {
         displayLoginError("Authentication Failed!", loginButtonPushEvent);
       }
     }
-
-    if (command["CMDType"] == "updateFiles") {
+     if (command["CMDType"] == "updateFiles") {
       dataToSend = {currentDir: command["data"]["path"], files: command["data"]["files"]};
       BrowserWindow.fromId(command["data"]["window"]).send('FileList', JSON.stringify(dataToSend));
+      console.log("Displaying new Directory...");
     }
 
   } else if (packet["packetType"] == "__HDS__") {
@@ -296,7 +322,9 @@ function packetReceiveHander(data) {
     console.log(packet["ind"]);
     console.log(packet["len"]);
     if (packet["ind"] == packet["len"]) {
-      packetReceiveHander(partialLPWPacket);
+      createDecryptionThread(JSON.parse(partialLPWPacket)["payload"], key, "command")
+      
+      //packetReceiveHander(partialLPWPacket);
       partialLPWPacket = "";
       console.log("Finished LPW Packet Receive.");
     }
@@ -306,6 +334,30 @@ function packetReceiveHander(data) {
 }
   //console.log(Array.apply([], data).join(","));
   //client.write(data);
+
+
+function createDecryptionThread(data, key, inputType) {
+  DecryptWin = new BrowserWindow({width: 400, height: 400, frame: false, show: true})
+
+  // Open the DevTools.
+  DecryptWin.webContents.openDevTools()
+
+  DecryptWin.loadFile('decrypt.html')
+
+  ipcMain.once('decryptionFinished', (event, arg) => {
+    console.log("Decryption Thread Finished.")
+    if (arg["inputType"] == "command"){
+      packetReceiveHander(JSON.stringify({packetType:"__CMD__", payload:arg["output"]}), true);
+    }
+  })
+  
+  ipcMain.once('requestTextToDecrypt', (event, arg) => {
+  event.sender.send("textToDecrypt", {data: data, key: key, inputType: inputType});
+  })
+}
+
+
+
 
 function convertCharListToInt(charList) {
   var result = 0;
@@ -403,10 +455,10 @@ function sendPacket(data) {
     client.write(data);
   });
 
-  client.on('data', packetReceiveHander);
+  client.on('data', streamToPacketParser);
 }
 
-client.on('data', packetReceiveHander);
+client.on('data', streamToPacketParser);
 
   function createLoginWindow () {
     // Create the browser window.

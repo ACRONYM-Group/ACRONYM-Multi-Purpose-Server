@@ -161,10 +161,10 @@ def connectionHandler(conn, addr):
                     for s in directory:
                         fileData = {"name":s,"size":os.stat(commandRec["data"]["path"] + s).st_size}
                         filesDataToSend.append(fileData)
-                        print(filesDataToSend)
                     
                     dataToSend = encryption.encryptWrapper(json.dumps({"CMDType":"updateFiles", "data":{"files":filesDataToSend, "window":commandData["windowID"], "path": commandRec["data"]["path"]}}), key)
                     Packet.Packet(dataToSend,"__CMD__").send(conn)
+                    print("Client requested " + commandRec["data"]["path"])
 
 
 

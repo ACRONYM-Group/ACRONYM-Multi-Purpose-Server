@@ -26,24 +26,26 @@ class Packet:
         data = {"packetType": self.type, "payload":self.body}
 
         data = json.dumps(data)
-        LPWPacketLength = 500
+        LPWPacketLength = 700
         if (len(data) <= LPWPacketLength):
             conn.sendall(data.encode())
+            conn.sendall("\-ENDACROFTPPACKET-/".encode())
 
         if (len(data) > LPWPacketLength):
             numberOfLPWPackets = math.ceil(len(data)/LPWPacketLength)
             i = 0
             while len(data) > 0:
                 i = i + 1
-                LPWPayload = data[:500]
+                LPWPayload = data[:LPWPacketLength]
                 LargePacketWrapper = {"packetType":"__LPW__", "len": numberOfLPWPackets, "ind": i, "payload":LPWPayload}
-                data = data[500:]
+                data = data[LPWPacketLength:]
                 dataToSend = json.dumps(LargePacketWrapper).encode()
-                print("Sending:")
-                print(LargePacketWrapper)
-                print(" ")
+                #print("Sending:")
+                #print(LargePacketWrapper)
+                #print(" ")
                 conn.sendall(dataToSend)
-                time.sleep(0.1)
+                #time.sleep(1)
+                conn.sendall("\-ENDACROFTPPACKET-/".encode())
 
         
 

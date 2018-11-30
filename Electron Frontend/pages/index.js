@@ -92,7 +92,7 @@ ipcRenderer.on('updateMOTD', (event, arg) => {
     document.getElementById("MOTD").innerText = arg;
 })
 ///home/jordan/Desktop/
-ipcRenderer.send('requestFiles', 'z:/')
+ipcRenderer.send('requestFiles', 'Z:/AcroFTP/')
 
 ipcRenderer.send('requestMOTD', 'ping')
 
