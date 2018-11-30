@@ -16,6 +16,7 @@ var MOTD = "Message Of The Day...";
 var loginButtonPushEvent;
 let win
 let loginWin
+var partialLPWPacket = "";
 
 var testInt = bigInt("214325345634634");
 var keyArray = testInt.toArray(10)["value"];
@@ -176,6 +177,8 @@ function constructPacket(type, payload) {
   return JSON.stringify(packet);
 }
 
+
+
 function packetReceiveHander(data) {
   //var dataArr = data.split('')
   console.log(" ");
@@ -184,6 +187,10 @@ function packetReceiveHander(data) {
   //  console.log(charToInt(dataArr[i]))
   //}
   console.log(data.toString());
+
+
+  
+
   var packet = JSON.parse(data.toString());
   if (packet["packetType"] == "__DAT__") {
     var rawBinary = stringToBytes(packet["payload"]);
@@ -281,6 +288,18 @@ function packetReceiveHander(data) {
 
   } else if (packet["packetType"] == "__HDS__") {
     client.write(constructPacket("__HDS__", packet["payload"]));
+
+  } else if (packet["packetType"] == "__LPW__") {
+    LPWPacket = packet["payload"];
+    partialLPWPacket = partialLPWPacket + packet["payload"];
+    console.log(partialLPWPacket);
+    console.log(packet["ind"]);
+    console.log(packet["len"]);
+    if (packet["ind"] == packet["len"]) {
+      packetReceiveHander(partialLPWPacket);
+      partialLPWPacket = "";
+      console.log("Finished LPW Packet Receive.");
+    }
   }
 
   //latestMinecraftData = 
@@ -487,7 +506,7 @@ client.on('data', packetReceiveHander);
 
     ipcMain.on('requestDirectory', (event, arg) => {
       path = arg;
-      
+
       if (path[path.length-1] == "/") {
         var path = arg;
       } else {

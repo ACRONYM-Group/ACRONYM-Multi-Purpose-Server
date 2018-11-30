@@ -5,9 +5,12 @@ __RAW__     Raw Text
 __CMD__     Command
 __HDS__     Handshake
 __DAT__     Raw Data (Binary)
+__LPW__     Large Packet Wrapper
 """
 
 import json
+import math
+import time
 
 class Packet:
     def __init__(self, body, packetType="__RAW__", connection = None):
@@ -22,9 +25,27 @@ class Packet:
 
         data = {"packetType": self.type, "payload":self.body}
 
-        data = json.dumps(data).encode()
+        data = json.dumps(data)
+        LPWPacketLength = 500
+        if (len(data) <= LPWPacketLength):
+            conn.sendall(data.encode())
 
-        conn.sendall(data)
+        if (len(data) > LPWPacketLength):
+            numberOfLPWPackets = math.ceil(len(data)/LPWPacketLength)
+            i = 0
+            while len(data) > 0:
+                i = i + 1
+                LPWPayload = data[:500]
+                LargePacketWrapper = {"packetType":"__LPW__", "len": numberOfLPWPackets, "ind": i, "payload":LPWPayload}
+                data = data[500:]
+                dataToSend = json.dumps(LargePacketWrapper).encode()
+                print("Sending:")
+                print(LargePacketWrapper)
+                print(" ")
+                conn.sendall(dataToSend)
+                time.sleep(0.1)
+
+        
 
     def __repr__(self):
         return "self.body = " + '"' + str(self.body) + '"\n' + "self.type = " + '"' + str(self.type) + '"'

@@ -91,8 +91,8 @@ ipcRenderer.on('FileList', (event, arg) => {
 ipcRenderer.on('updateMOTD', (event, arg) => {
     document.getElementById("MOTD").innerText = arg;
 })
-
-ipcRenderer.send('requestFiles', '/')
+///home/jordan/Desktop/
+ipcRenderer.send('requestFiles', 'z:/')
 
 ipcRenderer.send('requestMOTD', 'ping')
 
