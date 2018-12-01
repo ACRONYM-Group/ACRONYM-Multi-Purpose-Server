@@ -25,6 +25,12 @@ function openPath(FolderPath) {
     ipcRenderer.send('requestDirectory', FolderPath);
 }
 
+function downloadFile(id) {
+    fileToDownload = currentFileSystemDirectory + id.substring(3);
+    console.log("Client has requested the download of " + fileToDownload);
+    ipcRenderer.send('downloadFile', fileToDownload);
+}
+
 function goBackDir() {
     console.log("Going up a directory.");
     console.log("Current Dir " + currentFileSystemDirectory);
@@ -75,7 +81,7 @@ ipcRenderer.on('FileList', (event, arg) => {
 
     for (i = 0; i < filesInDirectory.length; i++) { 
         if (filesInDirectory[i]["name"].includes(".")) {
-            text += "<div id='FIL" + filesInDirectory[i]["name"] + "' class='fileListItem'>📰 - " + filesInDirectory[i]["name"] + " (" + (Math.round(filesInDirectory[i]["size"]/1048576 * 10)/10) + "MB)</div> " + generateDeleteButton() + "<br>";
+            text += "<div id='FIL" + filesInDirectory[i]["name"] + "' class='fileListItem' onclick='downloadFile(this.id)'>📰 - " + filesInDirectory[i]["name"] + " (" + (Math.round(filesInDirectory[i]["size"]/1048576 * 10)/10) + "MB)</div> " + generateDeleteButton() + "<br>";
             totalFileSize += filesInDirectory[i]["size"];
             totalNumberOfFiles += 1;
         }

@@ -175,7 +175,7 @@ function constructPacket(type, payload) {
   var packet = {"packetType":type, "payload":payload};
   console.log("Packet Constructed:")
   console.log(packet);
-  return JSON.stringify(packet);
+  return JSON.stringify(packet) + "\-ENDACROFTPPACKET-/";
 }
 
 function streamToPacketParser(data, alreadyDecrypted) {
@@ -310,6 +310,16 @@ function packetReceiveHander(data, alreadyDecrypted) {
       dataToSend = {currentDir: command["data"]["path"], files: command["data"]["files"]};
       BrowserWindow.fromId(command["data"]["window"]).send('FileList', JSON.stringify(dataToSend));
       console.log("Displaying new Directory...");
+    }
+
+    if (command["CMDType"] == "downloadFile") {
+      console.log("Server is sending file.")
+      data = command["payload"]["file"]
+      data = Buffer.from(data, 'base64');
+      fs.writeFile("Z:/AcroFTPClient/test.txt", data, (err) => {
+        if (err) throw err;
+        console.log('The file has been saved!');
+      });
     }
 
   } else if (packet["packetType"] == "__HDS__") {
@@ -486,6 +496,15 @@ client.on('data', streamToPacketParser);
 
     ipcMain.on('requestMOTD', (event, arg) => {
       event.sender.send("updateMOTD", MOTD);
+    })
+
+    ipcMain.on('downloadFile', (event, arg) => {
+      downloadWin = new BrowserWindow({width: 300, height: 200, frame: false});
+
+      commandToSend = {CMDType:"downloadFile", data:{windowID:downloadWin.id, filePath:arg}}
+      dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+
     })
 
     ipcMain.on('requestFiles', (event, arg) => {

@@ -51,12 +51,21 @@ def decrypt(data, key):
 
     return newData
 
+def encryptWrapperOLD(data, key):
+    return encrypt(data, key)
+
 def encryptWrapper(data, key):
     queue = ""
     output = ""
 
     i = 0
+    n = -1
     while i < len(data):
+        n = n + 1
+        if n >= 1000:
+            print(len(data))
+            n = 0
+        
         queue += data[:1]
         data = data[1:]
 

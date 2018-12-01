@@ -56,6 +56,5 @@ def readPacket(connection):
     data = connection.recv(1024)
     data = data.decode()
 
-    data = json.loads(data)
-
-    return Packet(data["payload"], data["packetType"], connection)
+    #return Packet(data["payload"], data["packetType"], connection)
+    return data
