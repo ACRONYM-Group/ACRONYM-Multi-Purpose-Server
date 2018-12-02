@@ -16,8 +16,11 @@ var MOTD = "Message Of The Day...";
 var loginButtonPushEvent;
 let win
 let loginWin
-var partialLPWPacket = "";
+var partialLPWPackets = {};
 var partiallyReceivedPacket = "";
+var buffer = require('buffer')
+
+console.log(buffer.constants.MAX_STRING_LENGTH);
 
 var testInt = bigInt("214325345634634");
 var keyArray = testInt.toArray(10)["value"];
@@ -350,10 +353,14 @@ function packetReceiveHander(data, alreadyDecrypted) {
 
   } else if (packet["packetType"] == "__LPW__") {
     LPWPacket = packet["payload"];
-    partialLPWPacket = partialLPWPacket + packet["payload"];
+    if (partialLPWPackets[packet["LPWID"]] == undefined) {
+      partialLPWPackets[packet["LPWID"]] = {};
+      partialLPWPackets[packet["LPWID"]]["data"] = "";
+    }
+    partialLPWPackets[packet["LPWID"]]["data"] += LPWPacket;
 
     if ((packet["ind"] / 10000 - Math.floor(packet["ind"] / 10000)) == 0) {
-      console.log("Receiving LPW Packet: " + packet["ind"] + "/" + packet["len"]);
+      console.log("Receiving LPW Packet - " + packet["ind"] + "/" + packet["len"] + "- ID" + packet["LPWID"]);
     }
 
     if (packet["windowID"] != null) {
@@ -362,20 +369,24 @@ function packetReceiveHander(data, alreadyDecrypted) {
       }
     }
     
-    if (packet["ind"] == packet["len"]) { 
+    if (packet["ind"] == packet["len"]) {
+      console.log("-------------");
+      console.log("ID" + packet["LPWID"]);
+      console.log(partialLPWPackets[packet["LPWID"]]["data"])
+      console.log("-------------");
       if (packet["windowID"] != null) {
         BrowserWindow.fromId(packet["windowID"]).send("TransferProgressReport", {index: packet["ind"], length: packet["len"]});
       }
       if (packet["windowID"] != null) {
-        createDecryptionThread(JSON.parse(partialLPWPacket)["payload"], key, "command", "Hi", {windowID: packet["windowID"]});
+        createDecryptionThread(JSON.parse(partialLPWPackets[packet["LPWID"]]["data"])["payload"], key, "command", "Hi", {windowID: packet["windowID"]});
         console.log("Window ID founding running Decryption in progress report mode");
       } else {
-        createDecryptionThread(JSON.parse(partialLPWPacket)["payload"], key, "command", "none");
+        createDecryptionThread(JSON.parse(partialLPWPackets[packet["LPWID"]]["data"])["payload"], key, "command", "none");
         console.log("Window ID not found, running Decryption without progress report.")
       }
       
-      partialLPWPacket = "";
-      console.log("Finished LPW Packet Receive.");
+      partialLPWPackets[packet["LPWID"]] = null;
+      console.log("Finished LPW Packet ID" + packet["LPWID"] + " Receive.");
     }
   }
 

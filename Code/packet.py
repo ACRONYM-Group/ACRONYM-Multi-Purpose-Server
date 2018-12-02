@@ -20,6 +20,7 @@ class Packet:
         self.type = packetType
 
     def send(self, conn=None, windowID = None):
+        LPWID = time.clock()
         if conn == None:
             conn = self.connection
 
@@ -38,7 +39,7 @@ class Packet:
             while currentDataIndex < len(data):
                 i = i + 1
                 LPWPayload = data[currentDataIndex:currentDataIndex + LPWPacketLength]
-                LargePacketWrapper = {"packetType":"__LPW__", "len": numberOfLPWPackets, "ind": i, "windowID":windowID, "payload":LPWPayload}
+                LargePacketWrapper = {"packetType":"__LPW__", "LPWID": LPWID, "len": numberOfLPWPackets, "ind": i, "windowID":windowID, "payload":LPWPayload}
                 currentDataIndex = currentDataIndex + LPWPacketLength
                 dataToSend = json.dumps(LargePacketWrapper).encode()
                 conn.sendall(dataToSend)

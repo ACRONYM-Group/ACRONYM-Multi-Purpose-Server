@@ -132,6 +132,20 @@ def readEncrypted(conn, key):
         data = stream.getData(DataStream.DATA_TYPE_STRING)
         return encryption.decrypt(data, key)
 
+def downloadFileHandler(conn, commandRec, key):
+    print("Client has requested to download " + commandRec["data"]["filePath"])
+    file = open(commandRec["data"]["filePath"], "rb")
+    print("Starting File Read...")
+    fileData = file.read()
+    print("File read complete. Encoding in Base64...")
+    fileDataB64 = base64.b64encode(fileData).decode('ascii')
+    print("File encoded.")
+    print("Encrypting File.")
+    dataToSend = encryption.encrypt(json.dumps({"CMDType":"downloadFile", "payload":{"file":fileDataB64, "filePath":commandRec["data"]["filePath"], "windowID":commandRec["data"]["windowID"]}}), key, fileTransferProgressFunction, {"conn":conn, "windowID":commandRec["data"]["windowID"]})
+    print("File Encryption Complete.")
+    print("Sending File.")
+    Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
+
 def packetHandler(packetRec, key, hasUserAuthenticated, conn):
     if packetRec.type == "__CMD__":
         print("Client sent Command, decrypting...")
@@ -147,18 +161,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn):
 
         if hasUserAuthenticated:
             if commandRec["CMDType"] == "downloadFile":
-                print("Client has requested to download " + commandRec["data"]["filePath"])
-                file = open(commandRec["data"]["filePath"], "rb")
-                print("Starting File Read...")
-                fileData = file.read()
-                print("File read complete. Encoding in Base64...")
-                fileDataB64 = base64.b64encode(fileData).decode('ascii')
-                print("File encoded.")
-                print("Encrypting File.")
-                dataToSend = encryption.encrypt(json.dumps({"CMDType":"downloadFile", "payload":{"file":fileDataB64, "filePath":commandRec["data"]["filePath"], "windowID":commandRec["data"]["windowID"]}}), key, fileTransferProgressFunction, {"conn":conn, "windowID":commandRec["data"]["windowID"]})
-                print("File Encryption Complete.")
-                print("Sending File.")
-                Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
+                threading.Thread(target=downloadFileHandler, args=(conn, commandRec, key)).start()
 
             if commandRec["CMDType"] == "requestMOTD":
                 print("Sending the client the MOTD")
@@ -196,6 +199,7 @@ def connectionHandler(conn, addr):
     print(encryption.decrypt(chr(205), key))
 
     partialPacket = ""
+    LPWIDs = []
 
     while True:
         rawRec = Packet.readPacket(conn)
