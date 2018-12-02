@@ -25,74 +25,71 @@ var utf16ToDig = function(s) {
 }
 
 
-function CarterDecrypt(data, key) {
-    //console.log("decrypting...");
-    var newData = ""
-    key = key % 2560;
-    key = key*2;
-    key = bigInt(key);
-    var r = key.multiply(10);
-    r = r.pow(key).mod(123);
-    //r = (key*10)**key%123;
-    //console.log("Starting Decrypt. Mathed R:");
-    //console.log(r);
-  
-    for (var c = 0; c < data.length; c++) {
-      //console.log("Decrypt Tick");
-      var oldVal = bigInt(utf16ToDig(data.charAt(c)));
-      oldVal = oldVal.minus(r.mod(bigInt(256)));
-      //console.log(r.mod(256).toJSNumber());
-      oldVal = Number(oldVal.toString());
-      //console.log(oldVal);
-  
-      if (oldVal < 0) {
-        oldVal = oldVal+256;
-      }
-  
-      //console.log(intToChar(oldVal));
-      newData = newData + intToChar(oldVal);
-    
-      //r = r.multiply(key.add(bigInt(1).add(bigInt(r.divide(key))).mod(250))); //(key + 1+utf16ToDig(r/key))%250;
-      var factor = key.add(1);
-      var factor2 = r.divide(key);
-      //console.log("DIVIDING")
-      //console.log(r);
-      //console.log(key);
-      //console.log(factor2);
-      factor = factor.add(factor2);
-      factor = factor.mod(250);
-  
-      r = r.multiply(factor)
-      //(key + 1+int(r/key))%250
+function CarterDecrypt(data, key, progressFunction, progressData) {
+  console.log("Decrypting with key: " + key)
+  var newData = ""
+  key = key % 2560;
+  key = key*2;
+  key = bigInt(key);
+  var r = key.multiply(10);
+  r = r.pow(key).mod(123);
+  var rOrig = r;
+
+  var y = 0;
+  var x = 0;
+  var yMax = data.length - 1;
+
+  while (y <= yMax) {
+    var oldVal = bigInt(utf16ToDig(data.charAt(y)));
+    oldVal = oldVal.minus(r.mod(bigInt(256)));
+    oldVal = Number(oldVal.toString());
+
+    if (oldVal < 0) {
+      oldVal = oldVal+256;
     }
+
+    newData = newData + intToChar(oldVal);
   
-    return newData;
+    var factor = key.add(1);
+    var factor2 = r.divide(key);
+    factor = factor.add(factor2);
+    factor = factor.mod(250);
+
+    r = r.multiply(factor)
+    if (r >= 10000000 || r <= 0) {
+      r = rOrig
+    }
+
+    if (progressFunction != "none") {
+      if (x >= data.length/20) {
+        x = 0
+        console.log(data.length);
+        ipcRenderer.send("decryptionProgressReport", {y: y, yMax: yMax, progressFunction: progressFunction, progressData: progressData});
+        console.log("Sending Status Report");
+      }
+    }
+    y = y + 1;
+    x = x + 1;
   }
 
-function CarterDecryptWrapper(data, key) {
-    queue = "";
-    output = "";
-  
-    i = 0
-    while (i < data.length) {
-      queue += data.charAt(0);
-      data = data.substr(1);
-  
-      if (queue.length == 4 || data.length == 0) {
-        output += CarterDecrypt(queue, key);
-        queue = "";
-      }
-    }
-  
-    return output;
+  if (progressFunction != "none") {
+    console.log(data.length);
+    ipcRenderer.send("decryptionProgressReport", {y: y, yMax: yMax, progressFunction: progressFunction, progressData: progressData});
+    console.log("Sending Status Report");
   }
+
+  return newData;
+}
+
 ipcRenderer.on('textToDecrypt', (event, arg) => {
     console.log("Starting Decrypt...")
     console.log(arg["key"].value);
-    decryptedText = CarterDecryptWrapper(arg["data"], arg["key"].value);
+    console.log(arg["progressFunction"]);
+    console.log(arg["progressData"]);
+    decryptedText = CarterDecrypt(arg["data"], arg["key"].value, arg["progressFunction"], arg["progressData"]);
     console.log("Finished Decrypting.")
     ipcRenderer.send('decryptionFinished', {output:decryptedText, inputType: arg["inputType"]});
-    window.close();
+    //window.close();
 })
 
 ipcRenderer.send('requestTextToDecrypt', "ping");

@@ -18,74 +18,25 @@ import platform
 import os
 
 import base64
+import math
 
 OSName = platform.platform()
 print("Current Software Platform: " + OSName)
 
+def PrintProgress(y, yMax, progressData):
+    print("Progress: " + str(y/yMax*100) + "%")
 
-def encrypt(data, key):
-    print("Length of Input: " + str(len(data)))
-    newData = []
+def fileTransferProgressFunction(y, yMax, key, progressData=None):
+    print("Transfer Progress Key: ")
+    print(key)
+    dataToSend = encryption.encrypt(json.dumps({"CMDType":"fileTransferProgressReport","data":{ "y":y, "yMax":yMax, "windowID":progressData["windowID"]}}), key)
+    Packet.Packet(dataToSend,"__CMD__").send(progressData["conn"])
 
-    key = key%2560
-
-    key = key*2
-
-    rOrig = (key*10)**key%123
-    r = rOrig
-    msStart = time.time()*1000.0
-    yMax = len(data) - 1
-    y = 0
-    x = 0
-    while y < yMax:
-        c = data[y]
-        newData.append((chr((ord(c) + r%256) % 256)))
-
-        r *= (key + 1+int(r/key))%250
-        if r == 0:
-            r = rOrig
-        if (x >= 1000000):
-            print (yMax - y)
-            x = 0
-        #print(r)
-        y = y + 1
-        x = x + 1
-
-    print("Encryption took: " + str(time.time()*1000.0 - msStart) + " Milliseconds")
-    print("Length of Output: " + str(len(newData)))
-    print("Joining Output...")
-
-    msStart = time.time()*1000.0
-    newData = ''.join(newData)
-    print("Joining Took: " + str(time.time()*1000.0 - msStart) + " Milliseconds")
-
-    #print(newData) 
-
-file = open("Z:/AcroFTP/earth.jpg", "rb")
-fileData = file.read()
-fileDataB64 = base64.b64encode(fileData).decode('ascii')
-dataToSend = encrypt(json.dumps({"CMDType":"downloadFile", "payload":{"file":fileDataB64, "filePath":"Z:/AcroFTP/earth.jpg"}}), 12345)
-
-
-n = 0
-while n < 0:
-    test = ""
-    msStart = time.time()*1000.0
-    i = 0
-    while i < 1:
-        test = encrypt("Which is probably really good, because I'd assume that means the rest is in overhead of dealing with large strings, and so we might be able to come up with a mathematical solution to this. (For instance: Make the encryption algorithm work properly with strings longer than 4 characters.)", 12345)
-        i = i + 1
-
-    msEnd = time.time()*1000.0
-    elapsedTime = msEnd - msStart
-    print("10,000 Raw Encryptions finished in " + str(elapsedTime) + " milliseconds")
-    n = n + 1
-
-#print(chr(205))
-test = encryption.encrypt("AFTP", 123456789106576575675685678567)
-print(test)
-testDecrypt = encryption.decrypt(test, 12345678910)
-print(testDecrypt)
+#varToEncrypt = "HELLO WORLD! HOW ARE YOU?"
+#print(varToEncrypt)
+#test = encryption.encrypt(varToEncrypt, 123456)
+#print(test)
+#print(encryption.decrypt(test, 123456))
 
 
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -184,14 +135,14 @@ def readEncrypted(conn, key):
 def packetHandler(packetRec, key, hasUserAuthenticated, conn):
     if packetRec.type == "__CMD__":
         print("Client sent Command, decrypting...")
-        commandRec = encryption.decryptWrapper(packetRec.body, key)
+        commandRec = encryption.decrypt(packetRec.body, key)
         print("Decrypted Command: " + commandRec)
 
         commandRec = json.loads(commandRec)
         if commandRec["CMDType"] == "login":
             userCredentials = json.loads(commandRec["data"])
             hasUserAuthenticated = tempPassCheck(userCredentials["username"], userCredentials["password"])
-            dataToSend = encryption.encryptWrapper(json.dumps({"CMDType":"AuthResult", "data":hasUserAuthenticated}), key)
+            dataToSend = encryption.encrypt(json.dumps({"CMDType":"AuthResult", "data":hasUserAuthenticated}), key)
             Packet.Packet(dataToSend,"__CMD__").send(conn)
 
         if hasUserAuthenticated:
@@ -204,18 +155,18 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn):
                 fileDataB64 = base64.b64encode(fileData).decode('ascii')
                 print("File encoded.")
                 print("Encrypting File.")
-                dataToSend = encryption.encryptWrapper(json.dumps({"CMDType":"downloadFile", "payload":{"file":fileDataB64, "filePath":commandRec["data"]["filePath"]}}), key)
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"downloadFile", "payload":{"file":fileDataB64, "filePath":commandRec["data"]["filePath"], "windowID":commandRec["data"]["windowID"]}}), key, fileTransferProgressFunction, {"conn":conn, "windowID":commandRec["data"]["windowID"]})
                 print("File Encryption Complete.")
                 print("Sending File.")
-                Packet.Packet(dataToSend,"__CMD__").send(conn)
+                Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
 
             if commandRec["CMDType"] == "requestMOTD":
                 print("Sending the client the MOTD")
-                dataToSend = encryption.encryptWrapper(json.dumps({"CMDType":"updateMOTD", "data":MOTD}), key)
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"updateMOTD", "data":MOTD}), key)
                 #print(" ")
                 #print("Data to send and data to send Decrypt:")
                 #print(dataToSend)
-                dataToSendDecrypt = encryption.decryptWrapper(dataToSend, key)
+                dataToSendDecrypt = encryption.decrypt(dataToSend, key)
                 #print(dataToSendDecrypt)
                 Packet.Packet(dataToSend,"__CMD__").send(conn)
             
@@ -228,7 +179,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn):
                     fileData = {"name":s,"size":os.stat(commandRec["data"]["path"] + s).st_size}
                     filesDataToSend.append(fileData)
                 
-                dataToSend = encryption.encryptWrapper(json.dumps({"CMDType":"updateFiles", "data":{"files":filesDataToSend, "window":commandData["windowID"], "path": commandRec["data"]["path"]}}), key)
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"updateFiles", "data":{"files":filesDataToSend, "window":commandData["windowID"], "path": commandRec["data"]["path"]}}), key)
                 Packet.Packet(dataToSend,"__CMD__").send(conn)
                 print("Client requested " + commandRec["data"]["path"])
 
@@ -265,6 +216,7 @@ def connectionHandler(conn, addr):
                     hasUserAuthenticated = packetHandler(packet, key, hasUserAuthenticated, conn)
                 except ValueError:
                     if (i == 0):
+                        print(s)
                         s = partialPacket + s
                         try:
                             s = json.loads(s)

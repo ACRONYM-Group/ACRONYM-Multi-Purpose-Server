@@ -48,6 +48,9 @@ console.log("!!!!!!!!!!!!!!!!!!!");
 console.log(intToChar(205))
 console.log(intToChar(205).length)
 
+function decryptionProgressReport(y, yMax, progressData) {
+  BrowserWindow.fromId(progressData["windowID"]).send("DecryptProgressReport", {y: y, yMax: yMax});
+}
 
 function encryptString(keyArray, counterInt, string) {
   var textBytes = aesjs.utils.utf8.toBytes(string);
@@ -67,16 +70,21 @@ function decryptString(keyArray, counterInt, string) {
 }
 
 function CarterEncrypt(data, key) {
+  console.log(data);
   var newData = ""
   key = key % 2560;
   key = key*2;
   key = bigInt(key);
   var r = key.multiply(10);
   r = r.pow(key).mod(123);
+  var rOrig = r;
 
-  for (var c = 0; c < data.length; c++) {
-    var characterInt = utf16ToDig(data.charAt(c));
-    //console.log("Character Int: " + characterInt);
+  var y = 0;
+  var x = 0;
+  var yMax = data.length - 1;
+
+  while (y <= yMax) {
+    var characterInt = utf16ToDig(data.charAt(y));
     newData += intToChar(bigInt(characterInt).add(r.mod(256)).mod(256));
     
     var factor = key.add(1);
@@ -85,56 +93,59 @@ function CarterEncrypt(data, key) {
     factor = factor.mod(250);
 
     r = r.multiply(factor)
+
+    if (r >= 10000000 || r <= 0) {
+      r = rOrig;
+    }
+
+    y = y + 1;
+    x = x + 1;
   }
 
   return newData;
 }
 
 function CarterDecrypt(data, key) {
-  //console.log("decrypting...");
   var newData = ""
   key = key % 2560;
   key = key*2;
   key = bigInt(key);
   var r = key.multiply(10);
   r = r.pow(key).mod(123);
-  //r = (key*10)**key%123;
-  //console.log("Starting Decrypt. Mathed R:");
-  //console.log(r);
+  var rOrig = r;
 
-  for (var c = 0; c < data.length; c++) {
-    //console.log("Decrypt Tick");
-    var oldVal = bigInt(utf16ToDig(data.charAt(c)));
+  var y = 0;
+  var x = 0;
+  var yMax = data.length - 1;
+
+  while (y <= yMax) {
+    var oldVal = bigInt(utf16ToDig(data.charAt(y)));
     oldVal = oldVal.minus(r.mod(bigInt(256)));
-    //console.log(r.mod(256).toJSNumber());
     oldVal = Number(oldVal.toString());
-    //console.log(oldVal);
 
     if (oldVal < 0) {
       oldVal = oldVal+256;
     }
 
-    //console.log(intToChar(oldVal));
     newData = newData + intToChar(oldVal);
   
-    //r = r.multiply(key.add(bigInt(1).add(bigInt(r.divide(key))).mod(250))); //(key + 1+utf16ToDig(r/key))%250;
     var factor = key.add(1);
     var factor2 = r.divide(key);
-    //console.log("DIVIDING")
-    //console.log(r);
-    //console.log(key);
-    //console.log(factor2);
     factor = factor.add(factor2);
     factor = factor.mod(250);
 
     r = r.multiply(factor)
-    //(key + 1+int(r/key))%250
+    if (r >= 10000000 || r <= 0) {
+      r = rOrig
+    }
+    y = y + 1;
+    x = x + 1;
   }
 
   return newData;
 }
 
-function CarterEncryptWrapper(data, key) {
+function CarterEncryptWrapperOLD(data, key) {
   queue = "";
   output = "";
 
@@ -152,7 +163,11 @@ function CarterEncryptWrapper(data, key) {
   return output;
 }
 
-function CarterDecryptWrapper(data, key) {
+function CarterEncryptWrapper(data, key) {
+  return CarterEncrypt(data, key);
+}
+
+function CarterDecryptWrapperOLD(data, key) {
   queue = "";
   output = "";
 
@@ -170,6 +185,9 @@ function CarterDecryptWrapper(data, key) {
   return output;
 }
 
+function CarterDecryptWrapper(data, key) {
+  return CarterDecrypt(data, key);
+}
 
 function constructPacket(type, payload) {
   var packet = {"packetType":type, "payload":payload};
@@ -186,10 +204,10 @@ function streamToPacketParser(data, alreadyDecrypted) {
   }
 
   while (data.indexOf("\-ENDACROFTPPACKET-/") !== -1) {
-    console.log(data); 
+    //console.log(data); 
     firstPacket = data.substring(0, data.indexOf("\-ENDACROFTPPACKET-/") - 1);
-    console.log("Parsing Stream to: ")
-    console.log(firstPacket);
+    //console.log("Parsing Stream to: ")
+    //console.log(firstPacket);
     packetReceiveHander(firstPacket, alreadyDecrypted);
     data = data.substring(data.indexOf("\-ENDACROFTPPACKET-/") - 1 + 20);
   }
@@ -201,12 +219,12 @@ function streamToPacketParser(data, alreadyDecrypted) {
 
 function packetReceiveHander(data, alreadyDecrypted) {
   //var dataArr = data.split('')
-  console.log(" ");
-  console.log('Received: ');
+  //console.log(" ");
+  //console.log('Received: ');
   //for (var i = 0; i < data.length; i++) {
   //  console.log(charToInt(dataArr[i]))
   //}
-  console.log(data.toString());
+  //console.log(data.toString());
 
 
   
@@ -282,8 +300,8 @@ function packetReceiveHander(data, alreadyDecrypted) {
       decryptedPacketData = CarterDecryptWrapper(packet["payload"], key);
     }
     
-    console.log("Decrypted Command:");
-    console.log(decryptedPacketData);
+    //console.log("Decrypted Command:");
+    //console.log(decryptedPacketData);
 
     command = JSON.parse(decryptedPacketData);
 
@@ -318,8 +336,13 @@ function packetReceiveHander(data, alreadyDecrypted) {
       data = Buffer.from(data, 'base64');
       fs.writeFile("Z:/AcroFTPClient/test.txt", data, (err) => {
         if (err) throw err;
-        console.log('The file has been saved!');
+        console.log('The file has been saved at' + Date.now() + '!');
       });
+    }
+
+    if (command["CMDType"] == "fileTransferProgressReport") {
+      console.log("Server File Transfer Encryption Progress: " + (command["data"]["y"] / command["data"]["yMax"] * 100) + "%");
+      BrowserWindow.fromId(command["data"]["windowID"]).send("EncryptionProgressReport", command["data"]);
     }
 
   } else if (packet["packetType"] == "__HDS__") {
@@ -328,13 +351,29 @@ function packetReceiveHander(data, alreadyDecrypted) {
   } else if (packet["packetType"] == "__LPW__") {
     LPWPacket = packet["payload"];
     partialLPWPacket = partialLPWPacket + packet["payload"];
-    console.log(partialLPWPacket);
-    console.log(packet["ind"]);
-    console.log(packet["len"]);
-    if (packet["ind"] == packet["len"]) {
-      createDecryptionThread(JSON.parse(partialLPWPacket)["payload"], key, "command")
+
+    if ((packet["ind"] / 10000 - Math.floor(packet["ind"] / 10000)) == 0) {
+      console.log("Receiving LPW Packet: " + packet["ind"] + "/" + packet["len"]);
+    }
+
+    if (packet["windowID"] != null) {
+      if ((packet["ind"] / 1000 - Math.floor(packet["ind"] / 1000)) == 0) {
+        BrowserWindow.fromId(packet["windowID"]).send("TransferProgressReport", {index: packet["ind"], length: packet["len"]});
+      }
+    }
+    
+    if (packet["ind"] == packet["len"]) { 
+      if (packet["windowID"] != null) {
+        BrowserWindow.fromId(packet["windowID"]).send("TransferProgressReport", {index: packet["ind"], length: packet["len"]});
+      }
+      if (packet["windowID"] != null) {
+        createDecryptionThread(JSON.parse(partialLPWPacket)["payload"], key, "command", "Hi", {windowID: packet["windowID"]});
+        console.log("Window ID founding running Decryption in progress report mode");
+      } else {
+        createDecryptionThread(JSON.parse(partialLPWPacket)["payload"], key, "command", "none");
+        console.log("Window ID not found, running Decryption without progress report.")
+      }
       
-      //packetReceiveHander(partialLPWPacket);
       partialLPWPacket = "";
       console.log("Finished LPW Packet Receive.");
     }
@@ -346,11 +385,11 @@ function packetReceiveHander(data, alreadyDecrypted) {
   //client.write(data);
 
 
-function createDecryptionThread(data, key, inputType) {
-  DecryptWin = new BrowserWindow({width: 400, height: 400, frame: false, show: true})
+function createDecryptionThread(data, key, inputType, progressFunction, progressData) {
+  DecryptWin = new BrowserWindow({width: 400, height: 400, frame: false, show: false})
 
   // Open the DevTools.
-  DecryptWin.webContents.openDevTools()
+  //DecryptWin.webContents.openDevTools()
 
   DecryptWin.loadFile('decrypt.html')
 
@@ -360,9 +399,14 @@ function createDecryptionThread(data, key, inputType) {
       packetReceiveHander(JSON.stringify({packetType:"__CMD__", payload:arg["output"]}), true);
     }
   })
+
+  ipcMain.on('decryptionProgressReport', (event, arg) => {
+    decryptionProgressReport(arg["y"], arg["yMax"], arg["progressData"])
+    console.log("Decryption Status Report!");
+  })
   
   ipcMain.once('requestTextToDecrypt', (event, arg) => {
-  event.sender.send("textToDecrypt", {data: data, key: key, inputType: inputType});
+    event.sender.send("textToDecrypt", {data: data, key: key, inputType: inputType, progressFunction: progressFunction, progressData: progressData});
   })
 }
 
@@ -499,11 +543,15 @@ client.on('data', streamToPacketParser);
     })
 
     ipcMain.on('downloadFile', (event, arg) => {
-      downloadWin = new BrowserWindow({width: 300, height: 200, frame: false});
+      downloadWin = new BrowserWindow({width: 400, height: 200, frame: false});
+      downloadWin.loadFile('download.html')
+      //downloadWin.webContents.openDevTools()
 
       commandToSend = {CMDType:"downloadFile", data:{windowID:downloadWin.id, filePath:arg}}
       dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
+
+      console.log("Client is sending file download requset at: " + Date.now())
 
     })
 

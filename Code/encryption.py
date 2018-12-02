@@ -2,41 +2,71 @@ import random
 import math
 import time
 
-def encrypt(data, key):
-    newData = ""
+def encrypt(data, key, progressFunction=None, progressData=None, progressInterval=250000):
+    msStart = time.time()*1000.0
+    newData = []
 
+    origKey = key
     key = key%2560
 
     key = key*2
 
-    r = (key*10)**key%123
+    rOrig = (key*10)**key%123
+    r = rOrig
+    yMax = len(data) - 1
+    y = 0
+    x = 0
+    startupTime = time.time()*1000.0 - msStart
 
-    for c in data:
-        #print(" ")
-        #print(r)
-        #print(c)
-        #print((chr((ord(c) + r%256) % 256)))
-        newData += (chr((ord(c) + r%256) % 256))
-
-
+    msStart = time.time()*1000.0
+    while y <= yMax:
+        c = data[y]
+        newData.append((chr((ord(c) + r%256) % 256)))
         r *= (key + 1+int(r/key))%250
+        if r >= 10000000 or r <= 0:
+            r = rOrig
 
+        if (x >= progressInterval):
+            x = 0
+            if progressFunction != None:
+                progressFunction(y, yMax, origKey, progressData)
+        
+        y = y + 1
+        x = x + 1
+
+    encryptionTime = time.time()*1000.0 - msStart
+
+    msStart = time.time()*1000.0
+    newData = ''.join(newData)
+    joinTime = time.time()*1000.0 - msStart
+    totalTime = startupTime + encryptionTime + joinTime
+    print("Encrypt Time - Total: " + str(math.floor(totalTime*10)/10) + " ms, Encrypt: " +  str(math.floor(encryptionTime * 10)/10) + " ms, Join: " + str(math.floor(joinTime*10)/10) + " ms")
+
+    if progressFunction != None:
+        progressFunction(y, yMax, origKey, progressData)
+        
     return newData
 
-def decrypt(data, key):
-    newData = ""
+def decrypt(data, key, progressFunction=None, progressData=None, progressInterval=1000000):
+    msStart = time.time()*1000.0
+    newData = []
 
+    origKey = key
     key = key%2560
 
     key = key*2
 
-    r = (key*10)**key%123
+    rOrig = (key*10)**key%123
+    r = rOrig
+    yMax = len(data) - 1
+    y = 0
+    x = 0
+    startupTime = time.time()*1000.0 - msStart
 
-    #print("starting decrypt. mathed r:")
-    #print(r)
+    msStart = time.time()*1000.0
 
-    for c in data:
-        oldVal = ord(c)
+    while y <= yMax:
+        oldVal = ord(data[y])
 
         oldVal -= r%256
 
@@ -46,50 +76,27 @@ def decrypt(data, key):
         newData += (chr(oldVal))
 
         r *= (key + 1+int(r/key))%250
-        #print("R:")
-        #print(r)
+
+        if r >= 10000000 or r <= 0:
+            r = rOrig
+        
+        if (x >= progressInterval):
+            x = 0
+            if progressFunction != None:
+                progressFunction(y, yMax, origKey, progressData)
+        
+        y = y + 1
+        x = x + 1
+
+    decryptionTime = time.time()*1000.0 - msStart
+
+    msStart = time.time()*1000.0
+    newData = ''.join(newData)
+    joinTime = time.time()*1000.0 - msStart
+    totalTime = startupTime + decryptionTime + joinTime
+    print("Decrypt Time - Total: " + str(math.floor(totalTime*10)/10) + " ms, Decrypt: " +  str(math.floor(decryptionTime * 10)/10) + " ms, Join: " + str(math.floor(joinTime*10)/10) + " ms")
 
     return newData
-
-def encryptWrapperOLD(data, key):
-    return encrypt(data, key)
-
-def encryptWrapper(data, key):
-    queue = ""
-    output = ""
-
-    i = 0
-    n = -1
-    while i < len(data):
-        n = n + 1
-        if n >= 1000:
-            print(len(data))
-            n = 0
-        
-        queue += data[:1]
-        data = data[1:]
-
-        if len(queue) == 4 or len(data) == 0:
-            output += encrypt(queue, key)
-            queue = ""
-
-    return output
-
-def decryptWrapper(data, key):
-    queue = ""
-    output = ""
-
-    i = 0
-    while i < len(data):
-        queue += data[:1]
-        data = data[1:]
-
-        if len(queue) == 4 or len(data) == 0:
-            output += decrypt(queue, key)
-            queue = ""
-    
-    return output
-
 
 oldTime = time.time()
 decrypt("Hello WORLD", 10000000)
