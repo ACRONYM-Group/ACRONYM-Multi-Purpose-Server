@@ -27,7 +27,7 @@ var utf16ToDig = function(s) {
 
 function CarterDecrypt(data, key, progressFunction, progressData) {
   console.log("Decrypting with key: " + key)
-  var newData = ""
+  var newData = "";
   key = key % 2560;
   key = key*2;
   key = bigInt(key);
@@ -83,13 +83,14 @@ function CarterDecrypt(data, key, progressFunction, progressData) {
 
 ipcRenderer.on('textToDecrypt', (event, arg) => {
     console.log("Starting Decrypt...")
-    console.log(arg["key"].value);
-    console.log(arg["progressFunction"]);
-    console.log(arg["progressData"]);
+    //console.log(arg["key"].value);
+    //console.log(arg["progressFunction"]);
+    //console.log(arg["progressData"]);
     decryptedText = CarterDecrypt(arg["data"], arg["key"].value, arg["progressFunction"], arg["progressData"]);
     console.log("Finished Decrypting.")
-    ipcRenderer.send('decryptionFinished', {output:decryptedText, inputType: arg["inputType"]});
-    //window.close();
+    ipcRenderer.send('decryptionFinished', {output:decryptedText, inputType: arg["inputType"], filePathToWrite: arg["filePathToWrite"]});
+    ipcRenderer.removeAllListeners("textToDecrypt");
+    window.close();
 })
 
 ipcRenderer.send('requestTextToDecrypt', "ping");

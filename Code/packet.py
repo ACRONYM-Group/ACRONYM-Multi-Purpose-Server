@@ -29,8 +29,8 @@ class Packet:
         data = json.dumps(data)
         LPWPacketLength = 2048
         if (len(data) <= LPWPacketLength):
-            conn.sendall(data.encode())
-            conn.sendall("\-ENDACROFTPPACKET-/".encode())
+            dataToSend = data.encode() + "\-ENDACROFTPPACKET-/".encode()
+            conn.sendall(dataToSend)
 
         if (len(data) > LPWPacketLength):
             numberOfLPWPackets = math.ceil(len(data)/LPWPacketLength)
@@ -42,8 +42,8 @@ class Packet:
                 LargePacketWrapper = {"packetType":"__LPW__", "LPWID": LPWID, "len": numberOfLPWPackets, "ind": i, "windowID":windowID, "payload":LPWPayload}
                 currentDataIndex = currentDataIndex + LPWPacketLength
                 dataToSend = json.dumps(LargePacketWrapper).encode()
+                dataToSend = dataToSend + "\-ENDACROFTPPACKET-/".encode()
                 conn.sendall(dataToSend)
-                conn.sendall("\-ENDACROFTPPACKET-/".encode())
 
         
 

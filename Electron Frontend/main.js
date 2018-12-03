@@ -19,6 +19,9 @@ let loginWin
 var partialLPWPackets = {};
 var partiallyReceivedPacket = "";
 var buffer = require('buffer')
+var queuedDecryptionJobs = [];
+var DecryptWindows = [];
+var fileWriteQueue = {};
 
 console.log(buffer.constants.MAX_STRING_LENGTH);
 
@@ -201,6 +204,10 @@ function constructPacket(type, payload) {
 
 function streamToPacketParser(data, alreadyDecrypted) {
   data = data.toString();
+  //console.log("  ");
+  //console.log("  ");
+  //console.log("--------------");
+  //console.log(data);
   if (partiallyReceivedPacket.length > 0) {
     data = partiallyReceivedPacket + data;
     partiallyReceivedPacket = "";
@@ -212,7 +219,12 @@ function streamToPacketParser(data, alreadyDecrypted) {
     //console.log("Parsing Stream to: ")
     //console.log(firstPacket);
     packetReceiveHander(firstPacket, alreadyDecrypted);
-    data = data.substring(data.indexOf("\-ENDACROFTPPACKET-/") - 1 + 20);
+    data = data.substring(data.indexOf("\-ENDACROFTPPACKET-/") + 19, data.length);
+
+    //console.log("------");
+    //console.log(" ");
+    //console.log("Remaining Data to Parse: ");
+    //console.log(data);
   }
 
   if (data.length > 0) {
@@ -337,15 +349,58 @@ function packetReceiveHander(data, alreadyDecrypted) {
       console.log("Server is sending file.")
       data = command["payload"]["file"]
       data = Buffer.from(data, 'base64');
-      fs.writeFile("Z:/AcroFTPClient/test.txt", data, (err) => {
+      fs.writeFile("Z:/AcroFTPClient/" + command["payload"]["fileName"], data, (err) => {
         if (err) throw err;
-        console.log('The file has been saved at' + Date.now() + '!');
+        console.log('The file has been saved at ' + Date.now() + '!');
       });
     }
+
+    if (command["CMDType"] == "downloadFileChunk") {
+      packet = command["payload"];
+      packetData = Buffer.from(packet["file"], "base64");
+
+      var indexToCompare = -1;
+      if (fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]] == undefined) {
+        indexToCompare = 0;
+      } else {
+        indexToCompare = fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["packetIndex"];
+      }
+
+      if (packet["packetIndex"] == indexToCompare)  {
+        writeFileChunk(packetData, "Z:/AcroFTPClient/" + packet["fileName"]);
+      } else {
+        fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["outOfOrderPackets"][packet["packetIndex"]] = packetData;
+      }
+
+      var hasFoundMissingPacket = false;
+      for (var i = packet["packetIndex"] + 1; i <= packet["packetIndex"] + 5; i++) {
+        if (fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]] != null) {
+          if (fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["outOfOrderPackets"][i] != undefined) {
+            if (hasFoundMissingPacket == false) {
+              writeFileChunk(fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["outOfOrderPackets"][i], "Z:/AcroFTPClient/" + packet["fileName"]);
+            }
+          } else {
+            hasFoundMissingPacket = true;
+          }
+        }
+      }
+  }
 
     if (command["CMDType"] == "fileTransferProgressReport") {
       console.log("Server File Transfer Encryption Progress: " + (command["data"]["y"] / command["data"]["yMax"] * 100) + "%");
       BrowserWindow.fromId(command["data"]["windowID"]).send("EncryptionProgressReport", command["data"]);
+    }
+
+    if (command["CMDType"] == "fileTransferComplete") {
+      packet = command["payload"];
+      if (fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["packetIndex"] == packet["finalPacketIndex"] + 1) {
+        var elapsedTime = Date.now() - fileWriteQueue["Z:/AcroFTPClient/" - packet["fileName"]]["startTime"];
+        console.log("File Transfer of " + packet["fileName"] + " Complete! It took " + elapsedTime + " Milliseconds.");
+        fileWriteQueue["Z:/AcroFTPClient/" - packet["fileName"]] = null;
+      } else {
+        fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["hasServerSentEndPacket"] = true;
+        fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["finalPacketIndex"] = packet["finalPacketIndex"];
+      }
     }
 
   } else if (packet["packetType"] == "__HDS__") {
@@ -370,10 +425,10 @@ function packetReceiveHander(data, alreadyDecrypted) {
     }
     
     if (packet["ind"] == packet["len"]) {
-      console.log("-------------");
-      console.log("ID" + packet["LPWID"]);
-      console.log(partialLPWPackets[packet["LPWID"]]["data"])
-      console.log("-------------");
+      //console.log("-------------");
+      //console.log("ID" + packet["LPWID"]);
+      //console.log(partialLPWPackets[packet["LPWID"]]["data"])
+      //console.log("-------------");
       if (packet["windowID"] != null) {
         BrowserWindow.fromId(packet["windowID"]).send("TransferProgressReport", {index: packet["ind"], length: packet["len"]});
       }
@@ -395,31 +450,78 @@ function packetReceiveHander(data, alreadyDecrypted) {
   //console.log(Array.apply([], data).join(","));
   //client.write(data);
 
+function writeCallback() {
+  
+}
 
-function createDecryptionThread(data, key, inputType, progressFunction, progressData) {
-  DecryptWin = new BrowserWindow({width: 400, height: 400, frame: false, show: false})
+function writeFileChunk(data, filePath) {
+  console.log("WriteFunc received " + data.length + " Bytes.");
+  data = Buffer.from(data, 'utf8');
+  console.log("Converted to " + data.length + " Bytes. Writing.");
+  if (fileWriteQueue[filePath] == undefined) {
+    //fs.writeFile(filePath, data, writeCallback);
+    console.log("Writing " + data.length + " Bytes to file");
+    stream = fs.createWriteStream(filePath, {flags:'a'});
+    fileWriteQueue[filePath] = {writeStream: stream, packetIndex:0, outOfOrderPackets:{}, startTime: Date.now()}
+    fileWriteQueue[filePath]["writeStream"].write(data, writeCallback);
+    fileWriteQueue[filePath]["packetIndex"] += 1;
+  } else {
+    console.log("Appending " + data.length + " Bytes to file");
+    fileWriteQueue[filePath]["writeStream"].write(data, writeCallback);
+    fileWriteQueue[filePath]["packetIndex"] += 1;
+  }
+
+  if (fileWriteQueue[filePath]["hasServerSentEndPacket"] && fileWriteQueue[filePath]["packetIndex"] >= fileWriteQueue[filePath]["finalPacketIndex"]) {
+    var elapsedTime = Date.now() - fileWriteQueue[filePath]["startTime"];
+    console.log("File Transfer of " + filePath + " Complete! It took " + elapsedTime + " Milliseconds.");
+    fileWriteQueue[filePath] = null;
+  }
+  
+}
+
+function createDecryptionThread(data, key, inputType, progressFunction, progressData, filePathToWrite) {
+  DecryptWindows.push(new BrowserWindow({width: 400, height: 400, frame: false, show: false}));
+  id = DecryptWindows.length - 1;
 
   // Open the DevTools.
-  //DecryptWin.webContents.openDevTools()
+  DecryptWindows[id].webContents.openDevTools()
 
-  DecryptWin.loadFile('decrypt.html')
+  DecryptWindows[id].loadFile('decrypt.html')
 
-  ipcMain.once('decryptionFinished', (event, arg) => {
-    console.log("Decryption Thread Finished.")
-    if (arg["inputType"] == "command"){
-      packetReceiveHander(JSON.stringify({packetType:"__CMD__", payload:arg["output"]}), true);
-    }
-  })
+  DecryptWindows[id].on('closed', () => {
+    DecryptWindows[id] = null
 
-  ipcMain.on('decryptionProgressReport', (event, arg) => {
-    decryptionProgressReport(arg["y"], arg["yMax"], arg["progressData"])
-    console.log("Decryption Status Report!");
-  })
-  
-  ipcMain.once('requestTextToDecrypt', (event, arg) => {
-    event.sender.send("textToDecrypt", {data: data, key: key, inputType: inputType, progressFunction: progressFunction, progressData: progressData});
-  })
+  });
+
+  if (filePathToWrite == undefined) {
+    filePathToWrite = "none";
+  }
+
+  queuedDecryptionJobs.push({data: data, key: key, inputType: inputType, progressFunction: progressFunction, progressData: progressData, filePathToWrite});
 }
+
+ipcMain.on('decryptionFinished', (event, arg) => {
+  //console.log("Decryption Thread Finished. InputType: " + arg["inputType"]);
+  //console.log("output: " + arg["output"])
+  if (arg["inputType"] == "command") {
+    packetReceiveHander(JSON.stringify({packetType:"__CMD__", payload:arg["output"]}), true);
+  } else if (arg["inputType"] == "fileChunk") {
+    console.log("Decryption has output " + arg["output"].length + " Bytes");
+    writeFileChunk(arg["output"], arg["filePathToWrite"]);
+  }
+})
+
+ipcMain.on('decryptionProgressReport', (event, arg) => {
+  decryptionProgressReport(arg["y"], arg["yMax"], arg["progressData"])
+  //console.log("Decryption Status Report!");
+})
+
+ipcMain.on('requestTextToDecrypt', (event, arg) => {
+  console.log("Starting Decryption...");
+  event.sender.send("textToDecrypt", queuedDecryptionJobs[0]);
+  console.log("sending " + queuedDecryptionJobs[0]["data"].length + " Bytes to decryption;");
+  queuedDecryptionJobs.splice(0,1);
+})
 
 
 
@@ -554,7 +656,7 @@ client.on('data', streamToPacketParser);
     })
 
     ipcMain.on('downloadFile', (event, arg) => {
-      downloadWin = new BrowserWindow({width: 400, height: 200, frame: false});
+      downloadWin = new BrowserWindow({width: 400, height: 100, frame: false});
       downloadWin.loadFile('download.html')
       //downloadWin.webContents.openDevTools()
 

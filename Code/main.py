@@ -23,6 +23,8 @@ import math
 OSName = platform.platform()
 print("Current Software Platform: " + OSName)
 
+
+
 def PrintProgress(y, yMax, progressData):
     print("Progress: " + str(y/yMax*100) + "%")
 
@@ -135,15 +137,29 @@ def readEncrypted(conn, key):
 def downloadFileHandler(conn, commandRec, key):
     print("Client has requested to download " + commandRec["data"]["filePath"])
     file = open(commandRec["data"]["filePath"], "rb")
-    print("Starting File Read...")
-    fileData = file.read()
-    print("File read complete. Encoding in Base64...")
-    fileDataB64 = base64.b64encode(fileData).decode('ascii')
-    print("File encoded.")
-    print("Encrypting File.")
-    dataToSend = encryption.encrypt(json.dumps({"CMDType":"downloadFile", "payload":{"file":fileDataB64, "filePath":commandRec["data"]["filePath"], "windowID":commandRec["data"]["windowID"]}}), key, fileTransferProgressFunction, {"conn":conn, "windowID":commandRec["data"]["windowID"]})
+    fileName = commandRec["data"]["filePath"][::-1][:commandRec["data"]["filePath"][::-1].find("/")][::-1]
+    fileLength = os.stat(commandRec["data"]["filePath"]).st_size
+
+    fileData = file.read(2000000)
+    index = 0
+    packetIndex = 0
+    while index < fileLength:
+        fileDataB64 = base64.b64encode(fileData).decode("ascii")
+        print("Converted to: " + str(len(fileDataB64)))
+        dataToSend = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packetIndex, "length": fileLength, "filePath":commandRec["data"]["filePath"], "fileName": fileName, "windowID":commandRec["data"]["windowID"]}}), key)
+        
+        Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
+
+        fileTransferProgressFunction(index, fileLength, key, {"conn":conn, "windowID":commandRec["data"]["windowID"]})
+
+        fileData = file.read(2000000)
+        index = index + 2000000
+        packetIndex += 1
+    
     print("File Encryption Complete.")
-    print("Sending File.")
+    print("File Sent.")
+    fileTransferProgressFunction(index, fileLength, key, {"conn":conn, "windowID":commandRec["data"]["windowID"]})
+    dataToSend = encryption.encrypt(json.dumps({"CMDType":"fileTransferComplete", "payload": {"fileName":fileName, "finalPacketIndex":packetIndex}}), key)
     Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
 
 def packetHandler(packetRec, key, hasUserAuthenticated, conn):
