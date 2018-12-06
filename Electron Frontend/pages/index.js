@@ -1,4 +1,5 @@
 currentFileSystemDirectory = "";
+const {dialog} = require('electron').remote
 
 function openFile() {
     console.log(dialog.showOpenDialog({properties: ['openFile', 'openDirectory', 'multiSelections']}))
@@ -13,7 +14,9 @@ function generateDeleteButton() {
 }
 
 function uploadFile() {
-    ipcRenderer.send('requestPacketSend', 'ping');
+    file = dialog.showOpenDialog({properties: ['openFile']})[0];
+    console.log(file);
+    ipcRenderer.send('uploadFile', {file: file, uploadDirectory:currentFileSystemDirectory + file.split("\\").pop()});
 }
 
 function openFolder(FolderID) {

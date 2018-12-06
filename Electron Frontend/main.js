@@ -479,6 +479,46 @@ function writeFileChunk(data, filePath) {
   
 }
 
+function uploadFile(filePath, uploadPath, windowID) {
+  fs.open(filePath, 'r', (err, fd) => {
+    console.log("Starting File Upload!");
+    var totalBytesRead = 0;
+    var index = 0;
+    var fileSize = fs.statSync(filePath).size;
+    var sizeExcludingFinalPacket = Math.floor(fileSize/100);
+    while (fileSize - totalBytesRead > 100) {
+      var fileReadBuffer = Buffer.alloc(100);
+      var bytesRead = fs.readSync(fd, fileReadBuffer, 0, 100);
+
+      commandToSend = {CMDType:"uploadFile", data:{filePath:uploadPath, index:index, file:fileReadBuffer.toString("base64")}};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+
+      totalBytesRead = totalBytesRead + bytesRead;
+      BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
+      index = index + 1;
+      console.log("Uploading file packet");
+    }
+
+    var fileReadBuffer = Buffer.alloc(fileSize - totalBytesRead);
+    console.log(fd);
+    var bytesRead = fs.readSync(fd, fileReadBuffer, 0, fileSize - totalBytesRead);
+
+    commandToSend = {CMDType:"uploadFile", data:{filePath:uploadPath, index:index, file:fileReadBuffer.toString("base64")}};
+    dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+    client.write(constructPacket("__CMD__",dataToSend));
+
+    totalBytesRead = totalBytesRead + bytesRead;
+
+    commandToSend = {CMDType:"uploadFileFinish", data:{filePath:uploadPath, finalPacketIndex:index}};
+    dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+    client.write(constructPacket("__CMD__",dataToSend));
+    totalBytesRead = totalBytesRead + bytesRead;
+    BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
+  });
+
+}
+
 function createDecryptionThread(data, key, inputType, progressFunction, progressData, filePathToWrite) {
   DecryptWindows.push(new BrowserWindow({width: 400, height: 400, frame: false, show: false}));
   id = DecryptWindows.length - 1;
@@ -667,6 +707,18 @@ client.on('data', streamToPacketParser);
       console.log("Client is sending file download requset at: " + Date.now())
 
     })
+
+    ipcMain.on('uploadFile', (event, arg) => {
+      downloadWin = new BrowserWindow({width: 400, height: 100, frame: false});
+      downloadWin.loadFile('download.html')
+      //downloadWin.webContents.openDevTools()
+
+      uploadFile(arg["file"], arg["uploadDirectory"], downloadWin.id);
+
+      console.log("Client is sending file download requset at: " + Date.now())
+
+    })
+
 
     ipcMain.on('requestFiles', (event, arg) => {
       console.log("User Requested File Directory Data")
