@@ -28,7 +28,11 @@ programStartTime = datetime.now()
 
 OSName = platform.platform()
 
+print("AMPS Starting Up...")
+print("====================")
+print("Current AMPS Software Version: 12.27.2018.1")
 print("Current Software Platform: " + OSName)
+print(" ")
 
 
 
@@ -36,17 +40,8 @@ def PrintProgress(y, yMax, progressData):
     print("Progress: " + str(y/yMax*100) + "%")
 
 def fileTransferProgressFunction(y, yMax, key, progressData=None):
-    print("Transfer Progress Key: ")
-    print(key)
     dataToSend = encryption.encrypt(json.dumps({"CMDType":"fileTransferProgressReport","data":{ "y":y, "yMax":yMax, "windowID":progressData["windowID"]}}), key)
     Packet.Packet(dataToSend,"__CMD__").send(progressData["conn"])
-
-#varToEncrypt = "HELLO WORLD! HOW ARE YOU?"
-#print(varToEncrypt)
-#test = encryption.encrypt(varToEncrypt, 123456)
-#print(test)
-#print(encryption.decrypt(test, 123456))
-
 
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -62,7 +57,6 @@ def doHandshake(conn, addr):
     Packet.Packet('31415', "__HDS__").send(conn)
 
     data = Packet.readPacket(conn)[:-19]
-    print(data)
     data = json.loads(data)
 
     if data["payload"] == "31415":
@@ -108,7 +102,6 @@ def doKeyExchange(conn):
 
     mixed = exchange.calculateMixed()
 
-    print (primePair)
 
     Packet.Packet(chr(0) + chr(1) + DataString.convertIntToData(primePair[0]),"__DAT__").send(conn)
     time.sleep(0.1)
@@ -116,20 +109,12 @@ def doKeyExchange(conn):
     time.sleep(0.1)
     Packet.Packet(chr(0) + chr(3) + DataString.convertIntToData(mixed),"__DAT__").send(conn)
 
-    print ("My Mixed: " + str(mixed))
-
-    print ("Secret: " + str(exchange.secret))
-
     packet = json.loads(Packet.readPacket(conn)[:-19])
 
     val = DataString.convertDataToInt(packet["payload"][2:])
 
-    print ("Their Mixed: " + str(val))
-
     key = exchange.getSharedKey(val)
-
-    print ("Settled Key: " + str(key))
-
+    print("Key Exchange Succesful!")
     return key
 
 def sendEncrypted(conn, data, key):
@@ -165,7 +150,6 @@ def downloadFileHandler(conn, commandRec, key):
     packetIndex = 0
     while index < fileLength: 
         fileDataB64 = base64.b64encode(fileData).decode("ascii")
-        print("Converted to: " + str(len(fileDataB64)))
         dataToSend = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packetIndex, "length": fileLength, "filePath":commandRec["data"]["filePath"], "fileName": fileName, "windowID":commandRec["data"]["windowID"]}}), key)
         
         Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
@@ -176,23 +160,18 @@ def downloadFileHandler(conn, commandRec, key):
         index = index + 2000000
         packetIndex += 1
     
-    print("File Encryption Complete.")
-    print("File Sent.")
     fileTransferProgressFunction(index, fileLength, key, {"conn":conn, "windowID":commandRec["data"]["windowID"]})
     dataToSend = encryption.encrypt(json.dumps({"CMDType":"fileTransferComplete", "payload": {"fileName":fileName, "finalPacketIndex":packetIndex}}), key)
     Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
 
 def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue):
     if packetRec.type == "__LPW__":
-        #print("Received LPW subPacket")
         LPWPacketRec = json.loads(packetRec.body)
         if not LPWPacketRec["LPWID"] in LPWPackets:
             LPWPackets[LPWPacketRec["LPWID"]] = {}
 
         LPWPackets[LPWPacketRec["LPWID"]][LPWPacketRec["index"]] = LPWPacketRec["LPWPayload"]
-        #print(str(len(LPWPackets[LPWPacketRec["LPWID"]])) + "/" + str(LPWPacketRec["len"]-1))
         if (len(LPWPackets[LPWPacketRec["LPWID"]]) >= LPWPacketRec["len"]):
-            #print("Got all LPW subpackets")
             completeLPWPayload = ""
             i = 0
             while i < len(LPWPackets[LPWPacketRec["LPWID"]]):
@@ -201,30 +180,22 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
             loadedPacket = {}
             try:
                 loadedPacket = json.loads(completeLPWPayload, strict = False)
-                #print("LPW Receive Complete")
             except Exception as e:
                 print("LPW Packet Load Error!")
-                #print(completeLPWPayload)
                 print(e)
             hasUserAuthenticated, LPWPackets, fileWriteQueue = packetHandler(Packet.Packet( loadedPacket["payload"], loadedPacket["packetType"], conn), key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue)
 
     if packetRec.type == "__CMD__":
         commandRec = encryption.decrypt(packetRec.body, key)
         commandRecOrig = commandRec
+        print("COMMAND RECEIVED!")
+        print(commandRec)
         try:
             commandRec = json.loads(commandRec)
         except:
             try:
                 commandRec = json.loads(packetRec.body)
-                #print("????????????????????")
-                #print("COMMAND WAS NOT ENCRYPTED")
-                #print("????????????????????")
-                #print("-------decrypt------")
-                #print(commandRecOrig)
-                #print("-------body---------")
-                #print(packetRec.body)
-                #print("????????????????????")
-                #print("????????????????????")
+                print("COMMAND WAS NOT ENCRYPTED")
             except:
                 print("????????????????????")
                 print("Failed to load command")
@@ -236,7 +207,6 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
                 print("????????????????????")
                 print("????????????????????")
         
-        #print(commandRec["CMDType"])
         if commandRec["CMDType"] == "login":
             userCredentials = json.loads(commandRec["data"])
             hasUserAuthenticated = tempPassCheck(userCredentials["username"], userCredentials["password"])
@@ -246,13 +216,11 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
         if hasUserAuthenticated:
 
             if commandRec["CMDType"] == "uploadFileFinish":
-                print("Upload Finished Packet received.")
                 if fileWriteQueue[commandRec["data"]["filePath"]]["index"] >= commandRec["data"]["finalPacketIndex"]:
                     print("Write of " + commandRec["data"]["filePath"] + " Complete! Took " + str(millis(fileWriteQueue[commandRec["data"]["filePath"]]["startTime"])) + " Milliseconds")
                     fileWriteQueue[commandRec["data"]["filePath"]]["fileReference"].close()
                     fileWriteQueue[commandRec["data"]["filePath"]] = None
                 else:
-                    print("Received upload finish, but not all packets yet. Waiting.")
                     fileWriteQueue[commandRec["data"]["filePath"]]["finalPacketIndex"] = commandRec["data"]["finalPacketIndex"]
 
             
@@ -262,19 +230,12 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
             if commandRec["CMDType"] == "requestMOTD":
                 print("Sending the client the MOTD")
                 dataToSend = encryption.encrypt(json.dumps({"CMDType":"updateMOTD", "data":MOTD}), key)
-                #print(" ")
-                #print("Data to send and data to send Decrypt:")
-                #print(dataToSend)
                 dataToSendDecrypt = encryption.decrypt(dataToSend, key)
-                #print(dataToSendDecrypt)
                 Packet.Packet(dataToSend,"__CMD__").send(conn)
 
             if commandRec["CMDType"] == "uploadFile":
-                #print("Receiving File Upload")
                 if not commandRec["data"]["filePath"] in fileWriteQueue:
                     fileWriteQueue[commandRec["data"]["filePath"]] = {"index":0, "outOfOrderPackets":{}, "startTime": datetime.now()}
-                print(fileWriteQueue[commandRec["data"]["filePath"]]["index"])
-                print(commandRec["data"]["index"])
                 if fileWriteQueue[commandRec["data"]["filePath"]]["index"] == commandRec["data"]["index"]:
                     if not "fileReference" in fileWriteQueue[commandRec["data"]["filePath"]]:
                         file = open(commandRec["data"]["filePath"], "wb")
@@ -307,7 +268,6 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
 
 
             if commandRec["CMDType"] == "requestFiles":
-                print("Sending the client the File Structure...")
                 filesDataToSend = []
                 commandData = commandRec["data"]
                 directory = os.listdir(commandData["path"])
@@ -317,14 +277,12 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
                 
                 dataToSend = encryption.encrypt(json.dumps({"CMDType":"updateFiles", "data":{"files":filesDataToSend, "window":commandData["windowID"], "path": commandRec["data"]["path"]}}), key)
                 Packet.Packet(dataToSend,"__CMD__").send(conn)
-                print("Client requested " + commandRec["data"]["path"])
 
     return hasUserAuthenticated, LPWPackets, fileWriteQueue
 
 
 
 def connectionHandler(conn, addr):
-    print ("Connection Recieved From " + str(addr[0]))
 
     doHandshake(conn, addr)
     key = doKeyExchange(conn)
@@ -332,8 +290,6 @@ def connectionHandler(conn, addr):
     hasUserAuthenticated = False
     LPWPackets = {}
     fileWriteQueue = {}
-
-    print(encryption.decrypt(chr(205), key))
 
     partialPacket = ""
     LPWIDs = []

@@ -19,5 +19,4 @@ class KeyExchange:
         return (self.g ** self.secret) % self.p
 
     def getSharedKey(self,otherMix):
-        print ("P: " + str(self.p) + "\nG: " + str(self.g))
         return (otherMix ** self.secret) % self.p

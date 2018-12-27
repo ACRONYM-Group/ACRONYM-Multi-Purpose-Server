@@ -23,37 +23,6 @@ var queuedDecryptionJobs = [];
 var DecryptWindows = [];
 var fileWriteQueue = {};
 
-console.log(buffer.constants.MAX_STRING_LENGTH);
-
-var testInt = bigInt("214325345634634");
-var keyArray = testInt.toArray(10)["value"];
-console.log(keyArray);
-
-if (keyArray.length < 16) {
-  for (i = keyArray.length; i < 16; i++) {
-    keyArray.unshift(0);
-  }
-}
-
-/*
-var textToEncrypt = "Encryption is cool!";
-var encryptedHex = encryptString(keyArray, 5, textToEncrypt);
-console.log(" ")
-console.log("The text:");
-console.log(textToEncrypt);
-console.log("Has been encrypted to:");
-console.log(encryptedHex);
-console.log(" ");
-console.log("The hex decrypts to:")
-var decryptedString = decryptString(keyArray, 5, encryptedHex);
-console.log(decryptedString);
-console.log(" ");
-*/
-
-console.log("!!!!!!!!!!!!!!!!!!!");
-console.log(intToChar(205))
-console.log(intToChar(205).length)
-
 function decryptionProgressReport(y, yMax, progressData) {
   BrowserWindow.fromId(progressData["windowID"]).send("DecryptProgressReport", {y: y, yMax: yMax});
 }
@@ -209,27 +178,15 @@ function constructPacket(type, payload, addEndStatement) {
 
 function streamToPacketParser(data, alreadyDecrypted) {
   data = data.toString();
-  //console.log("  ");
-  //console.log("  ");
-  //console.log("--------------");
-  //console.log(data);
   if (partiallyReceivedPacket.length > 0) {
     data = partiallyReceivedPacket + data;
     partiallyReceivedPacket = "";
   }
 
   while (data.indexOf("\-ENDACROFTPPACKET-/") !== -1) {
-    //console.log(data); 
     firstPacket = data.substring(0, data.indexOf("\-ENDACROFTPPACKET-/") - 1);
-    //console.log("Parsing Stream to: ")
-    //console.log(firstPacket);
     packetReceiveHander(firstPacket, alreadyDecrypted);
     data = data.substring(data.indexOf("\-ENDACROFTPPACKET-/") + 19, data.length);
-
-    //console.log("------");
-    //console.log(" ");
-    //console.log("Remaining Data to Parse: ");
-    //console.log(data);
   }
 
   if (data.length > 0) {
@@ -238,45 +195,18 @@ function streamToPacketParser(data, alreadyDecrypted) {
 }
 
 function packetReceiveHander(data, alreadyDecrypted) {
-  //var dataArr = data.split('')
-  //console.log(" ");
-  //console.log('Received: ');
-  //for (var i = 0; i < data.length; i++) {
-  //  console.log(charToInt(dataArr[i]))
-  //}
-  //console.log(data.toString());
-
-
-  
 
   var packet = JSON.parse(data.toString());
   if (packet["packetType"] == "__DAT__") {
     var rawBinary = stringToBytes(packet["payload"]);
-    //console.log(rawBinary[0].toString());
-    //console.log(rawBinary[1].toString());
-    //console.log(rawBinary[2].toString());
-    //console.log(rawBinary[3].toString());
-
-    console.log("Whole Binary received:");
-    console.log(rawBinary);
     var dataID = rawBinary[0] * 256 + rawBinary[1];
     var dataIDFirstByte = rawBinary[0];
     var dataIDSecondByte = rawBinary[1];
-    console.log("Server wants talk about raw Data ID " + dataID);
     rawBinary = rawBinary.splice(2,rawBinary.length - 2);
-    console.log("Whole Binary Minus DataID received:");
-    console.log(rawBinary);
     var dataLength = rawBinary[0];
-    console.log("Server is sending " + dataLength + " Bytes");
     rawBinary = rawBinary.splice(1,rawBinary.length-1);
-    console.log("Binary Data received:");
-    console.log(rawBinary);
-    console.log("Received Integer: " + convertCharListToInt(rawBinary));
 
     if (dataIDFirstByte == 0) {
-      console.log("-----");
-      console.log("Message is Key Exchange");
-      console.log("Key exchange step: " + dataIDSecondByte);
       keyExchangeInts.push(convertCharListToInt(rawBinary));
       if (keyExchangeInts.length == 3) {
         if (keyExchangeInts[0] >= keyExchangeInts[1]) {
@@ -288,30 +218,21 @@ function packetReceiveHander(data, alreadyDecrypted) {
         }
         theirMixed = keyExchangeInts[2];
 
-        console.log("Larger Prime is: " + keyExchangeLargerPrime);
-        console.log("Smaller Prime is: " + keyExchangeSmallerPrime);
-        console.log("Their Mixed Number: " + theirMixed);
-
         var g = keyExchangeSmallerPrime;
         var p = keyExchangeLargerPrime;
         var secret = Math.floor(Math.random()*48) + 2;
-        console.log("My Secret Number: " + secret);
         var mixedNumber = bigInt(g).pow(secret).mod(p);
-
-        console.log("My Mixed Number: " + mixedNumber);
 
         
         client.write(constructPacket("__DAT__", intToChar(0) + intToChar(3) + intToRawBin(mixedNumber)));
 
         key = bigInt(theirMixed).pow(secret).mod(p);
-        console.log("Got key: " + key);
       }
     }
 
   } else if (packet["packetType"] == "__RAW__") {
 
   } else if (packet["packetType"] == "__CMD__") {
-    console.log("Got Command!");
     var keyArray = key.toArray(10)["value"];
 
     if (alreadyDecrypted) {
@@ -319,9 +240,6 @@ function packetReceiveHander(data, alreadyDecrypted) {
     } else {
       decryptedPacketData = CarterDecryptWrapper(packet["payload"], key);
     }
-    
-    //console.log("Decrypted Command:");
-    //console.log(decryptedPacketData);
 
     command = JSON.parse(decryptedPacketData);
 
@@ -340,23 +258,19 @@ function packetReceiveHander(data, alreadyDecrypted) {
         dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
         client.write(constructPacket("__CMD__",dataToSend));
       } else {
-        console.log("Authentication Result: " + command["data"]);
         displayLoginError("Authentication Failed!", loginButtonPushEvent);
       }
     }
      if (command["CMDType"] == "updateFiles") {
       dataToSend = {currentDir: command["data"]["path"], files: command["data"]["files"]};
       BrowserWindow.fromId(command["data"]["window"]).send('FileList', JSON.stringify(dataToSend));
-      console.log("Displaying new Directory...");
     }
 
     if (command["CMDType"] == "downloadFile") {
-      console.log("Server is sending file.")
       data = command["payload"]["file"]
       data = Buffer.from(data, 'base64');
       fs.writeFile("Z:/AcroFTPClient/" + command["payload"]["fileName"], data, (err) => {
         if (err) throw err;
-        console.log('The file has been saved at ' + Date.now() + '!');
       });
     }
 
@@ -392,7 +306,6 @@ function packetReceiveHander(data, alreadyDecrypted) {
   }
 
     if (command["CMDType"] == "fileTransferProgressReport") {
-      console.log("Server File Transfer Encryption Progress: " + (command["data"]["y"] / command["data"]["yMax"] * 100) + "%");
       BrowserWindow.fromId(command["data"]["windowID"]).send("EncryptionProgressReport", command["data"]);
     }
 
@@ -420,7 +333,6 @@ function packetReceiveHander(data, alreadyDecrypted) {
     partialLPWPackets[packet["LPWID"]]["data"] += LPWPacket;
 
     if ((packet["ind"] / 10000 - Math.floor(packet["ind"] / 10000)) == 0) {
-      console.log("Receiving LPW Packet - " + packet["ind"] + "/" + packet["len"] + "- ID" + packet["LPWID"]);
     }
 
     if (packet["windowID"] != null) {
@@ -430,30 +342,19 @@ function packetReceiveHander(data, alreadyDecrypted) {
     }
     
     if (packet["ind"] == packet["len"]) {
-      //console.log("-------------");
-      //console.log("ID" + packet["LPWID"]);
-      //console.log(partialLPWPackets[packet["LPWID"]]["data"])
-      //console.log("-------------");
       if (packet["windowID"] != null) {
         BrowserWindow.fromId(packet["windowID"]).send("TransferProgressReport", {index: packet["ind"], length: packet["len"]});
       }
       if (packet["windowID"] != null) {
         createDecryptionThread(JSON.parse(partialLPWPackets[packet["LPWID"]]["data"])["payload"], key, "command", "Hi", {windowID: packet["windowID"]});
-        console.log("Window ID founding running Decryption in progress report mode");
       } else {
         createDecryptionThread(JSON.parse(partialLPWPackets[packet["LPWID"]]["data"])["payload"], key, "command", "none");
-        console.log("Window ID not found, running Decryption without progress report.")
       }
       
       partialLPWPackets[packet["LPWID"]] = null;
-      console.log("Finished LPW Packet ID" + packet["LPWID"] + " Receive.");
     }
   }
-
-  //latestMinecraftData = 
 }
-  //console.log(Array.apply([], data).join(","));
-  //client.write(data);
 
 function sendLPWPacket(data) {
   var LPWPacketLength = 700;
@@ -477,8 +378,6 @@ function sendLPWPacket(data) {
       client.write(constructPacket("__LPW__",dataToSend));
 
       dataIndex = dataIndex + LPWPacketLength;
-      //console.log("Sending LPW Packet!");
-      //console.log(data.length);
       data = data.slice(LPWPacketLength, data.length);
 
       index = index + 1
@@ -504,18 +403,14 @@ function writeCallback() {
 }
 
 function writeFileChunk(data, filePath) {
-  console.log("WriteFunc received " + data.length + " Bytes.");
   data = Buffer.from(data, 'utf8');
-  console.log("Converted to " + data.length + " Bytes. Writing.");
   if (fileWriteQueue[filePath] == undefined) {
     //fs.writeFile(filePath, data, writeCallback);
-    console.log("Writing " + data.length + " Bytes to file");
     stream = fs.createWriteStream(filePath, {flags:'a'});
     fileWriteQueue[filePath] = {writeStream: stream, packetIndex:0, outOfOrderPackets:{}, startTime: Date.now()}
     fileWriteQueue[filePath]["writeStream"].write(data, writeCallback);
     fileWriteQueue[filePath]["packetIndex"] += 1;
   } else {
-    console.log("Appending " + data.length + " Bytes to file");
     fileWriteQueue[filePath]["writeStream"].write(data, writeCallback);
     fileWriteQueue[filePath]["packetIndex"] += 1;
   }
@@ -539,14 +434,6 @@ function uploadFile(filePath, uploadPath, windowID) {
     bufferSize = readChunkSize;
     fs.closeSync(fd);
     setTimeout(function() {uploadFileChunk(fileSize, totalBytesRead, readChunkSize, index, bufferSize, uploadPath, windowID, filePath, filePosition);}, 2000);
-
-    
-    /*commandToSend = {CMDType:"uploadFile", data:{filePath:uploadPath, index:index, file:fileReadBuffer.toString("base64")}};
-    dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
-    var packetToSend = constructPacket("__CMD__", dataToSend, false);
-    console.log(packetToSend.toString("base64"));;
-    console.log(JSON.parse(packetToSend.toString("base64")))
-    sendLPWPacket(packetToSend);*/
 
     
   });
@@ -576,9 +463,7 @@ function uploadFileChunk(fileSize, totalBytesRead, readChunkSize, index, bufferS
     totalBytesRead = totalBytesRead + bytesRead;
     BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
     index = index + 1;
-    
-    console.log("attempted to read " + bufferSize + " Actually got " + bytesRead);
-    console.log("File Size: " + fileSize + " Read Chunk Size: " + readChunkSize + " Total Bytes Read: " + totalBytesRead);
+
     fs.closeSync(fd);
     if (fileSize - (totalBytesRead+1) > 0) {
       setTimeout(function() {uploadFileChunk(fileSize, totalBytesRead, readChunkSize, index, bufferSize, uploadPath, windowID, filePath, filePosition);}, 500);
@@ -619,25 +504,19 @@ function createDecryptionThread(data, key, inputType, progressFunction, progress
 }
 
 ipcMain.on('decryptionFinished', (event, arg) => {
-  //console.log("Decryption Thread Finished. InputType: " + arg["inputType"]);
-  //console.log("output: " + arg["output"])
   if (arg["inputType"] == "command") {
     packetReceiveHander(JSON.stringify({packetType:"__CMD__", payload:arg["output"]}), true);
   } else if (arg["inputType"] == "fileChunk") {
-    console.log("Decryption has output " + arg["output"].length + " Bytes");
     writeFileChunk(arg["output"], arg["filePathToWrite"]);
   }
 })
 
 ipcMain.on('decryptionProgressReport', (event, arg) => {
   decryptionProgressReport(arg["y"], arg["yMax"], arg["progressData"])
-  //console.log("Decryption Status Report!");
 })
 
 ipcMain.on('requestTextToDecrypt', (event, arg) => {
-  console.log("Starting Decryption...");
   event.sender.send("textToDecrypt", queuedDecryptionJobs[0]);
-  console.log("sending " + queuedDecryptionJobs[0]["data"].length + " Bytes to decryption;");
   queuedDecryptionJobs.splice(0,1);
 })
 
@@ -710,16 +589,6 @@ function logCustomBase(num, logBase) {
   return Math.log(num)/Math.log(logBase);
 }
 
-/*
-console.log(" ")
-console.log("Encryption Test Results:");
-EncryptionTest = CarterEncryptWrapper("Welcome to the A.C.R.O.N.Y.M. Network.", 12345678910);
-console.log(EncryptionTest);
-DecryptionTest = CarterDecryptWrapper(EncryptionTest, 12345678910);
-console.log(DecryptionTest);
-console.log(" ")
-*/
-
 function displayLoginError(txt, event) {
   event.sender.send("displayLoginError", txt);
 }
@@ -729,14 +598,11 @@ var net = require('net');
 var client = new net.Socket();
 client.connect(ServerPort, ServerIP, function() {
   console.log('Connected');
-  //client.write(String.fromCharCode(3) + String.fromCharCode(1) + String.fromCharCode(4) + String.fromCharCode(1) + String.fromCharCode(5));
-  //client.write('{"clientType": "electron"}')
 });
 
 function sendPacket(data) {
   var client = new net.Socket();
   client.connect(ServerPort, ServerIP, function() {
-    //console.log('Connected');
     client.write(data);
   });
 
@@ -756,7 +622,6 @@ client.on('data', streamToPacketParser);
     pageToLoad = "login.html";
 
     ipcMain.on('loginButtonPressed', (event, arg) => {
-        console.log(arg)
         commandToSend = {CMDType:"login", data:arg}
         dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
         client.write(constructPacket("__CMD__",dataToSend));
@@ -793,18 +658,16 @@ client.on('data', streamToPacketParser);
 
       uploadFile(arg["file"], arg["uploadDirectory"], downloadWin.id);
 
-      console.log("Client is sending file download requset at: " + Date.now())
+      console.log("Client is sending file upload requset at: " + Date.now())
 
     })
 
 
     ipcMain.on('requestFiles', (event, arg) => {
-      console.log("User Requested File Directory Data")
 
       var path = arg;
 
       commandToSend = {CMDType:"requestFiles", data:{path: path, windowID: event.sender.getOwnerBrowserWindow().id}}
-      console.log(event.sender.getOwnerBrowserWindow().id);
       dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
  
@@ -822,7 +685,6 @@ client.on('data', streamToPacketParser);
 
 
   ipcMain.on('requestPacketSend', (event, arg) => {
-    console.log("Window is asking to send packet")
     sendPacket(arg)
     });
 
@@ -846,19 +708,16 @@ client.on('data', streamToPacketParser);
 
   ipcMain.on('requestPageData', (event, arg) => {
     path = "z:/files/projects/ACRONYM-File-Transfer-System/Electron Frontend/pages/" + arg;
-    console.log(path);
     file = fs.readFileSync(path, 'utf8');
     event.sender.send('pageLoadData', file);
   });
 
   ipcMain.on('requestStandardElements', (event, arg) => {
-    console.log("Client is requesting Standard Elements");
     path = "z:/files/projects/ACRONYM-File-Transfer-System/Electron Frontend/standardElements/"
     standardElements = {};
     fs.readdir(path, function(err, items) {
       for (i = 0; i < items.length; i++) {
         currentFileName = items[i];
-        console.log("Reading " + currentFileName);
         standardElements[currentFileName] = {'name': currentFileName, 'data': fs.readFileSync(path + currentFileName, 'utf8')}
       }
       dataToSend = standardElements;
@@ -876,20 +735,8 @@ client.on('data', streamToPacketParser);
       }
 
       commandToSend = {CMDType:"requestFiles", data:{path: path, windowID: event.sender.getOwnerBrowserWindow().id}}
-      console.log(event.sender.getOwnerBrowserWindow().id);
       dataToSend = CarterEncryptWrapper(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
-      
-      /*
-      console.log("reading from " + path);
-      fs.readdir(path, function(err, items) {
-        for (i = 0; i < items.length; i++) {
-          currentFileName = items[i]
-          items[i] = {'name': currentFileName, 'size': fs.statSync(path + currentFileName).size/1000000.0}
-        }
-        dataToSend = {currentDir: path, files: items}
-        event.sender.send('FileList', JSON.stringify(dataToSend))
-      });*/
       });
 
 

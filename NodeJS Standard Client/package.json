@@ -1,0 +1,18 @@
+{
+  "name": "amps_standard_client",
+  "version": "0.0.1",
+  "description": "A standard library interface for AMPS written in Node JS",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "author": "Jordan Hofstrand",
+  "license": "ISC",
+  "dependencies": {
+    "big-integer": "^1.6.40",
+    "electron": "^4.0.0",
+    "net": "^1.0.2",
+    "seedrandom": "^2.4.4"
+  }
+}
