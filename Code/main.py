@@ -51,7 +51,7 @@ hostName = ""
 serverSocket.bind((hostName, port))
 
 MOTD = "Welcome to the A.C.R.O.N.Y.M. Network.\nServer is Running on " + OSName
-masterPassword = "FSaP314"
+masterPassword = "pass"
 
 def doHandshake(conn, addr):
     Packet.Packet('31415', "__HDS__").send(conn)
