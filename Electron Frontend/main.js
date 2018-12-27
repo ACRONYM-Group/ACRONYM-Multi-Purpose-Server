@@ -76,7 +76,6 @@ function decryptString(keyArray, counterInt, string) {
 }
 
 function CarterEncrypt(data, key) {
-  console.log(data);
   var newData = ""
   key = key % 2560;
   key = key*2;
@@ -195,11 +194,17 @@ function CarterDecryptWrapper(data, key) {
   return CarterDecrypt(data, key);
 }
 
-function constructPacket(type, payload) {
+function constructPacket(type, payload, addEndStatement) {
   var packet = {"packetType":type, "payload":payload};
-  console.log("Packet Constructed:")
-  console.log(packet);
-  return JSON.stringify(packet) + "\-ENDACROFTPPACKET-/";
+  packet = JSON.stringify(packet);
+  if (addEndStatement == undefined) {
+    addEndStatement = true;
+  }
+
+  if (addEndStatement) {
+    packet = packet + "\-ENDACROFTPPACKET-/";
+  }
+  return packet;
 }
 
 function streamToPacketParser(data, alreadyDecrypted) {
@@ -450,6 +455,50 @@ function packetReceiveHander(data, alreadyDecrypted) {
   //console.log(Array.apply([], data).join(","));
   //client.write(data);
 
+function sendLPWPacket(data) {
+  var LPWPacketLength = 700;
+  if (true) {
+
+    index = 0;
+    var hrTime = process.hrtime()
+    var LPWID = hrTime[0] * 1000000 + hrTime[1] / 1000;
+    var dataIndex = 0;
+    var numLPWPackets = Math.ceil(data.length/LPWPacketLength);
+
+    while (data.length > 0) {
+      LPWPayload = data.slice(0, LPWPacketLength)
+      if (data.length <= LPWPacketLength) {
+        LPWPacketLength = data.length
+        numLPWPackets = index + 1
+        LPWPayload = data
+      }
+      commandToSend = {LPWPayload:LPWPayload, index:index, LPWID:LPWID, len:numLPWPackets};
+      dataToSend = JSON.stringify(commandToSend);
+      client.write(constructPacket("__LPW__",dataToSend));
+
+      dataIndex = dataIndex + LPWPacketLength;
+      //console.log("Sending LPW Packet!");
+      //console.log(data.length);
+      data = data.slice(LPWPacketLength, data.length);
+
+      index = index + 1
+    }
+  } else {
+
+    index = 0;
+    var hrTime = process.hrtime()
+    var LPWID = hrTime[0] * 1000000 + hrTime[1] / 1000;
+    var dataIndex = 0;
+    var LPWPacketLength = 300;
+    var numLPWPackets = Math.ceil(data.length/LPWPacketLength);
+
+    LPWPayload = data;
+    commandToSend = {LPWPayload:LPWPayload, index:index, LPWID:LPWID, len:numLPWPackets};
+    dataToSend = JSON.stringify(commandToSend);
+    client.write(constructPacket("__LPW__",dataToSend));
+  }
+}
+
 function writeCallback() {
   
 }
@@ -481,42 +530,71 @@ function writeFileChunk(data, filePath) {
 
 function uploadFile(filePath, uploadPath, windowID) {
   fs.open(filePath, 'r', (err, fd) => {
-    console.log("Starting File Upload!");
     var totalBytesRead = 0;
     var index = 0;
     var fileSize = fs.statSync(filePath).size;
-    var sizeExcludingFinalPacket = Math.floor(fileSize/100);
-    while (fileSize - totalBytesRead > 100) {
-      var fileReadBuffer = Buffer.alloc(100);
-      var bytesRead = fs.readSync(fd, fileReadBuffer, 0, 100);
+    var readChunkSize = 1500000;
+    var filePosition = 0;
+    var sizeExcludingFinalPacket = Math.floor(fileSize/readChunkSize);
+    bufferSize = readChunkSize;
+    fs.closeSync(fd);
+    setTimeout(function() {uploadFileChunk(fileSize, totalBytesRead, readChunkSize, index, bufferSize, uploadPath, windowID, filePath, filePosition);}, 2000);
 
-      commandToSend = {CMDType:"uploadFile", data:{filePath:uploadPath, index:index, file:fileReadBuffer.toString("base64")}};
-      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
-      client.write(constructPacket("__CMD__",dataToSend));
-
-      totalBytesRead = totalBytesRead + bytesRead;
-      BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
-      index = index + 1;
-      console.log("Uploading file packet");
-    }
-
-    var fileReadBuffer = Buffer.alloc(fileSize - totalBytesRead);
-    console.log(fd);
-    var bytesRead = fs.readSync(fd, fileReadBuffer, 0, fileSize - totalBytesRead);
-
-    commandToSend = {CMDType:"uploadFile", data:{filePath:uploadPath, index:index, file:fileReadBuffer.toString("base64")}};
+    
+    /*commandToSend = {CMDType:"uploadFile", data:{filePath:uploadPath, index:index, file:fileReadBuffer.toString("base64")}};
     dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
-    client.write(constructPacket("__CMD__",dataToSend));
+    var packetToSend = constructPacket("__CMD__", dataToSend, false);
+    console.log(packetToSend.toString("base64"));;
+    console.log(JSON.parse(packetToSend.toString("base64")))
+    sendLPWPacket(packetToSend);*/
 
-    totalBytesRead = totalBytesRead + bytesRead;
-
-    commandToSend = {CMDType:"uploadFileFinish", data:{filePath:uploadPath, finalPacketIndex:index}};
-    dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
-    client.write(constructPacket("__CMD__",dataToSend));
-    totalBytesRead = totalBytesRead + bytesRead;
-    BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
+    
   });
 
+}
+
+function uploadFileChunk(fileSize, totalBytesRead, readChunkSize, index, bufferSize, uploadPath, windowID, filePath, filePosition) {
+  fs.open(filePath, 'r', (err, fd) => {
+    bufferSize = readChunkSize;
+    if (fileSize - totalBytesRead < readChunkSize) {
+      bufferSize = fileSize - totalBytesRead;
+    }
+    
+    var fileReadBuffer = Buffer.alloc(bufferSize);
+    var bytesRead = fs.readSync(fd, fileReadBuffer, 0, bufferSize, filePosition);
+    filePosition += bufferSize;
+    
+
+    commandToSend = {CMDType:"uploadFile", data:{filePath:uploadPath, index:index, file:fileReadBuffer.toString("base64")}};
+    dataToSend = JSON.stringify(commandToSend);
+
+    dataToSend = CarterEncrypt(dataToSend, key);
+
+    var packetToSend = constructPacket("__CMD__", dataToSend, false);
+    sendLPWPacket(packetToSend);
+
+    totalBytesRead = totalBytesRead + bytesRead;
+    BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
+    index = index + 1;
+    
+    console.log("attempted to read " + bufferSize + " Actually got " + bytesRead);
+    console.log("File Size: " + fileSize + " Read Chunk Size: " + readChunkSize + " Total Bytes Read: " + totalBytesRead);
+    fs.closeSync(fd);
+    if (fileSize - (totalBytesRead+1) > 0) {
+      setTimeout(function() {uploadFileChunk(fileSize, totalBytesRead, readChunkSize, index, bufferSize, uploadPath, windowID, filePath, filePosition);}, 500);
+    } else {
+      setTimeout(function() { uploadFinishedCallback(uploadPath, index, windowID, totalBytesRead, fileSize, bytesRead); },2000);
+    }
+  });
+}
+
+
+function uploadFinishedCallback(uploadPath, index, windowID, totalBytesRead, fileSize, bytesRead) {
+  commandToSend = {CMDType:"uploadFileFinish", data:{filePath:uploadPath, finalPacketIndex:index}};
+  dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+  client.write(constructPacket("__CMD__",dataToSend));
+  totalBytesRead = totalBytesRead + bytesRead;
+  BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
 }
 
 function createDecryptionThread(data, key, inputType, progressFunction, progressData, filePathToWrite) {

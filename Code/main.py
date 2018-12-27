@@ -7,6 +7,7 @@ import primes as Primes
 import dataOverStream as DataStream
 
 import encryption
+import re
 
 import packet as Packet
 import dataOverString as DataString
@@ -26,6 +27,7 @@ from datetime import timedelta
 programStartTime = datetime.now()
 
 OSName = platform.platform()
+
 print("Current Software Platform: " + OSName)
 
 
@@ -50,8 +52,6 @@ serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 port = 4242
 hostName = ""
-
-fileWriteQueue = {}
 
 serverSocket.bind((hostName, port))
 
@@ -146,6 +146,14 @@ def millis(startTime):
    ms = (dt.days * 24 * 60 * 60 + dt.seconds) * 1000 + dt.microseconds / 1000.0
    return ms
 
+xinvalid = re.compile(r'\\x([0-9a-fA-F]{2})')
+
+def fix_xinvalid(m):
+    return chr(int(m.group(1), 16))
+
+def fix(s):
+    return xinvalid.sub(fix_xinvalid, s)
+
 def downloadFileHandler(conn, commandRec, key):
     print("Client has requested to download " + commandRec["data"]["filePath"])
     file = open(commandRec["data"]["filePath"], "rb")
@@ -155,7 +163,7 @@ def downloadFileHandler(conn, commandRec, key):
     fileData = file.read(2000000)
     index = 0
     packetIndex = 0
-    while index < fileLength:
+    while index < fileLength: 
         fileDataB64 = base64.b64encode(fileData).decode("ascii")
         print("Converted to: " + str(len(fileDataB64)))
         dataToSend = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packetIndex, "length": fileLength, "filePath":commandRec["data"]["filePath"], "fileName": fileName, "windowID":commandRec["data"]["windowID"]}}), key)
@@ -174,13 +182,61 @@ def downloadFileHandler(conn, commandRec, key):
     dataToSend = encryption.encrypt(json.dumps({"CMDType":"fileTransferComplete", "payload": {"fileName":fileName, "finalPacketIndex":packetIndex}}), key)
     Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
 
-def packetHandler(packetRec, key, hasUserAuthenticated, conn):
-    if packetRec.type == "__CMD__":
-        print("Client sent Command, decrypting...")
-        commandRec = encryption.decrypt(packetRec.body, key)
-        print("Decrypted Command: " + commandRec)
+def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue):
+    if packetRec.type == "__LPW__":
+        #print("Received LPW subPacket")
+        LPWPacketRec = json.loads(packetRec.body)
+        if not LPWPacketRec["LPWID"] in LPWPackets:
+            LPWPackets[LPWPacketRec["LPWID"]] = {}
 
-        commandRec = json.loads(commandRec)
+        LPWPackets[LPWPacketRec["LPWID"]][LPWPacketRec["index"]] = LPWPacketRec["LPWPayload"]
+        #print(str(len(LPWPackets[LPWPacketRec["LPWID"]])) + "/" + str(LPWPacketRec["len"]-1))
+        if (len(LPWPackets[LPWPacketRec["LPWID"]]) >= LPWPacketRec["len"]):
+            #print("Got all LPW subpackets")
+            completeLPWPayload = ""
+            i = 0
+            while i < len(LPWPackets[LPWPacketRec["LPWID"]]):
+                completeLPWPayload += LPWPackets[LPWPacketRec["LPWID"]][i]
+                i += 1
+            loadedPacket = {}
+            try:
+                loadedPacket = json.loads(completeLPWPayload, strict = False)
+                #print("LPW Receive Complete")
+            except Exception as e:
+                print("LPW Packet Load Error!")
+                #print(completeLPWPayload)
+                print(e)
+            hasUserAuthenticated, LPWPackets, fileWriteQueue = packetHandler(Packet.Packet( loadedPacket["payload"], loadedPacket["packetType"], conn), key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue)
+
+    if packetRec.type == "__CMD__":
+        commandRec = encryption.decrypt(packetRec.body, key)
+        commandRecOrig = commandRec
+        try:
+            commandRec = json.loads(commandRec)
+        except:
+            try:
+                commandRec = json.loads(packetRec.body)
+                #print("????????????????????")
+                #print("COMMAND WAS NOT ENCRYPTED")
+                #print("????????????????????")
+                #print("-------decrypt------")
+                #print(commandRecOrig)
+                #print("-------body---------")
+                #print(packetRec.body)
+                #print("????????????????????")
+                #print("????????????????????")
+            except:
+                print("????????????????????")
+                print("Failed to load command")
+                print("????????????????????")
+                print("-------decrypt------")
+                print(commandRecOrig)
+                print("-------body---------")
+                print(packetRec.body)
+                print("????????????????????")
+                print("????????????????????")
+        
+        #print(commandRec["CMDType"])
         if commandRec["CMDType"] == "login":
             userCredentials = json.loads(commandRec["data"])
             hasUserAuthenticated = tempPassCheck(userCredentials["username"], userCredentials["password"])
@@ -188,7 +244,6 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn):
             Packet.Packet(dataToSend,"__CMD__").send(conn)
 
         if hasUserAuthenticated:
-            print(commandRec["CMDType"])
 
             if commandRec["CMDType"] == "uploadFileFinish":
                 print("Upload Finished Packet received.")
@@ -197,6 +252,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn):
                     fileWriteQueue[commandRec["data"]["filePath"]]["fileReference"].close()
                     fileWriteQueue[commandRec["data"]["filePath"]] = None
                 else:
+                    print("Received upload finish, but not all packets yet. Waiting.")
                     fileWriteQueue[commandRec["data"]["filePath"]]["finalPacketIndex"] = commandRec["data"]["finalPacketIndex"]
 
             
@@ -214,11 +270,13 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn):
                 Packet.Packet(dataToSend,"__CMD__").send(conn)
 
             if commandRec["CMDType"] == "uploadFile":
+                #print("Receiving File Upload")
                 if not commandRec["data"]["filePath"] in fileWriteQueue:
                     fileWriteQueue[commandRec["data"]["filePath"]] = {"index":0, "outOfOrderPackets":{}, "startTime": datetime.now()}
-
+                print(fileWriteQueue[commandRec["data"]["filePath"]]["index"])
+                print(commandRec["data"]["index"])
                 if fileWriteQueue[commandRec["data"]["filePath"]]["index"] == commandRec["data"]["index"]:
-                    if commandRec["data"]["index"] == 0:
+                    if not "fileReference" in fileWriteQueue[commandRec["data"]["filePath"]]:
                         file = open(commandRec["data"]["filePath"], "wb")
                         file.write(base64.b64decode(commandRec["data"]["file"]))
                         file.close()
@@ -233,7 +291,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn):
                 i = fileWriteQueue[commandRec["data"]["filePath"]]["index"] + 1
                 hasFoundEmptyPacket = False
                 while (i <= 5):
-                    if i in fileWriteQueue[commandRec["data"]["filePath"]]["outOfOrderPackets"]:
+                    if i in fileWriteQueue[commandRec["data"]["filePath"]]["outOfOrderPackets"] and "fileReference" in fileWriteQueue[commandRec["data"]["filePath"]]:
                         if hasFoundEmptyPacket == False:
                             fileWriteQueue[commandRec["data"]["filePath"]]["fileReference"].write(base64.b64decode(fileWriteQueue[commandRec["data"]["filePath"]]["outOfOrderPackets"][i]))
                             fileWriteQueue[commandRec["data"]["filePath"]]["index"] += 1
@@ -243,9 +301,9 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn):
 
                 if "finalPacketIndex" in fileWriteQueue[commandRec["data"]["filePath"]]:
                     if fileWriteQueue[commandRec["data"]["filePath"]]["finalPacketIndex"] == fileWriteQueue[commandRec["data"]["filePath"]]["index"]:
-                        console.log("Write of " + commandRec["data"]["filePath"] + " Complete! Took " + millis(fileWriteQueue[commandRec["data"]["filePath"]]["startTime"]) + " Milliseconds")
-                        fileWriteQueue[commandRec["data"]["filePath"]]["fileReference"].close()
-                        fileWriteQueue[commandRec["data"]["filePath"]] = None
+                        print("Write of " + commandRec["data"]["filePath"] + " Complete! Took " + millis(fileWriteQueue[commandRec["data"]["filePath"]]["startTime"]) + " Milliseconds")
+                        #fileWriteQueue[commandRec["data"]["filePath"]]["fileReference"].close()
+                        #fileWriteQueue[commandRec["data"]["filePath"]] = None
 
 
             if commandRec["CMDType"] == "requestFiles":
@@ -261,7 +319,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn):
                 Packet.Packet(dataToSend,"__CMD__").send(conn)
                 print("Client requested " + commandRec["data"]["path"])
 
-    return hasUserAuthenticated
+    return hasUserAuthenticated, LPWPackets, fileWriteQueue
 
 
 
@@ -272,6 +330,8 @@ def connectionHandler(conn, addr):
     key = doKeyExchange(conn)
 
     hasUserAuthenticated = False
+    LPWPackets = {}
+    fileWriteQueue = {}
 
     print(encryption.decrypt(chr(205), key))
 
@@ -280,31 +340,35 @@ def connectionHandler(conn, addr):
 
     while True:
         rawRec = Packet.readPacket(conn)
-        packetsRec = rawRec.split("\-ENDACROFTPPACKET-/")
+        packetsRec = rawRec.split("-ENDACROFTPPACKET-/")
 
         i = -1
         for s in packetsRec:
 
             i = i + 1
             if len(s) > 0:
-                print(s)
+                #print(s)
                 if (s[-19:] == "-ENDACROFTPPACKET-/"):
                     s = s[:-19]
 
                 try:
-                    s = json.loads(s)
-                    packet = Packet.Packet(s["payload"], s["packetType"], conn)
-                    hasUserAuthenticated = packetHandler(packet, key, hasUserAuthenticated, conn)
+                    v = json.loads(s)
+                    #print("JSON Load Complete Zero Exception Mode")
+                    packet = Packet.Packet(v["payload"], v["packetType"], conn)
+                    hasUserAuthenticated, LPWPackets, fileWriteQueue = packetHandler(packet, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue)
                 except ValueError:
+                    #print("VALUE ERROR!")
                     if (i == 0):
-                        print(s)
-                        s = str(partialPacket) + s
+                        #print(s)
+                        s = str(partialPacket) + str(s)
                         try:
-                            s = json.loads(s)
-                            packet = Packet.Packet(s["payload"], s["packetType"], conn)
-                            hasUserAuthenticated = packetHandler(packet, key, hasUserAuthenticated, conn)
+                            v = json.loads(s)
+                            #print("JSON Load Complete Single Exception Mode")
+                            packet = Packet.Packet(v["payload"], v["packetType"], conn)
+                            hasUserAuthenticated, LPWPackets, fileWriteQueue = packetHandler(packet, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue)
                         except:
-                            print("DOUBLE PACKET PARSE EXCEPTION, Ignoring Packet.")
+                            print("DOUBLE PACKET PARSE EXCEPTION, Unable to read:")
+                            print(s)
 
                     if (i == len(packetsRec) - 1):
                         #print("Setting partialPacket to: " + partialPacket)

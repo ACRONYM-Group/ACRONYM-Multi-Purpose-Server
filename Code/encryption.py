@@ -40,7 +40,7 @@ def encrypt(data, key, progressFunction=None, progressData=None, progressInterva
     newData = ''.join(newData)
     joinTime = time.time()*1000.0 - msStart
     totalTime = startupTime + encryptionTime + joinTime
-    print("Encrypt Time - Total: " + str(math.floor(totalTime*10)/10) + " ms, Encrypt: " +  str(math.floor(encryptionTime * 10)/10) + " ms, Join: " + str(math.floor(joinTime*10)/10) + " ms")
+    #print("Encrypt Time - Total: " + str(math.floor(totalTime*10)/10) + " ms, Encrypt: " +  str(math.floor(encryptionTime * 10)/10) + " ms, Join: " + str(math.floor(joinTime*10)/10) + " ms")
 
     if progressFunction != None:
         progressFunction(y, yMax, origKey, progressData)
@@ -94,10 +94,10 @@ def decrypt(data, key, progressFunction=None, progressData=None, progressInterva
     newData = ''.join(newData)
     joinTime = time.time()*1000.0 - msStart
     totalTime = startupTime + decryptionTime + joinTime
-    print("Decrypt Time - Total: " + str(math.floor(totalTime*10)/10) + " ms, Decrypt: " +  str(math.floor(decryptionTime * 10)/10) + " ms, Join: " + str(math.floor(joinTime*10)/10) + " ms")
+    #print("Decrypt Time - Total: " + str(math.floor(totalTime*10)/10) + " ms, Decrypt: " +  str(math.floor(decryptionTime * 10)/10) + " ms, Join: " + str(math.floor(joinTime*10)/10) + " ms")
 
     return newData
 
 oldTime = time.time()
 decrypt("Hello WORLD", 10000000)
-print (time.time() - oldTime)
+#print (time.time() - oldTime)

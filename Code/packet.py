@@ -11,6 +11,7 @@ __LPW__     Large Packet Wrapper
 import json
 import math
 import time
+import struct
 
 class Packet:
     def __init__(self, body, packetType="__RAW__", connection = None):
@@ -51,10 +52,14 @@ class Packet:
         return "self.body = " + '"' + str(self.body) + '"\n' + "self.type = " + '"' + str(self.type) + '"'
 
 def readPacket(connection):
-    data = connection.recv(1024)
-    data = data.decode()
-
-    #return Packet(data["payload"], data["packetType"], connection)
+    data = connection.recv(4096000)
+    
+    try:
+        data = data.decode()
+    except:
+        data2 = connection.recv(4096000)
+        data += data2
+        data = data.decode()
     return data
 
 
