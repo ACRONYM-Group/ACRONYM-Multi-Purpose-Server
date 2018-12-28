@@ -150,3 +150,14 @@ class Connection:
         jsonObject = json.dumps(dictionary)
 
         self.sendEncrypted(jsonObject, dataType)
+
+    def setData(self, name, value, dataType="str"):
+        """
+            Sets data in the cache on the server
+
+            Specificly, sets the data under name to value
+        """
+        self.sendEncryptedDict({"CMDType": "setData",
+                                "name": name,
+                                "value": value,
+                                "dataType": dataType}, "__CMD__")

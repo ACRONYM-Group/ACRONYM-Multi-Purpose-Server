@@ -53,6 +53,8 @@ serverSocket.bind((hostName, port))
 MOTD = "Welcome to the A.C.R.O.N.Y.M. Network.\nServer is Running on " + OSName
 masterPassword = "pass"
 
+globalCache = {}
+
 def doHandshake(conn, addr):
     Packet.Packet('31415', "__HDS__").send(conn)
 
@@ -194,6 +196,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
         print(commandRec)
         print("COMMAND RECEIVED!")
         print(commandRec)
+
         try:
             commandRec = json.loads(commandRec)
         except:
@@ -215,6 +218,19 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
 
         if commandRec["CMDType"] == "setData":
             print("Set Data", commandRec["name"],"=",commandRec["value"])
+            value = commandRec["value"]
+            if commandRec["dataType"] == "str":
+                value = str(value)
+            elif commandRec["dataType"] == "int":
+                value = int(value)
+            elif commandRec["dataType"] == "float":
+                value = float(value)
+            elif commandRec["dataType"] == "list":
+                value = list(value)
+
+            globalCache[commandRec["name"]] = value
+
+            print(globalCache)
         
         if commandRec["CMDType"] == "login":
             userCredentials = json.loads(commandRec["data"])
