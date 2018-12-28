@@ -191,6 +191,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
     if packetRec.type == "__CMD__":
         commandRec = encryption.decrypt(packetRec.body, key)
         commandRecOrig = commandRec
+        print(commandRec)
         print("COMMAND RECEIVED!")
         print(commandRec)
         try:
@@ -209,6 +210,11 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
                 print(packetRec.body)
                 print("????????????????????")
                 print("????????????????????")
+        
+        print(commandRec["CMDType"])
+
+        if commandRec["CMDType"] == "setData":
+            print("Set Data", commandRec["name"],"=",commandRec["value"])
         
         if commandRec["CMDType"] == "login":
             userCredentials = json.loads(commandRec["data"])

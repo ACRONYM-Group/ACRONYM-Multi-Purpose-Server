@@ -2,7 +2,10 @@ import ACELib
 
 conn = ACELib.Connection()
 
-conn.connect()
-conn.handshake()
+conn.initConnection()
 
-print(conn.getKey())
+print(conn.key)
+
+conn.sendEncryptedDict({"CMDType": "setData",
+                        "name": "name",
+                        "value": "value"}, "__CMD__")

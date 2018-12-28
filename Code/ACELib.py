@@ -5,11 +5,9 @@
 """
 
 import socket
-import threading
 
 import keyExchange
 
-import primes as Primes
 import dataOverStream as DataStream
 
 import encryption
@@ -42,37 +40,45 @@ class Connection:
         self.host = host
         self.port = port
 
+        self.key = 0
+
     def connect(self):
         """
             Connects to the AMPS Server, and initalizes the connection
         """
         self.socket.connect((self.host, self.port))
 
-    def recievePacketVerify(self):
+    def recievePacketVerify(self, encrypted=False):
         """
             Gets a packet from the server, and verifies it is of the correct
             format
         """
-        rawPacketData = Packet.readPacket(self.socket)
+        if not encrypted:
+            rawPacketData = Packet.readPacket(self.socket)
+            if not rawPacketData.endswith("-ENDACROFTPPACKET-/"):
+                raise ACEE.BadPacketException("Corrupted Packet")
 
-        if not rawPacketData.endswith("-ENDACROFTPPACKET-/"):
-            raise ACEE.BadPacketException("Corrupted Packet")
+            rawPacketData = rawPacketData[:-19]
+        else:
+            encryptedPacket = Packet.readPacket(self.socket)
+            rawPacketData = encryption.decrypt(encryptedPacket, self.key)
 
-        packetDataJSON = json.loads(rawPacketData[:-19])
-        
+        packetDataJSON = json.loads(rawPacketData)
+
         return packetDataJSON
 
     def recievePacketType(self, packetType,
-                          exception=ACEE.BadPacketTypeException()):
+                          exception=ACEE.BadPacketTypeException(),
+                          encrypted=False):
         """
             Gets a packet from the server, and checks that it is of the
             correct type
         """
-        packet = self.recievePacketVerify()
-        
+        packet = self.recievePacketVerify(encrypted)
+
         if packet['packetType'] == packetType:
             return packet
-        
+
         raise exception
 
     def handshake(self):
@@ -118,5 +124,29 @@ class Connection:
         mixedPacket = Packet.Packet("00" + DataString.convertIntToData(mixed))
         mixedPacket.send(self.socket)
 
-        print(key)
         return key
+
+    def initConnection(self):
+        """
+            Does the initalization of the connection with the server
+            Does the connection, handshake, and the keyexchange
+        """
+        self.connect()
+        self.handshake()
+        self.key = self.getKey()
+
+    def sendEncrypted(self, packetBody, packetType):
+        """
+            Sends encrypted data over the connection
+        """
+        Packet.Packet(encryption.encrypt(packetBody, self.key),
+                      packetType).send(self.socket)
+
+    def sendEncryptedDict(self, dictionary, dataType):
+        """
+            Converts a dictionary to a JSON object, and sends that over an
+            encrypted connection
+        """
+        jsonObject = json.dumps(dictionary)
+
+        self.sendEncrypted(jsonObject, dataType)
