@@ -61,7 +61,13 @@ class Connection:
             rawPacketData = rawPacketData[:-19]
         else:
             encryptedPacket = Packet.readPacket(self.socket)
-            rawPacketData = encryption.decrypt(encryptedPacket, self.key)
+            if not encryptedPacket.endswith("-ENDACROFTPPACKET-/"):
+                raise ACEE.BadPacketException("Corrupted Packet")
+            encryptedPacket = encryptedPacket[:-19]
+            
+            jsonPart = json.loads(encryptedPacket)["payload"]
+
+            rawPacketData = encryption.decrypt(jsonPart, self.key)
 
         packetDataJSON = json.loads(rawPacketData)
 
@@ -161,3 +167,13 @@ class Connection:
                                 "name": name,
                                 "value": value,
                                 "dataType": dataType}, "__CMD__")
+
+    def getData(self, name):
+        """
+            Gets data by name from the server
+        """
+        self.sendEncryptedDict({"CMDType": "getData",
+                                "name": name}, "__CMD__")
+
+        data = self.recievePacketType("__DAT__", encrypted=True)
+        return data["payload"]

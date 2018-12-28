@@ -4,4 +4,5 @@ conn = ACELib.Connection()
 
 conn.initConnection()
 
-conn.setData("name", "carter")
+conn.setData("name", "value")
+print(conn.getData("name"))
