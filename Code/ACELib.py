@@ -29,6 +29,8 @@ import math
 
 from datetime import datetime, timedelta
 
+import ACEExceptions as ACEE
+
 
 class Connection:
     """
@@ -44,5 +46,77 @@ class Connection:
         """
             Connects to the AMPS Server, and initalizes the connection
         """
-
         self.socket.connect((self.host, self.port))
+
+    def recievePacketVerify(self):
+        """
+            Gets a packet from the server, and verifies it is of the correct
+            format
+        """
+        rawPacketData = Packet.readPacket(self.socket)
+
+        if not rawPacketData.endswith("-ENDACROFTPPACKET-/"):
+            raise ACEE.BadPacketException("Corrupted Packet")
+
+        packetDataJSON = json.loads(rawPacketData[:-19])
+        
+        return packetDataJSON
+
+    def recievePacketType(self, packetType,
+                          exception=ACEE.BadPacketTypeException()):
+        """
+            Gets a packet from the server, and checks that it is of the
+            correct type
+        """
+        packet = self.recievePacketVerify()
+        
+        if packet['packetType'] == packetType:
+            return packet
+        
+        raise exception
+
+    def handshake(self):
+        """
+            Performs the standard handshake with an AMPS Server
+        """
+        packet = self.recievePacketVerify()
+
+        if packet['packetType'] == '__HDS__' and packet['payload'] == '31415':
+            Packet.Packet('31415', "__HDS__").send(self.socket)
+        else:
+            raise ACEE.BadHandshakeException("Handshake not formated well")
+
+    def getKey(self):
+        """
+            Performs the other half of the key exchange, resulting in the
+            sharing of keys between the AMPS Server and client
+        """
+        primeError = (ACEE.
+                      BadPacketTypeException("Prime Packet has Bad Type"))
+        mixedError = (ACEE.BadPacketTypeException("Mixed Secret has Bad Type"))
+
+        primePacket1 = self.recievePacketType('__DAT__', primeError)
+        primePacket2 = self.recievePacketType('__DAT__', primeError)
+
+        primePacketData1 = primePacket1['payload'][2:]
+        primePacketData2 = primePacket2['payload'][2:]
+
+        primes = [DataString.convertDataToInt(primePacketData1),
+                  DataString.convertDataToInt(primePacketData2)]
+
+        exchange = keyExchange.KeyExchange(primes)
+        exchange.randomSecret()
+
+        mixed = exchange.calculateMixed()
+
+        otherMixedPacket = self.recievePacketType('__DAT__', mixedError)
+        otherMixed = (DataString.
+                      convertDataToInt(otherMixedPacket['payload'][2:]))
+
+        key = exchange.getSharedKey(otherMixed)
+
+        mixedPacket = Packet.Packet("00" + DataString.convertIntToData(mixed))
+        mixedPacket.send(self.socket)
+
+        print(key)
+        return key

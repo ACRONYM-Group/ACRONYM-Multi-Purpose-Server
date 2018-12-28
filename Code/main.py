@@ -109,12 +109,15 @@ def doKeyExchange(conn):
     time.sleep(0.1)
     Packet.Packet(chr(0) + chr(3) + DataString.convertIntToData(mixed),"__DAT__").send(conn)
 
-    packet = json.loads(Packet.readPacket(conn)[:-19])
+    packetData = Packet.readPacket(conn)[:-19]
+    print(packetData)
+    packet = json.loads(packetData)
 
     val = DataString.convertDataToInt(packet["payload"][2:])
 
     key = exchange.getSharedKey(val)
     print("Key Exchange Succesful!")
+    print(key)
     return key
 
 def sendEncrypted(conn, data, key):
