@@ -30,7 +30,7 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
 
   if (message["type"] == "connectionAccepted" && message["target"] == randomID) {
     ownedACEs.push(message["ID"]);
-    ownedACEsData[message["ID"]] = {type:requiredACEs[0]["type"]};
+    ownedACEsData[message["ID"]] = {type:requiredACEs[0]["type"], socket:socket};
     requiredACEs.shift();
     console.log("Gained ownership of ACE #" + message["ID"]);
   }
@@ -45,6 +45,8 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
 }
 ));
 ipc.server.start()
+
+
 
 app.on('ready', function() {
   keepAliveWin = new BrowserWindow({width: 10, height: 10, frame: false, show: false});

@@ -43,7 +43,7 @@ class Packet:
                 LargePacketWrapper = {"packetType":"__LPW__", "LPWID": LPWID, "len": numberOfLPWPackets, "ind": i, "windowID":windowID, "payload":LPWPayload}
                 currentDataIndex = currentDataIndex + LPWPacketLength
                 dataToSend = json.dumps(LargePacketWrapper).encode()
-                dataToSend = dataToSend + "\\-ENDACROFTPPACKET-/".encode()
+                dataToSend = dataToSend + "-ENDACROFTPPACKET-/".encode()
                 conn.sendall(dataToSend)
 
         

@@ -184,7 +184,7 @@ function constructPacket(type, payload, addEndStatement) {
   }
 
   if (addEndStatement) {
-    packet = packet + "\-ENDACROFTPPACKET-/";
+    packet = packet + "-ENDACROFTPPACKET-/";
   }
   return packet;
 }
@@ -196,10 +196,10 @@ function streamToPacketParser(data, alreadyDecrypted) {
     partiallyReceivedPacket = "";
   }
 
-  while (data.indexOf("\-ENDACROFTPPACKET-/") !== -1) {
-    firstPacket = data.substring(0, data.indexOf("\-ENDACROFTPPACKET-/") - 1);
+  while (data.indexOf("-ENDACROFTPPACKET-/") !== -1) {
+    firstPacket = data.substring(0, data.indexOf("-ENDACROFTPPACKET-/"));
     packetReceiveHander(firstPacket, alreadyDecrypted);
-    data = data.substring(data.indexOf("\-ENDACROFTPPACKET-/") + 19, data.length);
+    data = data.substring(data.indexOf("-ENDACROFTPPACKET-/") + 19, data.length);
   }
 
   if (data.length > 0) {
@@ -629,7 +629,7 @@ client.connect(ServerPort, ServerIP, function() {
 client.on('data', streamToPacketParser);
 
 function keyExchangeComplete() {
-  commandToSend = {CMDType:"login", data:JSON.stringify({username:"Jordan",password:"FSaP314"})};
+  commandToSend = {CMDType:"login", data:JSON.stringify({username:"Jordan",password:"pass"})};
   dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
   client.write(constructPacket("__CMD__",dataToSend));
 }
