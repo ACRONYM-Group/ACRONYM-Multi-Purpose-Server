@@ -8,24 +8,12 @@ import socket
 
 import keyExchange
 
-import dataOverStream as DataStream
-
 import encryption
-import re
 
 import packet as Packet
 import dataOverString as DataString
 
-import time
 import json
-
-import platform
-import os
-
-import base64
-import math
-
-from datetime import datetime, timedelta
 
 import ACEExceptions as ACEE
 
@@ -64,7 +52,7 @@ class Connection:
             if not encryptedPacket.endswith("-ENDACROFTPPACKET-/"):
                 raise ACEE.BadPacketException("Corrupted Packet")
             encryptedPacket = encryptedPacket[:-19]
-            
+
             jsonPart = json.loads(encryptedPacket)["payload"]
 
             rawPacketData = encryption.decrypt(jsonPart, self.key)
