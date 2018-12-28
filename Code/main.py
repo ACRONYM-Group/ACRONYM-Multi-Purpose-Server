@@ -51,7 +51,9 @@ hostName = ""
 serverSocket.bind((hostName, port))
 
 MOTD = "Welcome to the A.C.R.O.N.Y.M. Network.\nServer is Running on " + OSName
-masterPassword = "FSaP314"
+masterPassword = "pass"
+
+globalCache = {}
 
 def doHandshake(conn, addr):
     Packet.Packet('31415', "__HDS__").send(conn)
@@ -109,12 +111,15 @@ def doKeyExchange(conn):
     time.sleep(0.1)
     Packet.Packet(chr(0) + chr(3) + DataString.convertIntToData(mixed),"__DAT__").send(conn)
 
-    packet = json.loads(Packet.readPacket(conn)[:-19])
+    packetData = Packet.readPacket(conn)[:-19]
+    print(packetData)
+    packet = json.loads(packetData)
 
     val = DataString.convertDataToInt(packet["payload"][2:])
 
     key = exchange.getSharedKey(val)
     print("Key Exchange Succesful!")
+    print(key)
     return key
 
 def sendEncrypted(conn, data, key):
@@ -206,6 +211,33 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
                 print(packetRec.body)
                 print("????????????????????")
                 print("????????????????????")
+        
+        print(commandRec["CMDType"])
+
+        if commandRec["CMDType"] == "setData":
+            print("Set Data", commandRec["name"],"=",commandRec["value"])
+            value = commandRec["value"]
+            if commandRec["dataType"] == "str":
+                value = str(value)
+            elif commandRec["dataType"] == "int":
+                value = int(value)
+            elif commandRec["dataType"] == "float":
+                value = float(value)
+            elif commandRec["dataType"] == "list":
+                value = list(value)
+
+            globalCache[commandRec["name"]] = value
+
+            print(globalCache)
+        
+        elif commandRec["CMDType"] == "getData":
+            if commandRec["name"] in globalCache:
+                value = globalCache[commandRec["name"]]
+            else:
+                value = ""
+            data = {"packetType":"__DAT__","payload":value}
+            encr = encryption.encrypt(json.dumps(data), key)
+            Packet.Packet(encr, "__DAT__").send(conn)
         
         if commandRec["CMDType"] == "login":
             userCredentials = json.loads(commandRec["data"])
