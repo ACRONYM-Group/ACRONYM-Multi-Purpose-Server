@@ -30,6 +30,10 @@ class Connection:
 
         self.key = 0
 
+        self.eventHandler = None
+
+        self.runEventHandler = True
+
     def connect(self):
         """
             Connects to the AMPS Server, and initalizes the connection

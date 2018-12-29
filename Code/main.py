@@ -240,6 +240,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
             data = {"packetType":"__DAT__","payload":value}
             encr = encryption.encrypt(json.dumps(data), key)
             Packet.Packet(encr, "__DAT__").send(conn)
+            Packet.Packet(encr, "__DAT__").send(conn)
         
         if commandRec["CMDType"] == "login":
             userCredentials = json.loads(commandRec["data"])

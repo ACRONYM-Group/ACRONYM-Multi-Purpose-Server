@@ -53,7 +53,6 @@ class Packet:
 
 def readPacket(connection):
     data = connection.recv(4096000)
-    
     try:
         data = data.decode()
     except:
