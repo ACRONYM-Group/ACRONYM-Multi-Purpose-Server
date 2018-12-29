@@ -1,5 +1,5 @@
 """
-    Packages data to 
+    Packages data to send over a string
 """
 import math
 
