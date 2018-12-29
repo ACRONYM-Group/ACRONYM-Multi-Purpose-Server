@@ -193,10 +193,8 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
     if packetRec.type == "__CMD__":
         commandRec = encryption.decrypt(packetRec.body, key)
         commandRecOrig = commandRec
-        print(commandRec)
-        print("COMMAND RECEIVED!")
-        print(commandRec)
-
+        #print("COMMAND RECEIVED!")
+        #print(commandRec)
         try:
             commandRec = json.loads(commandRec)
         except:

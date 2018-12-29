@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="index.css">
+        <meta charset="UTF-8">
+        <title>Hello World!</title>
+        <script src="blank.js"></script>
+    </head>
+    <body style="background-color:#383838;">
+        <div id="titlebarGroup" style="width:100%;">
+            <div id="banner" style="-webkit-app-region: drag; width:100%; display:flex;";>
+                <div style="display:flex; height: 26px; width:100%;">
+                    <img src="ACRONYM.png" alt="A.C.R.O.N.Y.M. Logo" style="width:30px; margin:4px; margin-left:10px; height:16px;">
+                    <h5 style="margin-left:0px; text-align: center; color:white; padding-top:6px; padding-left: 5px;">ACE</h5>
+                </div>
+
+                <div id="MinButton" style=" float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE921;</div>
+                <div id="MaxButton" style="float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE922;</div>
+                <div id="RestoreButton" style="float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE923</div>
+                <div id="CloseButton" style="float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center;">&#xE8BB;</div>
+            </div>
+        </div>
+        
+        <div id="bodyGroup" class="wrapper">
+            <h2 style="color:white; text-align:center;">Welcome to AMPS</h2>
+            <div style="margin-left:auto; margin-right:auto; display: block; width:100%;">
+                <input style="margin-left:auto; margin-right:auto; display: block;" type="text" id="usernameForm" name="username" placeholder="Username..">
+                <input style="margin-left:auto; margin-right:auto; display: block;" type="text" id="passwordForm" name="password" placeholder="Password..">
+                <button class="LoginButton" onclick="switchToIndexPage()">Login</button>
+            </div>
+
+        </div>
+
+    </div>
+    <script src="./renderer.js"></script>
+    <script src="./login.js"></script>
+    </body>
+
+</html>
