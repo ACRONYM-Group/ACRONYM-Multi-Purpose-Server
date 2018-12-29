@@ -6,6 +6,7 @@ var randomID = Math.floor(Math.random()*5000)*Date.now();
 var requiredACEs = [];
 var ownedACEs = [];
 var ownedACEsData = {};
+var loginWin;
 
 function createNewACE() {
   const command = 'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/launch.bat';
@@ -40,6 +41,10 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
     } else if (message["type"] == "rawMessage") {
       console.log(message["data"]);
       ipc.server.emit(socket, "message", {target:message["ID"], data:"Hello ACE!"});
+    } else if (message["type"] == "loginResult") {
+      if (message["data"]) {
+        loginWin.close();
+      }
     }
   }
 }
@@ -47,12 +52,34 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
 ipc.server.start()
 
 
+function findGeneralPurposeACE(ownedACEs, ownedACEsData) {
+  for (var i = 0; i < ownedACEs.length; i++) {
+   if (ownedACEsData[ownedACEs[i]]["type"] == "generalPurpose") {
+     i = ownedACEs.length + 1;
+     return ownedACEs[i];
+   } 
+  }
+}
+
+
+
+
+ipcMain.on('login', (event, arg) => {
+    console.log("Attempting Login")
+    var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+    console.log(ACEID);
+    ipc.server.emit(ownedACEsData[ACEID]["socket"], "login", {target:message["ID"], username:arg["username"], password:arg["password"]});
+  });
+
+
+
+
 
 app.on('ready', function() {
   keepAliveWin = new BrowserWindow({width: 10, height: 10, frame: false, show: false});
-  loginWin = new BrowserWindow({width: 225, height: 300, frame: false, show: true});
+  loginWin = new BrowserWindow({width: 225, height: 220, frame: false, show: true});
   loginWin.loadFile('login.html')
-  //loginWin.webContents.openDevTools()
+  loginWin.webContents.openDevTools()
 })
 
 app.on('window-all-closed', () => {

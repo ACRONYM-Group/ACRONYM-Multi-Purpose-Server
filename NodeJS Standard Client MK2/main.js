@@ -65,6 +65,14 @@ ipc.connectTo('world', () => {
       console.log(app.quit());
     }
   });
+
+  ipc.of.world.on('login', (message) => {
+    if (message["target"] == randomID) {
+      commandToSend = {CMDType:"login", data:JSON.stringify({username:message["username"],password:message["password"]})};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+    }
+  });
 });
 
 function checkHeartbeat() {
@@ -261,19 +269,10 @@ function packetReceiveHander(data, alreadyDecrypted) {
       console.log("New MOTD: ");
       console.log(MOTD);
       console.log(" ");
-
-      //uploadFile("Z:/AcroFTPClient/Gale Crater.png", "Z:/AcroFTP/Gale Crater.png", -1);
-
-      //console.log("Client is sending file upload requset at: " + Date.now())
-
-      //commandToSend = {CMDType:"downloadFile", data:{windowID:-1, filePath:"Z:/AcroFTP/Earth.jpg"}}
-      //dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
-      //client.write(constructPacket("__CMD__",dataToSend));
-
-      //console.log("Client is sending file download requset at: " + Date.now())
     }
 
     if (command["CMDType"] == "AuthResult") {
+      ipc.of.world.emit('command', {type:"loginResult", data:command["data"], ID:randomID, target:hostID});
       if (command["data"] == true) {
         console.log("Login Successful!");
 
@@ -629,9 +628,7 @@ client.connect(ServerPort, ServerIP, function() {
 client.on('data', streamToPacketParser);
 
 function keyExchangeComplete() {
-  commandToSend = {CMDType:"login", data:JSON.stringify({username:"Jordan",password:"pass"})};
-  dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
-  client.write(constructPacket("__CMD__",dataToSend));
+  
 }
 
 

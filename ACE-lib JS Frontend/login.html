@@ -6,12 +6,12 @@
         <title>Hello World!</title>
         <script src="blank.js"></script>
     </head>
-    <body style="background-color:#3e4444;">
+    <body style="background-color:#383838;">
         <div id="titlebarGroup" style="width:100%;">
             <div id="banner" style="-webkit-app-region: drag; width:100%; display:flex;";>
                 <div style="display:flex; height: 26px; width:100%;">
-                    <img src="ACRONYM.png" alt="A.C.R.O.N.Y.M. Logo" style="width:30px; margin:5px; margin-left:10px; height:16px;">
-                    <h4 style="margin-left:0px; text-align: center; color:white; padding-top:5px; padding-left: 5px;">ACE</h4>
+                    <img src="ACRONYM.png" alt="A.C.R.O.N.Y.M. Logo" style="width:30px; margin:4px; margin-left:10px; height:16px;">
+                    <h5 style="margin-left:0px; text-align: center; color:white; padding-top:6px; padding-left: 5px;">ACE</h5>
                 </div>
 
                 <div id="MinButton" style=" float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE921;</div>
@@ -24,13 +24,16 @@
         <div id="bodyGroup" class="wrapper">
             <h2 style="color:white; text-align:center;">Welcome to AMPS</h2>
             <div style="margin-left:auto; margin-right:auto; display: block; width:100%;">
-                <input style="margin-left:auto; margin-right:auto; display: block;" type="text" id="username" name="username" placeholder="Username..">
-                <input style="margin-left:auto; margin-right:auto; display: block;" type="text" id="password" name="password" placeholder="Password..">
+                <input style="margin-left:auto; margin-right:auto; display: block;" type="text" id="usernameForm" name="username" placeholder="Username..">
+                <input style="margin-left:auto; margin-right:auto; display: block;" type="text" id="passwordForm" name="password" placeholder="Password..">
+                <button class="LoginButton" onclick="switchToIndexPage()">Login</button>
             </div>
 
         </div>
 
-        <script src="./renderer.js"></script></div>
+    </div>
+    <script src="./renderer.js"></script>
+    <script src="./login.js"></script>
     </body>
 
 </html>
