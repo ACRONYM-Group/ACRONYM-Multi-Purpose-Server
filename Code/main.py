@@ -29,7 +29,6 @@ programStartTime = datetime.now()
 
 OSName = platform.platform()
 
-onCorrectStart()
 
 def onCorrectStart():
     print("AMPS Starting Up...")
@@ -38,6 +37,8 @@ def onCorrectStart():
     print("Current Software Platform: " + OSName)
     print(" ")
 
+
+onCorrectStart()
 
 def PrintProgress(y, yMax, progressData):
     print("Progress: " + str(y/yMax*100) + "%")
@@ -197,6 +198,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
     if packetRec.type == "__CMD__":
         commandRec = encryption.decrypt(packetRec.body, key)
         commandRecOrig = commandRec
+        commandRec = "".join(commandRec)
         #print("COMMAND RECEIVED!")
         #print(commandRec)
         try:
@@ -217,40 +219,41 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
                 print("????????????????????")
         
         print(commandRec["CMDType"])
-
-        if commandRec["CMDType"] == "setData":
-            print("Set Data", commandRec["name"],"=",commandRec["value"])
-            value = commandRec["value"]
-            if commandRec["dataType"] == "str":
-                value = str(value)
-            elif commandRec["dataType"] == "int":
-                value = int(value)
-            elif commandRec["dataType"] == "float":
-                value = float(value)
-            elif commandRec["dataType"] == "list":
-                value = list(value)
-
-            globalCache[commandRec["name"]] = value
-
-            print(globalCache)
-        
-        elif commandRec["CMDType"] == "getData":
-            if commandRec["name"] in globalCache:
-                value = globalCache[commandRec["name"]]
-            else:
-                value = ""
-            data = {"packetType":"__DAT__","payload":value}
-            encr = encryption.encrypt(json.dumps(data), key)
-            Packet.Packet(encr, "__DAT__").send(conn)
-            Packet.Packet(encr, "__DAT__").send(conn)
         
         if commandRec["CMDType"] == "login":
-            userCredentials = json.loads(commandRec["data"])
+            try:
+                userCredentials = json.loads(commandRec["data"])
+            except TypeError:
+                userCredentials = commandRec["data"]
             hasUserAuthenticated = tempPassCheck(userCredentials["username"], userCredentials["password"])
             dataToSend = encryption.encrypt(json.dumps({"CMDType":"AuthResult", "data":hasUserAuthenticated}), key)
             Packet.Packet(dataToSend,"__CMD__").send(conn)
 
         if hasUserAuthenticated:
+            if commandRec["CMDType"] == "setData":
+                print("Set Data", commandRec["name"],"=",commandRec["value"])
+                value = commandRec["value"]
+                if commandRec["dataType"] == "str":
+                    value = str(value)
+                elif commandRec["dataType"] == "int":
+                    value = int(value)
+                elif commandRec["dataType"] == "float":
+                    value = float(value)
+                elif commandRec["dataType"] == "list":
+                    value = list(value)
+
+                globalCache[commandRec["name"]] = value
+
+                print(globalCache)
+            
+            elif commandRec["CMDType"] == "getData":
+                if commandRec["name"] in globalCache:
+                    value = globalCache[commandRec["name"]]
+                else:
+                    value = ""
+                data = {"packetType":"__DAT__","payload":value}
+                encr = encryption.encrypt(json.dumps(data), key)
+                Packet.Packet(encr, "__DAT__").send(conn)
 
             if commandRec["CMDType"] == "uploadFileFinish":
                 if fileWriteQueue[commandRec["data"]["filePath"]]["index"] >= commandRec["data"]["finalPacketIndex"]:
