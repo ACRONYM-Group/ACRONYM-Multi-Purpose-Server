@@ -52,6 +52,7 @@ ipc.connectTo('world', () => {
       if (message["hostID"] != -1 && hostID == -1) {
         hostID = message["hostID"];
         ipc.of.world.emit('command', {type:"connectionAccepted", data:"ping", ID:randomID, target:hostID});
+        consoleOutput("ACE has accepeted!", ipc.of.world);
       }
      }
   });
