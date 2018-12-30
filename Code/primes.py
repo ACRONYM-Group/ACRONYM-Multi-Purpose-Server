@@ -1,18 +1,22 @@
+"""
+    Generates the primes for the key exxchange system
+"""
 import random
-import time
+
 
 def isPrime(num):
     if num < 2:
         return False
-    for i in range(2,int(num**0.5)+2):
+    for i in range(2, int(num**0.5)+2):
         if i >= num:
             return True
         if num/float(i) == int(num/i):
             return False
     return True
 
+
 def getRandomPrime(low, high=None):
-    if high == None:
+    if high is None:
         high = low
         low = 2
 
@@ -23,6 +27,6 @@ def getRandomPrime(low, high=None):
 
     return p
 
+
 def getPrimePair():
-    #1000000
-    return (getRandomPrime(0,1000000),getRandomPrime(0,1000000))
+    return (getRandomPrime(0, 1000000), getRandomPrime(0, 1000000))

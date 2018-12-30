@@ -30,6 +30,10 @@ class Connection:
 
         self.key = 0
 
+        self.eventHandler = None
+
+        self.runEventHandler = True
+
     def connect(self):
         """
             Connects to the AMPS Server, and initalizes the connection
@@ -56,6 +60,8 @@ class Connection:
             jsonPart = json.loads(encryptedPacket)["payload"]
 
             rawPacketData = encryption.decrypt(jsonPart, self.key)
+
+        rawPacketData = "".join(rawPacketData)
 
         packetDataJSON = json.loads(rawPacketData)
 
@@ -165,3 +171,16 @@ class Connection:
 
         data = self.recievePacketType("__DAT__", encrypted=True)
         return data["payload"]
+
+    def loginServer(self, username, password):
+        """
+            Starts the login process with the AMPS server
+        """
+        self.sendEncryptedDict({"CMDType": "login",
+                                "data": {"username": username,
+                                         "password": password}},
+                               "__CMD__")
+
+        result = self.recievePacketVerify(encrypted=True)
+
+        return result["data"]
