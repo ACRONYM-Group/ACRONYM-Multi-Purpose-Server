@@ -24,20 +24,24 @@ import math
 from datetime import datetime
 from datetime import timedelta
 
+
 programStartTime = datetime.now()
 
 OSName = platform.platform()
 
-print("AMPS Starting Up...")
-print("====================")
-print("Current AMPS Software Version: 12.27.2018.1")
-print("Current Software Platform: " + OSName)
-print(" ")
+onCorrectStart()
 
+def onCorrectStart():
+    print("AMPS Starting Up...")
+    print("====================")
+    print("Current AMPS Software Version: 12.27.2018.1")
+    print("Current Software Platform: " + OSName)
+    print(" ")
 
 
 def PrintProgress(y, yMax, progressData):
     print("Progress: " + str(y/yMax*100) + "%")
+
 
 def fileTransferProgressFunction(y, yMax, key, progressData=None):
     dataToSend = encryption.encrypt(json.dumps({"CMDType":"fileTransferProgressReport","data":{ "y":y, "yMax":yMax, "windowID":progressData["windowID"]}}), key)
