@@ -10,7 +10,7 @@ var keyExchangeSmallerPrime = 0;
 var key = bigInt(0);
 var theirMixed = 0;
 //var ServerIP = "172.25.76.132";
-var ServerIP = "192.168.1.104";
+var ServerIP = "192.168.1.11";
 var ServerPort = 4242;
 var MOTD = "Message Of The Day...";
 var loginButtonPushEvent;
@@ -27,6 +27,10 @@ var randomID = Math.floor(Math.random()*5000)*Date.now();
 var hostID = -1;
 
 const ipc = require('node-ipc');
+
+function consoleOutput(data, ipcHost) {
+  ipcHost.emit('command', {type:"printToConsole", data: data, ID:randomID, target:hostID})
+}
 
 ipc.config.id = 'hello';
 ipc.config.retry = 1500;
@@ -54,7 +58,6 @@ ipc.connectTo('world', () => {
 
   ipc.of.world.on('heartbeat', (message) => {
     if (message["target"] == randomID) {
-      console.log("Heartbeat!");
       lastHeartbeatTime = Date.now()
     }
   });
@@ -68,6 +71,7 @@ ipc.connectTo('world', () => {
 
   ipc.of.world.on('login', (message) => {
     if (message["target"] == randomID) {
+      consoleOutput("Loging In...", ipc.of.world);
       commandToSend = {CMDType:"login", data:JSON.stringify({username:message["username"],password:message["password"]})};
       dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
