@@ -18,7 +18,7 @@ function createNewACE() {
 }
 
 function createHubWindow() {
-  
+
 }
 
 createNewACE();
@@ -81,7 +81,6 @@ ipcMain.on('login', (event, arg) => {
     var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
     console.log(ACEID);
     dataToSend = {target:ACEID, username:arg["username"], password:arg["password"]};
-    console.log(dataToSend);
     ipc.server.emit(ownedACEsData[ACEID]["socket"], "login", dataToSend);
   });
 
