@@ -145,6 +145,7 @@ function CarterDecrypt(data, key) {
   var yMax = data.length - 1;
 
   while (y <= yMax) {
+    consoleOutput(data, ipc.of.world);
     var oldVal = bigInt(utf16ToDig(data.charAt(y)));
     oldVal = oldVal.minus(r.mod(bigInt(256)));
     oldVal = Number(oldVal.toString());
@@ -264,6 +265,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
     if (alreadyDecrypted) {
       decryptedPacketData = packet["payload"];
     } else {
+      consoleOutput(packet["payload"], ipc.of.world);
       decryptedPacketData = CarterDecrypt(packet["payload"], key);
     }
 

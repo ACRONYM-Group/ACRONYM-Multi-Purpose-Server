@@ -18,7 +18,9 @@ function createNewACE() {
 }
 
 function createHubWindow() {
-
+  hubWin = new BrowserWindow({width: 425, height: 340, frame: false, show: true});
+  hubWin.loadFile('hub.html')
+  return hubWin;
 }
 
 createNewACE();
@@ -49,6 +51,7 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
       if (message["data"]) {
         loginWin.send("authResult", message["data"]);
         loginWin.close();
+        hubWin = createHubWindow();
       } else {
         loginWin.send("authResult", message["data"]);
       }
@@ -90,7 +93,7 @@ ipcMain.on('login', (event, arg) => {
 
 app.on('ready', function() {
   keepAliveWin = new BrowserWindow({width: 10, height: 10, frame: false, show: false});
-  loginWin = new BrowserWindow({width: 225, height: 240, frame: false, show: true});
+  loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true});
   loginWin.loadFile('login.html')
   //loginWin.webContents.openDevTools()
 })
