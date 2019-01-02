@@ -7,12 +7,14 @@ var requiredACEs = [];
 var ownedACEs = [];
 var ownedACEsData = {};
 var loginWin;
+var username = "NOTLOGGEDIN";
+var CardsData = "<div class='programStatusCard' style='height:45px;'><h5 style='color:white; width:100%; background-color:#444444;'>Minecraft Server</h5><div style='width:100%; height:1px; background-color:black;'></div><div style='display:flex; width:100%;'><div style='display:flex;'><h5 style='color:white;'>Status: Online </h5><div class='cardHorizontalSpacer' style='width:1px; height:25px; background-color:black;'></div><h5 style='color:white;'>Players: 3 </h5></div></div></div>";
 
 function createNewACE() {
-  const command = 'C:/Users/Jordan/Desktop/AMPS/NodeJS Standard Client MK2/launch.bat'; //'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/launch.bat';
+  const command = 'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/launch.bat';
   const parameters = [];
 
-  const child = spawn(command, parameters, {cwd: 'C:/Users/Jordan/Desktop/AMPS/NodeJS Standard Client MK2/'/*'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/'*/});
+  const child = spawn(command, parameters, {cwd: 'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/'});
 
   requiredACEs.push({type:"generalPurpose"});
 }
@@ -80,12 +82,26 @@ function findGeneralPurposeACE(ownedACEs, ownedACEsData) {
 
 
 ipcMain.on('login', (event, arg) => {
-    console.log("Attempting Login")
-    var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-    console.log(ACEID);
-    dataToSend = {target:ACEID, username:arg["username"], password:arg["password"]};
-    ipc.server.emit(ownedACEsData[ACEID]["socket"], "login", dataToSend);
-  });
+  console.log("Attempting Login")
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:arg["username"], password:arg["password"]};
+  username = arg["username"];
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "login", dataToSend);
+});
+
+ipcMain.on('requestProgramStatusCards', (event, arg) => {
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:username};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestProgramStatusCards", dataToSend);
+
+  event.sender.send("programStatusCards", CardsData);
+});
+
+ipcMain.on('openPackManager', (event, arg) => {
+  packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true});
+  packManagerWin.loadFile('packManager.html')
+});
+
 
 
 

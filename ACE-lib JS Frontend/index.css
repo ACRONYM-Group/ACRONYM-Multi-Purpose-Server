@@ -28,6 +28,8 @@
       margin-bottom:2px;
       cursor:pointer;
       text-align:center;
+      font-size:15px;
+      height:17px;
   }
   .launchButton:hover {
       background-color:black;
@@ -35,11 +37,79 @@
 
   .programStatusCard {
       background-color: #6d6d6d;
-      width:100%;
-      height:75px;
+      width:90%;
+      height:125px;
       margin-bottom:3px;
+      border: 1px solid black;
+      border-radius: 2px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top:5px;
+
+      padding-left: 8px;
+      padding-right: 8px;
   }
 
+  .programStatusCard:hover {
+    background-color: black;
+    }
+
+.cardHorizontalSpacer {
+    margin-left:5px;
+    margin-right:5px;
+}
+
+.packageDisplay {
+    width:85%;
+    margin-left: auto;
+    margin-right: auto;
+    background-color:#6d6d6d;
+    color:white;
+    display:flex;
+    padding:5px;
+    padding-top:0px;
+    margin-bottom:10px;
+}
+
+.packEditButton {
+    width:40px;
+    margin-right:10px;
+    background-color:#333333;
+    position: absolute;
+    right:15px;
+    color:white;
+    margin-bottom:2px;
+    cursor:pointer;
+    text-align:center;
+    font-size:15px;
+    height:17px;
+}
+
+.packEditButton:hover {
+    background-color:black;
+}
+
+.packInstallButton {
+    width:65px;
+    margin-right:10px;
+    background-color:#333333;
+    position: absolute;
+    right:70px;
+    color:white;
+    margin-bottom:2px;
+    cursor:pointer;
+    text-align:center;
+    font-size:15px;
+    height:17px;
+}
+
+.packInstallButton:hover {
+    background-color:black;
+}
+
+.packDescription {
+    width:150px;
+}
   .wrapper {
     display:block;
     width:100%;

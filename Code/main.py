@@ -38,6 +38,16 @@ def onCorrectStart():
     print(" ")
 
 
+try:
+    with open("users.json","r") as f:
+        contents = f.read()
+    users = json.loads(contents)
+    print("User Data Load Complete.")
+
+except:
+    print("FAILED TO LOAD USER DATA!")
+
+
 onCorrectStart()
 
 def PrintProgress(y, yMax, progressData):
@@ -91,8 +101,8 @@ def checkUserPass(user, password):
 def tempPassCheck(username, password):
     print(" ")
     print(username + " is attempting login.")
-    print("Checking against master Password..")
-    if password == masterPassword:
+    print("Checking Password..")
+    if password == users[username]["password"]:
         print("Authentication Successful!")
         return True
     else:

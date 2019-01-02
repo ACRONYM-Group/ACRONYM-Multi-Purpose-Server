@@ -10,7 +10,7 @@ var keyExchangeSmallerPrime = 0;
 var key = bigInt(0);
 var theirMixed = 0;
 //var ServerIP = "172.25.76.132";
-var ServerIP = "192.168.1.11";
+var ServerIP = "192.168.1.104";
 var ServerPort = 4242;
 var MOTD = "Message Of The Day...";
 var loginButtonPushEvent;
@@ -145,8 +145,7 @@ function CarterDecrypt(data, key) {
   var yMax = data.length - 1;
 
   while (y <= yMax) {
-    consoleOutput(data, ipc.of.world);
-    var oldVal = bigInt(utf16ToDig(data.charAt(y)));
+    var oldVal = bigInt(utf16ToDig(data[y]));
     oldVal = oldVal.minus(r.mod(bigInt(256)));
     oldVal = Number(oldVal.toString());
 
@@ -265,7 +264,6 @@ function packetReceiveHander(data, alreadyDecrypted) {
     if (alreadyDecrypted) {
       decryptedPacketData = packet["payload"];
     } else {
-      consoleOutput(packet["payload"], ipc.of.world);
       decryptedPacketData = CarterDecrypt(packet["payload"], key);
     }
 
