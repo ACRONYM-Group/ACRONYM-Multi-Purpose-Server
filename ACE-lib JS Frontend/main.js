@@ -9,6 +9,9 @@ var ownedACEsData = {};
 var loginWin;
 var username = "NOTLOGGEDIN";
 var CardsData = "<div class='programStatusCard' style='height:45px;'><h5 style='color:white; width:100%; background-color:#444444;'>Minecraft Server</h5><div style='width:100%; height:1px; background-color:black;'></div><div style='display:flex; width:100%;'><div style='display:flex;'><h5 style='color:white;'>Status: Online </h5><div class='cardHorizontalSpacer' style='width:1px; height:25px; background-color:black;'></div><h5 style='color:white;'>Players: 3 </h5></div></div></div>";
+var programInstallDirectory = "Z:/AcroFTPClient/";
+
+var avaliablePackageUpdates = [];
 
 function createNewACE() {
   const command = 'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/launch.bat';
@@ -23,6 +26,13 @@ function createHubWindow() {
   hubWin = new BrowserWindow({width: 425, height: 340, frame: false, show: true});
   hubWin.loadFile('hub.html')
   return hubWin;
+}
+
+function createUpdateDialog(data) {
+  updateWin = new BrowserWindow({width: 375, height: 200, frame: false, show: true});
+  updateWin.loadFile('update.html')
+  updateWin.webContents.openDevTools();
+  return updateWin;
 }
 
 createNewACE();
@@ -59,6 +69,10 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
       }
     } else if (message["type"] == "printToConsole") {
       console.log("ACE Output: " + message["data"]);
+    } else if (message["type"] == "avaliablePackageUpdates") {
+      console.log("avaliablePackageUpdates: " + message["data"]);
+      avaliablePackageUpdates = message["data"];
+      createUpdateDialog(message["data"]);
     }
   }
 }
@@ -102,6 +116,15 @@ ipcMain.on('openPackManager', (event, arg) => {
   packManagerWin.loadFile('packManager.html')
 });
 
+ipcMain.on('requestAvaliablePackageUpdates', (event, arg) => {
+  console.log("Window has requested list of Updates.");
+  event.sender.send("avaliablePackageUpdates", avaliablePackageUpdates);
+});
+
+ipcMain.on('updatePackage', (event, arg) => {
+  console.log("Window has requested to update " + arg);
+  event.sender.send("updatingPackage", arg);
+});
 
 
 

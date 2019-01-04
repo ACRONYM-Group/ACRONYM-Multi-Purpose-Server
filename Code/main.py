@@ -29,10 +29,11 @@ programStartTime = datetime.now()
 
 OSName = platform.platform()
 
-programInstallDirectory = "Z:/files/projects/ACRONYM-File-Transfer-System/Code/"
+programInstallDirectory = "Z:/AcroFTP/"
 
 
 def onCorrectStart():
+    print(" ")
     print("AMPS Starting Up...")
     print("====================")
     print("Current AMPS Software Version: 12.27.2018.1")
@@ -41,13 +42,22 @@ def onCorrectStart():
 
 
 try:
-    with open("./Data/users.json","r") as f:
+    with open(programInstallDirectory + "Data/users.json","r") as f:
         contents = f.read()
     users = json.loads(contents)
-    print("User Data Load Complete.")
+    print("User Data Load Complete...")
 
 except:
     print("FAILED TO LOAD USER DATA!")
+
+try:
+    with open(programInstallDirectory + "Data/packages.json","r") as f:
+        contents = f.read()
+    packages = json.loads(contents)
+    print("Package Data Load Complete...")
+
+except:
+    print("FAILED TO LOAD PACKAGE DATA!")
 
 
 onCorrectStart()
@@ -205,7 +215,7 @@ def downloadFileHandler(conn, commandRec, key):
     dataToSend = encryption.encrypt(json.dumps({"CMDType":"fileTransferComplete", "payload": {"fileName":fileName, "finalPacketIndex":packetIndex, "filePathModifier":filePathModifier}}), key)
     Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
 
-def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue):
+def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue, username):
     if packetRec.type == "__LPW__":
         LPWPacketRec = json.loads(packetRec.body)
         if not LPWPacketRec["LPWID"] in LPWPackets:
@@ -224,7 +234,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
             except Exception as e:
                 print("LPW Packet Load Error!")
                 print(e)
-            hasUserAuthenticated, LPWPackets, fileWriteQueue = packetHandler(Packet.Packet( loadedPacket["payload"], loadedPacket["packetType"], conn), key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue)
+            hasUserAuthenticated, LPWPackets, fileWriteQueue, username = packetHandler(Packet.Packet( loadedPacket["payload"], loadedPacket["packetType"], conn), key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue, username)
 
     if packetRec.type == "__CMD__":
         commandRec = encryption.decrypt(packetRec.body, key)
@@ -260,8 +270,21 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
             hasUserAuthenticated = tempPassCheck(userCredentials["username"], userCredentials["password"])
             dataToSend = encryption.encrypt(json.dumps({"CMDType":"AuthResult", "data":hasUserAuthenticated}), key)
             Packet.Packet(dataToSend,"__CMD__").send(conn)
+            username = userCredentials["username"]
 
         if hasUserAuthenticated:
+
+            if commandRec["CMDType"] == "checkForPackageUpdates":
+                packagesToUpdate = {}
+                index = 0
+                for s in users[username]["subbedPackages"]:
+                    if users[username]["subbedPackages"][s]["mostRecentUpdate"] <= packages[s]["updateTime"]:
+                        packagesToUpdate[index] = s
+                        index = index + 1
+                        
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackageUpdates", "data":packagesToUpdate}), key)
+                Packet.Packet(dataToSend,"__CMD__").send(conn)
+
             if commandRec["CMDType"] == "downloadDir":
                 downloadDirHandler(conn, commandRec, key, commandRec["data"]["filePath"])
 
@@ -353,7 +376,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
                 dataToSend = encryption.encrypt(json.dumps({"CMDType":"updateFiles", "data":{"files":filesDataToSend, "window":commandData["windowID"], "path": commandRec["data"]["path"]}}), key)
                 Packet.Packet(dataToSend,"__CMD__").send(conn)
 
-    return hasUserAuthenticated, LPWPackets, fileWriteQueue
+    return hasUserAuthenticated, LPWPackets, fileWriteQueue, username
 
 
 
@@ -365,6 +388,7 @@ def connectionHandler(conn, addr):
     hasUserAuthenticated = False
     LPWPackets = {}
     fileWriteQueue = {}
+    username = ""
 
     partialPacket = ""
     LPWIDs = []
@@ -386,7 +410,7 @@ def connectionHandler(conn, addr):
                     v = json.loads(s)
                     #print("JSON Load Complete Zero Exception Mode")
                     packet = Packet.Packet(v["payload"], v["packetType"], conn)
-                    hasUserAuthenticated, LPWPackets, fileWriteQueue = packetHandler(packet, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue)
+                    hasUserAuthenticated, LPWPackets, fileWriteQueue, username = packetHandler(packet, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue, username)
                 except ValueError:
                     #print("VALUE ERROR!")
                     if (i == 0):
@@ -396,7 +420,7 @@ def connectionHandler(conn, addr):
                             v = json.loads(s)
                             #print("JSON Load Complete Single Exception Mode")
                             packet = Packet.Packet(v["payload"], v["packetType"], conn)
-                            hasUserAuthenticated, LPWPackets, fileWriteQueue = packetHandler(packet, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue)
+                            hasUserAuthenticated, LPWPackets, fileWriteQueue, username = packetHandler(packet, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue, username)
                         except:
                             print("DOUBLE PACKET PARSE EXCEPTION, Unable to read:")
                             print(s)

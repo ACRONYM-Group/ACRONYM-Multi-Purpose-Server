@@ -270,6 +270,10 @@ function packetReceiveHander(data, alreadyDecrypted) {
 
     command = JSON.parse(decryptedPacketData);
 
+    if (command["CMDType"] == "avaliablePackageUpdates") {
+      ipc.of.world.emit('command', {type:"avaliablePackageUpdates", data:command["data"], ID:randomID, target:hostID});
+    }
+
     if (command["CMDType"] == "updateMOTD") {
       MOTD = command["data"];
       console.log("New MOTD: ");
@@ -282,13 +286,17 @@ function packetReceiveHander(data, alreadyDecrypted) {
       if (command["data"] == true) {
         console.log("Login Successful!");
 
-        commandToSend = {CMDType:"requestMOTD"};
+        //commandToSend = {CMDType:"requestMOTD"};
+        //dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+        //client.write(constructPacket("__CMD__",dataToSend));
+
+        commandToSend = {CMDType:"checkForPackageUpdates"};
         dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
         client.write(constructPacket("__CMD__",dataToSend));
 
-        commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
-        dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
-        client.write(constructPacket("__CMD__",dataToSend));
+        //commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
+        //dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+        //client.write(constructPacket("__CMD__",dataToSend));
       } else {
         console.log("Login Failed!");
       }
