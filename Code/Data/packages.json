@@ -1,0 +1,6 @@
+{
+    "Status Cards": {
+        "desc":"Used to keep program display cards up to date.",
+        "dataDir":"/Data/packages/StatusCards/"
+    }
+}

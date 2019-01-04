@@ -3,6 +3,7 @@ var seedrandom = require('seedrandom');
 var fs = require('fs');
 var bigInt = require("big-integer");
 var aesjs = require("aes-js");
+var path = require("path");
 var latestMinecraftData = {};
 var keyExchangeInts = [];
 var keyExchangeLargerPrime = 0;
@@ -284,6 +285,10 @@ function packetReceiveHander(data, alreadyDecrypted) {
         commandToSend = {CMDType:"requestMOTD"};
         dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
         client.write(constructPacket("__CMD__",dataToSend));
+
+        commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
+        dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+        client.write(constructPacket("__CMD__",dataToSend));
       } else {
         console.log("Login Failed!");
       }
@@ -307,25 +312,42 @@ function packetReceiveHander(data, alreadyDecrypted) {
       packet = command["payload"];
       packetData = Buffer.from(packet["file"], "base64");
 
+      //consoleOutput(JSON.stringify(packet), ipc.of.world);
+      if (packet["filePathModifier"] == undefined) {
+        filePathModifier = "";
+      } else {
+        if (packet["filePathModifier"] == "NONE") {
+
+        } else {
+          filePathModifier = packet["filePathModifier"];
+        }
+      }
+      var writeDir = "Z:/AcroFTPClient/" + filePathModifier + packet["fileName"];
+
+      if ((!dirChainExists(path.dirname("Z:/AcroFTPClient/" + filePathModifier)))) {
+        mkDirChain(path.dirname("Z:/AcroFTPClient/" + filePathModifier));
+      }
+
       var indexToCompare = -1;
-      if (fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]] == undefined) {
+      if (fileWriteQueue[writeDir] == undefined) {
         indexToCompare = 0;
       } else {
-        indexToCompare = fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["packetIndex"];
+        indexToCompare = fileWriteQueue[writeDir]["packetIndex"];
       }
 
       if (packet["packetIndex"] == indexToCompare)  {
-        writeFileChunk(packetData, "Z:/AcroFTPClient/" + packet["fileName"]);
+        writeFileChunk(packetData, writeDir);
       } else {
-        fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["outOfOrderPackets"][packet["packetIndex"]] = packetData;
+        writeFileChunk(packetData, writeDir, false);
+        fileWriteQueue[writeDir]["outOfOrderPackets"][packet["packetIndex"]] = packetData;
       }
 
       var hasFoundMissingPacket = false;
       for (var i = packet["packetIndex"] + 1; i <= packet["packetIndex"] + 5; i++) {
-        if (fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]] != null) {
-          if (fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["outOfOrderPackets"][i] != undefined) {
+        if (fileWriteQueue[writeDir] != null) {
+          if (fileWriteQueue[writeDir]["outOfOrderPackets"][i] != undefined) {
             if (hasFoundMissingPacket == false) {
-              writeFileChunk(fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["outOfOrderPackets"][i], "Z:/AcroFTPClient/" + packet["fileName"]);
+              writeFileChunk(fileWriteQueue[writeDir]["outOfOrderPackets"][i], writeDir);
             }
           } else {
             hasFoundMissingPacket = true;
@@ -340,13 +362,23 @@ function packetReceiveHander(data, alreadyDecrypted) {
 
     if (command["CMDType"] == "fileTransferComplete") {
       packet = command["payload"];
-      if (fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["packetIndex"] == packet["finalPacketIndex"] + 1) {
-        var elapsedTime = Date.now() - fileWriteQueue["Z:/AcroFTPClient/" - packet["fileName"]]["startTime"];
-        console.log("File Transfer of " + packet["fileName"] + " Complete! It took " + elapsedTime + " Milliseconds.");
-        fileWriteQueue["Z:/AcroFTPClient/" - packet["fileName"]] = null;
+      if (packet["filePathModifier"] == undefined) {
+        filePathModifier = "";
       } else {
-        fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["hasServerSentEndPacket"] = true;
-        fileWriteQueue["Z:/AcroFTPClient/" + packet["fileName"]]["finalPacketIndex"] = packet["finalPacketIndex"];
+        filePathModifier = packet["filePathModifier"];
+      }
+      var writeDir = "Z:/AcroFTPClient/" + filePathModifier + packet["fileName"];
+
+      if (fileWriteQueue[writeDir] == undefined) {
+        writeFileChunk("NOTHING", writeDir, false);
+      }
+      if (fileWriteQueue[writeDir]["packetIndex"] == packet["finalPacketIndex"] + 1) {
+        var elapsedTime = Date.now() - fileWriteQueue[writeDir]["startTime"];
+        consoleOutput("File Transfer of " + packet["fileName"] + " Complete! It took " + elapsedTime + " Milliseconds.", ipc.of.world);
+        setTimeout(fileWriteCallback(writeDir), 5000);
+      } else {
+        fileWriteQueue[writeDir]["hasServerSentEndPacket"] = true;
+        fileWriteQueue[writeDir]["finalPacketIndex"] = packet["finalPacketIndex"];
       }
     }
 
@@ -388,7 +420,6 @@ function packetReceiveHander(data, alreadyDecrypted) {
 function sendLPWPacket(data) {
   var LPWPacketLength = 700;
   if (true) {
-
     index = 0;
     var hrTime = process.hrtime()
     var LPWID = hrTime[0] * 1000000 + hrTime[1] / 1000;
@@ -427,27 +458,63 @@ function sendLPWPacket(data) {
   }
 }
 
-function writeCallback() {
-  
+function mkDirChain(filePath) {
+  try {
+    fs.mkdirSync(filePath)
+  } catch (e) {
+    try {
+    mkDirChain(path.dirname(filePath).split(path.sep).pop())
+    fs.mkdirSync(filePath)
+    } catch (e) {
+    }
+  }
 }
 
-function writeFileChunk(data, filePath) {
+function dirChainExists(filePath) {
+  try {
+    return fs.existsSync(filePath);
+  } catch (e) {
+    return false;
+  }
+}
+
+function writeCallback() {
+
+}
+
+function fileWriteCallback(filePath) {
+  fileWriteQueue[filePath]["writeStream"].close()
+  fileWriteQueue[filePath] = null;
+}
+
+function writeFileChunk(data, filePath, shouldWrite) {
+  if (shouldWrite == undefined) {
+    shouldWrite = true;
+  }
+  if ((!dirChainExists(path.dirname(filePath)))) {
+    mkDirChain(path.dirname(filePath));
+  }
+
   data = Buffer.from(data, 'utf8');
   if (fileWriteQueue[filePath] == undefined) {
     //fs.writeFile(filePath, data, writeCallback);
     stream = fs.createWriteStream(filePath, {flags:'a'});
     fileWriteQueue[filePath] = {writeStream: stream, packetIndex:0, outOfOrderPackets:{}, startTime: Date.now()}
-    fileWriteQueue[filePath]["writeStream"].write(data, writeCallback);
-    fileWriteQueue[filePath]["packetIndex"] += 1;
+    if (shouldWrite) {
+      fileWriteQueue[filePath]["writeStream"].write(data, writeCallback);
+      fileWriteQueue[filePath]["packetIndex"] += 1;
+    }
   } else {
-    fileWriteQueue[filePath]["writeStream"].write(data, writeCallback);
-    fileWriteQueue[filePath]["packetIndex"] += 1;
+    if (shouldWrite) {
+      fileWriteQueue[filePath]["writeStream"].write(data, writeCallback);
+      fileWriteQueue[filePath]["packetIndex"] += 1;
+    }
   }
 
   if (fileWriteQueue[filePath]["hasServerSentEndPacket"] && fileWriteQueue[filePath]["packetIndex"] >= fileWriteQueue[filePath]["finalPacketIndex"]) {
     var elapsedTime = Date.now() - fileWriteQueue[filePath]["startTime"];
-    console.log("File Transfer of " + filePath + " Complete! It took " + elapsedTime + " Milliseconds.");
-    fileWriteQueue[filePath] = null;
+    consoleOutput("File Transfer of " + filePath + " Complete! It took " + elapsedTime + " Milliseconds.", ipc.of.world);
+    setTimeout(function() {fileWriteCallback(filePath)}, 5000);
   }
   
 }

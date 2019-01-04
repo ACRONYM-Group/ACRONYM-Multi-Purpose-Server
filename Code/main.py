@@ -29,6 +29,8 @@ programStartTime = datetime.now()
 
 OSName = platform.platform()
 
+programInstallDirectory = "Z:/files/projects/ACRONYM-File-Transfer-System/Code/"
+
 
 def onCorrectStart():
     print("AMPS Starting Up...")
@@ -39,7 +41,7 @@ def onCorrectStart():
 
 
 try:
-    with open("users.json","r") as f:
+    with open("./Data/users.json","r") as f:
         contents = f.read()
     users = json.loads(contents)
     print("User Data Load Complete.")
@@ -159,18 +161,37 @@ def fix_xinvalid(m):
 def fix(s):
     return xinvalid.sub(fix_xinvalid, s)
 
+def downloadDirHandler(conn, commandRec, key, dir):
+    for root, directories, filenames in os.walk(dir):
+        for directory in directories:
+
+            directory_path = os.path.join(root, directory)
+
+        for filename in filenames:
+
+            file_path = os.path.join(root,filename).replace("\\", "/")
+            filePathModifier = os.path.dirname(file_path)
+            filePathModifier = filePathModifier[len(os.path.dirname(dir))+1:] + "/"
+            downloadFileHandler(conn, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":filePathModifier}}, key)
+
 def downloadFileHandler(conn, commandRec, key):
     print("Client has requested to download " + commandRec["data"]["filePath"])
     file = open(commandRec["data"]["filePath"], "rb")
     fileName = commandRec["data"]["filePath"][::-1][:commandRec["data"]["filePath"][::-1].find("/")][::-1]
     fileLength = os.stat(commandRec["data"]["filePath"]).st_size
 
+    try:
+        filePathModifier = commandRec["data"]["filePathModifier"]
+        print(commandRec["data"]["filePathModifier"])
+    except:
+        filePathModifier = "NONE"
+
     fileData = file.read(2000000)
     index = 0
     packetIndex = 0
     while index < fileLength: 
         fileDataB64 = base64.b64encode(fileData).decode("ascii")
-        dataToSend = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packetIndex, "length": fileLength, "filePath":commandRec["data"]["filePath"], "fileName": fileName, "windowID":commandRec["data"]["windowID"]}}), key)
+        dataToSend = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packetIndex, "length": fileLength, "filePath":commandRec["data"]["filePath"], "fileName": fileName, "filePathModifier":filePathModifier, "windowID":commandRec["data"]["windowID"]}}), key)
         
         Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
 
@@ -181,7 +202,7 @@ def downloadFileHandler(conn, commandRec, key):
         packetIndex += 1
     
     fileTransferProgressFunction(index, fileLength, key, {"conn":conn, "windowID":commandRec["data"]["windowID"]})
-    dataToSend = encryption.encrypt(json.dumps({"CMDType":"fileTransferComplete", "payload": {"fileName":fileName, "finalPacketIndex":packetIndex}}), key)
+    dataToSend = encryption.encrypt(json.dumps({"CMDType":"fileTransferComplete", "payload": {"fileName":fileName, "finalPacketIndex":packetIndex, "filePathModifier":filePathModifier}}), key)
     Packet.Packet(dataToSend,"__CMD__").send(conn, commandRec["data"]["windowID"])
 
 def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWriteQueue):
@@ -211,6 +232,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
         commandRec = "".join(commandRec)
         #print("COMMAND RECEIVED!")
         #print(commandRec)
+
         try:
             commandRec = json.loads(commandRec)
         except:
@@ -240,6 +262,9 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
             Packet.Packet(dataToSend,"__CMD__").send(conn)
 
         if hasUserAuthenticated:
+            if commandRec["CMDType"] == "downloadDir":
+                downloadDirHandler(conn, commandRec, key, commandRec["data"]["filePath"])
+
             if commandRec["CMDType"] == "setData":
                 print("Set Data", commandRec["name"],"=",commandRec["value"])
                 value = commandRec["value"]

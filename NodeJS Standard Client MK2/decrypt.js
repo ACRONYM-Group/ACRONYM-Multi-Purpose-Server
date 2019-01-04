@@ -40,7 +40,7 @@ function CarterDecrypt(data, key, progressFunction, progressData) {
   var yMax = data.length - 1;
 
   while (y <= yMax) {
-    var oldVal = bigInt(utf16ToDig(data.charAt(y)));
+    var oldVal = bigInt(utf16ToDig(data[y]));
     oldVal = oldVal.minus(r.mod(bigInt(256)));
     oldVal = Number(oldVal.toString());
 
@@ -83,9 +83,6 @@ function CarterDecrypt(data, key, progressFunction, progressData) {
 
 ipcRenderer.on('textToDecrypt', (event, arg) => {
     console.log("Starting Decrypt...")
-    //console.log(arg["key"].value);
-    //console.log(arg["progressFunction"]);
-    //console.log(arg["progressData"]);
     decryptedText = CarterDecrypt(arg["data"], arg["key"].value, arg["progressFunction"], arg["progressData"]);
     console.log("Finished Decrypting.")
     ipcRenderer.send('decryptionFinished', {output:decryptedText, inputType: arg["inputType"], filePathToWrite: arg["filePathToWrite"]});
