@@ -1,4 +1,4 @@
-# ACRONYM-File-Transfer-System
+# ACRONYM-Multi-Purpose-Server
 <b>AMPS</b>
 ACRONYM Multi Purpose Server
 
