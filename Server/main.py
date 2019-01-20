@@ -40,27 +40,45 @@ def onCorrectStart():
     print("Current Software Platform: " + OSName)
     print(" ")
 
+onCorrectStart()
 
 try:
     with open(programInstallDirectory + "Data/users.json","r") as f:
         contents = f.read()
     users = json.loads(contents)
-    print("User Data Load Complete...")
+    print("Successfully loaded data for " + str(len(users)) + " Users...")
 
 except:
     print("FAILED TO LOAD USER DATA!")
+
 
 try:
     with open(programInstallDirectory + "Data/packages.json","r") as f:
         contents = f.read()
     packages = json.loads(contents)
-    print("Package Data Load Complete...")
+    print("Successfully loaded data for " + str(len(packages)) + " Packages...")
 
 except:
     print("FAILED TO LOAD PACKAGE DATA!")
 
 
-onCorrectStart()
+try:
+    with open(programInstallDirectory + "Data/computers.json","r") as f:
+        contents = f.read()
+    computers = json.loads(contents)
+    print("Successfully loaded data for " + str(len(computers)) + " Computers...")
+
+except:
+    print("FAILED TO LOAD COMPUTER DATA!")
+
+
+def writeUsersToDisk():
+    f = open(programInstallDirectory + "Data/users.json","w")
+    f.write(json.dumps(users))
+
+def writeComputersToDisk():
+    f = open(programInstallDirectory + "Data/computers.json","w")
+    f.write(json.dumps(computers))
 
 def PrintProgress(y, yMax, progressData):
     print("Progress: " + str(y/yMax*100) + "%")
@@ -163,6 +181,51 @@ def millis(startTime):
    ms = (dt.days * 24 * 60 * 60 + dt.seconds) * 1000 + dt.microseconds / 1000.0
    return ms
 
+def getVerPart(version, part):
+    versionParts = version.split(".")
+    if part == "major":
+        return int(versionParts[0])
+
+    if part == "minor":
+        return int(versionParts[1])
+
+    if part == "patch":
+        return int(versionParts[2])
+
+def compareGreaterVersion(firstVersion, secondVersion):
+    if getVerPart(firstVersion, "major") > getVerPart(secondVersion, "major"):
+        return True
+    elif getVerPart(firstVersion, "major") == getVerPart(secondVersion, "minor"):
+        if getVerPart(firstVersion, "minor") > getVerPart(secondVersion, "minor"):
+            return True
+        elif getVerPart(firstVersion, "minor") == getVerPart(secondVersion, "minor"):
+            if getVerPart(firstVersion, "patch") > getVerPart(secondVersion, "patch"):
+                return True
+            else:
+                return False
+        else:
+            return False
+    else:
+        return False
+
+def getHighestVersion(verList, specificMajor=-1):
+    highest = "0.0.0"
+    for s in verList:
+        if specificMajor == -1 or getVerPart(s, "major") == specificMajor:
+            if getVerPart(s, "major") > getVerPart(highest, "major"):
+                highest = s
+            
+            if getVerPart(s, "major") == getVerPart(highest, "major"):
+                if getVerPart(s, "minor") > getVerPart(highest, "minor"):
+                    highest = s
+                
+                if getVerPart(s, "minor") == getVerPart(highest, "minor"):
+                    if getVerPart(s, "patch") > getVerPart(highest, "patch"):
+                        highest = s
+
+    return highest
+
+
 xinvalid = re.compile(r'\\x([0-9a-fA-F]{2})')
 
 def fix_xinvalid(m):
@@ -171,7 +234,8 @@ def fix_xinvalid(m):
 def fix(s):
     return xinvalid.sub(fix_xinvalid, s)
 
-def downloadDirHandler(conn, commandRec, key, dir):
+def downloadDirHandler(conn, commandRec, key, dir, shouldIncludeFinalFolder=True):
+    print("Client would like to download " + dir)
     for root, directories, filenames in os.walk(dir):
         for directory in directories:
 
@@ -180,9 +244,12 @@ def downloadDirHandler(conn, commandRec, key, dir):
         for filename in filenames:
 
             file_path = os.path.join(root,filename).replace("\\", "/")
-            filePathModifier = os.path.dirname(file_path)
-            filePathModifier = filePathModifier[len(os.path.dirname(dir))+1:] + "/"
-            downloadFileHandler(conn, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":filePathModifier}}, key)
+            if shouldIncludeFinalFolder:
+                filePathModifier = os.path.dirname(file_path)
+                filePathModifier = filePathModifier[len(os.path.dirname(dir))+1:] + "/"
+            else:
+                filePathModifier = ""
+            downloadFileHandler(conn, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":commandRec["data"]["filePathModifier"] + filePathModifier}}, key)
 
 def downloadFileHandler(conn, commandRec, key):
     print("Client has requested to download " + commandRec["data"]["filePath"])
@@ -190,9 +257,9 @@ def downloadFileHandler(conn, commandRec, key):
     fileName = commandRec["data"]["filePath"][::-1][:commandRec["data"]["filePath"][::-1].find("/")][::-1]
     fileLength = os.stat(commandRec["data"]["filePath"]).st_size
 
+    print("File Path Modifier: " + commandRec["data"]["filePathModifier"])
     try:
         filePathModifier = commandRec["data"]["filePathModifier"]
-        print(commandRec["data"]["filePathModifier"])
     except:
         filePathModifier = "NONE"
 
@@ -274,16 +341,37 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
 
         if hasUserAuthenticated:
 
+            if commandRec["CMDType"] == "installPackage":
+                commandRec["data"] = json.loads(commandRec["data"])
+                computers[commandRec["data"]["computerName"]]["subbedPackages"][commandRec["data"]["package"]] = {"specificMajor":-1, "version":"0.0.0"}
+                writeComputersToDisk()
+
+            if commandRec["CMDType"] == "downloadPackageList":
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackages", "data":packages}), key)
+                Packet.Packet(dataToSend,"__CMD__").send(conn)
+
             if commandRec["CMDType"] == "checkForPackageUpdates":
                 packagesToUpdate = {}
                 index = 0
-                for s in users[username]["subbedPackages"]:
-                    if users[username]["subbedPackages"][s]["mostRecentUpdate"] <= packages[s]["updateTime"]:
-                        packagesToUpdate[index] = s
+                for s in computers[commandRec["data"]["computerName"]]["subbedPackages"]:
+                    usersCurrentVersion = computers[commandRec["data"]["computerName"]]["subbedPackages"][s]["version"]
+                    usersSpecificMajor = computers[commandRec["data"]["computerName"]]["subbedPackages"][s]["specificMajor"]
+                    highestVersion = getHighestVersion(packages[s]["versions"], computers[commandRec["data"]["computerName"]]["subbedPackages"][s]["specificMajor"])
+                    print("Checking " + str(s) + " for updates. user: " + str(usersCurrentVersion) + " specificMajor: " + str(usersSpecificMajor) + " highest: " + str(highestVersion))
+                    if compareGreaterVersion(highestVersion, usersCurrentVersion):
+                        print("     Found updated version!")
+                        packagesToUpdate[index] = {"package":s, "currentVersion":usersCurrentVersion, "newVersion":highestVersion}
                         index = index + 1
                         
-                dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackageUpdates", "data":packagesToUpdate}), key)
-                Packet.Packet(dataToSend,"__CMD__").send(conn)
+                if len(packagesToUpdate) > 0:
+                    dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackageUpdates", "data":packagesToUpdate}), key)
+                    Packet.Packet(dataToSend,"__CMD__").send(conn)
+
+            if commandRec["CMDType"] == "downloadPackage":
+                commandRec["data"] = json.loads(commandRec["data"])
+                downloadDirHandler(conn, {"data":{"filePathModifier":packages[commandRec["data"]["package"]]["dataDir"]}}, key, programInstallDirectory[:-1] + packages[commandRec["data"]["package"]]["dataDir"] + commandRec["data"]["version"], False)
+                computers[commandRec["data"]["computerName"]]["subbedPackages"][commandRec["data"]["package"]]["version"] = commandRec["data"]["version"]
+                writeComputersToDisk()
 
             if commandRec["CMDType"] == "downloadDir":
                 downloadDirHandler(conn, commandRec, key, commandRec["data"]["filePath"])

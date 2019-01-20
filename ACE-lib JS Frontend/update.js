@@ -4,10 +4,10 @@ function initialLoad() {
     ipcRenderer.send('requestAvaliablePackageUpdates', "Ping");
 }
 
-function updatePackage(data) {
+function updatePackage(data, newVersion) {
     console.log("Updating " + data);
 
-    ipcRenderer.send('updatePackage', data);
+    ipcRenderer.send('updatePackage', {package:data, version:newVersion});
 }
 
 function closeWindow() {
@@ -22,7 +22,7 @@ function drawUpdates(data) {
     for (var i = 0; i < Object.keys(data).length; i++) {
         console.log(i);
         console.log(data[i]);
-        cardTextToAdd += (data[i] + "<button id='" + data[i] + "' class='packUpdateButton' onclick='updatePackage(this.id)'>Update</button>" + "<br>");
+        cardTextToAdd += (data[i]["package"] + "<button id='" + data[i]["package"] + "' class='packUpdateButton' onclick='updatePackage(this.id,\"" + data[i]["newVersion"] + "\")'>Update</button>" + "<br><h5>" + data[i]["currentVersion"] + " to " + data[i]["newVersion"] + "</h5><br>");
     }
     document.getElementById("updateList").innerHTML = cardTextToAdd;
 }
@@ -35,6 +35,7 @@ ipcRenderer.on('avaliablePackageUpdates', (event, arg) => {
 })
 
 ipcRenderer.on('updatingPackage', (event, arg) => {
-    var element = document.getElementById(arg);
+    console.log(arg);
+    var element = document.getElementById(arg["package"]);
     element.parentNode.removeChild(element);
 })

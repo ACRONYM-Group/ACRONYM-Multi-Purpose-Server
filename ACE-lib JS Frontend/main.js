@@ -1,15 +1,23 @@
 const ipc = require('node-ipc');
 const spawn = require('child_process').spawn;
-const {app, BrowserWindow, dialog, ipcMain} = require('electron')
+const {app, BrowserWindow, dialog, ipcMain} = require('electron');
+const fs = require("fs");
 
 var randomID = Math.floor(Math.random()*5000)*Date.now();
 var requiredACEs = [];
 var ownedACEs = [];
 var ownedACEsData = {};
 var loginWin;
+var waitingToOpenPackManager = false;
 var username = "NOTLOGGEDIN";
 var CardsData = "<div class='programStatusCard' style='height:45px;'><h5 style='color:white; width:100%; background-color:#444444;'>Minecraft Server</h5><div style='width:100%; height:1px; background-color:black;'></div><div style='display:flex; width:100%;'><div style='display:flex;'><h5 style='color:white;'>Status: Online </h5><div class='cardHorizontalSpacer' style='width:1px; height:25px; background-color:black;'></div><h5 style='color:white;'>Players: 3 </h5></div></div></div>";
 var programInstallDirectory = "Z:/AcroFTPClient/";
+
+var config = {};
+
+config = JSON.parse(fs.readFileSync(programInstallDirectory + "data/config.json"));
+
+console.log("Config loaded. I am " + config["computerName"])
 
 var avaliablePackageUpdates = [];
 
@@ -29,7 +37,7 @@ function createHubWindow() {
 }
 
 function createUpdateDialog(data) {
-  updateWin = new BrowserWindow({width: 375, height: 200, frame: false, show: true});
+  updateWin = new BrowserWindow({width: 375, height: 225, frame: false, show: true});
   updateWin.loadFile('update.html')
   updateWin.webContents.openDevTools();
   return updateWin;
@@ -56,10 +64,14 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
   if (ownedACEs.indexOf(message["ID"]) != -1 && message["target"] == randomID) {
     if (message["type"] == "heartbeat") {
       ipc.server.emit(socket, "heartbeat", {target:message["ID"]});
-    } else if (message["type"] == "rawMessage") {
+    } 
+    
+    else if (message["type"] == "rawMessage") {
       console.log(message["data"]);
       ipc.server.emit(socket, "message", {target:message["ID"], data:"Hello ACE!"});
-    } else if (message["type"] == "loginResult") {
+    } 
+    
+    else if (message["type"] == "loginResult") {
       if (message["data"]) {
         loginWin.send("authResult", message["data"]);
         loginWin.close();
@@ -67,12 +79,26 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
       } else {
         loginWin.send("authResult", message["data"]);
       }
-    } else if (message["type"] == "printToConsole") {
+    } 
+    
+    else if (message["type"] == "printToConsole") {
       console.log("ACE Output: " + message["data"]);
-    } else if (message["type"] == "avaliablePackageUpdates") {
+    } 
+    
+    else if (message["type"] == "avaliablePackageUpdates") {
       console.log("avaliablePackageUpdates: " + message["data"]);
       avaliablePackageUpdates = message["data"];
       createUpdateDialog(message["data"]);
+    }
+
+    else if (message["type"] == "avaliablePackages") {
+      if (waitingToOpenPackManager) {
+        packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true});
+        packManagerWin.loadFile('packManager.html');
+        packManagerWin.openDevTools();
+      }
+
+      avaliablePackages = message["data"];
     }
   }
 }
@@ -98,9 +124,12 @@ function findGeneralPurposeACE(ownedACEs, ownedACEsData) {
 ipcMain.on('login', (event, arg) => {
   console.log("Attempting Login")
   var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:arg["username"], password:arg["password"]};
+  dataToSend = {target:ACEID, username:arg["username"], password:arg["password"], computerName:config["computerName"]};
   username = arg["username"];
   ipc.server.emit(ownedACEsData[ACEID]["socket"], "login", dataToSend);
+
+  dataToSend = {target:ACEID, username:arg["username"], password:arg["password"], computerName:config["computerName"]};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "checkForPackageUpdates", dataToSend);
 });
 
 ipcMain.on('requestProgramStatusCards', (event, arg) => {
@@ -112,8 +141,11 @@ ipcMain.on('requestProgramStatusCards', (event, arg) => {
 });
 
 ipcMain.on('openPackManager', (event, arg) => {
-  packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true});
-  packManagerWin.loadFile('packManager.html')
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:username, computerName:config["computerName"]};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestListOfPackages", dataToSend);
+
+  waitingToOpenPackManager = true;
 });
 
 ipcMain.on('requestAvaliablePackageUpdates', (event, arg) => {
@@ -121,9 +153,27 @@ ipcMain.on('requestAvaliablePackageUpdates', (event, arg) => {
   event.sender.send("avaliablePackageUpdates", avaliablePackageUpdates);
 });
 
+ipcMain.on('requestAvaliablePackages', (event, arg) => {
+  console.log("Window has requested list of Packages.");
+  event.sender.send("avaliablePackages", avaliablePackages);
+});
+
 ipcMain.on('updatePackage', (event, arg) => {
   console.log("Window has requested to update " + arg);
   event.sender.send("updatingPackage", arg);
+
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:username, package:arg["package"], version:arg["version"], computerName:config["computerName"]};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestDownloadPackage", dataToSend);
+});
+
+ipcMain.on('installPackage', (event, arg) => {
+  console.log("Window has requested to installb " + arg);
+  event.sender.send("installingPackage", arg);
+
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:username, package:arg["name"], version:arg["version"], computerName:config["computerName"]};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestInstallPackage", dataToSend);
 });
 
 
