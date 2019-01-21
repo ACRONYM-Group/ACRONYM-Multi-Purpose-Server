@@ -185,45 +185,13 @@ class Connection:
         result = self.recievePacketVerify(encrypted=True)
 
         return result["data"]
-
-    def getDownloadPacket(self):
-        fullData = ""
-        
-        fullData = Packet.readPacket(self.socket)
-        length = json.loads(fullData.split("-ENDACROFTPPACKET-/")[0])["len"]
-        length -= len(fullData.split("-ENDACROFTPPACKET-/"))
-        while length > 1:
-            print(length)
-            data = Packet.readPacket(self.socket)
-            length -= len(data.split("-ENDACROFTPPACKET-/"))
-            fullData += data
-
-        packets = fullData.split("-ENDACROFTPPACKET-/")
-        allData = []
-        for packet in packets:
-            if packet != "":
-                jsonBit = json.loads(packet)
-                allData.append((jsonBit["ind"], jsonBit["payload"]))
-
-        finalData = ""
-
-        for data in sorted(allData):
-            print(data[0])
-            finalData += (data[1])
-
-        finalJSON = json.loads(finalData)
-
-        print(finalJSON["payload"])
-
-        decrypted = encryption.decrypt(finalData, self.key)
-
-        finalStr = ""
-
-        for c in decrypted:
-            finalStr += c
-        print(finalStr)
-            
+                
     def downloadFile(self, fileName, fileObject):
+        """
+            Downloads the file with the given filename on the server,
+            and outputs it to the (binary, must be binary) file stores in
+            fileObject
+        """
         self.sendEncryptedDict({"CMDType": "downloadFile",
                                 "data":{"filePath": fileName,
                                         "windowID": -42,
