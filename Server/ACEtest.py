@@ -4,8 +4,7 @@ conn = ACELib.Connection()
 
 conn.initConnection()
 
-if conn.loginServer("client", "pass"):
+if conn.loginServer("CarterDev", "pass"):
     print("Login Good")
 
-conn.setData("name", "value")
-print(conn.getData("name"))
+conn.downloadFile("test.file", open("test.file", 'w+'))

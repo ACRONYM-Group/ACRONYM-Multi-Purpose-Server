@@ -14,6 +14,7 @@ import packet as Packet
 import dataOverString as DataString
 
 import json
+import base64
 
 import ACEExceptions as ACEE
 
@@ -22,7 +23,7 @@ class Connection:
     """
         Connection class wraps the connection to an AMPS Server
     """
-    def __init__(self, host="", port=4242):
+    def __init__(self, host="127.0.0.1", port=4242):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.host = host
@@ -184,3 +185,48 @@ class Connection:
         result = self.recievePacketVerify(encrypted=True)
 
         return result["data"]
+
+    def getDownloadPacket(self):
+        fullData = ""
+        
+        fullData = Packet.readPacket(self.socket)
+        length = json.loads(fullData.split("-ENDACROFTPPACKET-/")[0])["len"]
+        length -= len(fullData.split("-ENDACROFTPPACKET-/"))
+        while length > 1:
+            print(length)
+            data = Packet.readPacket(self.socket)
+            length -= len(data.split("-ENDACROFTPPACKET-/"))
+            fullData += data
+
+        packets = fullData.split("-ENDACROFTPPACKET-/")
+        allData = []
+        for packet in packets:
+            if packet != "":
+                jsonBit = json.loads(packet)
+                allData.append((jsonBit["ind"], jsonBit["payload"]))
+
+        finalData = ""
+
+        for data in sorted(allData):
+            print(data[0])
+            finalData += (data[1])
+
+        finalJSON = json.loads(finalData)
+
+        print(finalJSON["payload"])
+
+        decrypted = encryption.decrypt(finalData, self.key)
+
+        finalStr = ""
+
+        for c in decrypted:
+            finalStr += c
+        print(finalStr)
+            
+    def downloadFile(self, fileName, fileObject):
+        self.sendEncryptedDict({"CMDType": "downloadFile",
+                                "data":{"filePath": fileName,
+                                        "windowID": -42}}, "__CMD__")
+
+        fileObject.write(self.getDownloadPacket())
+        #print(self.recievePacketVerify(True))
