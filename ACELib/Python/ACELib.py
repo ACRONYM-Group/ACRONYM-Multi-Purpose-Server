@@ -185,11 +185,11 @@ class Connection:
         result = self.recievePacketVerify(encrypted=True)
 
         return result["data"]
-                
+
     def downloadFile(self, fileName, fileObject):
         """
             Downloads the file with the given filename on the server,
-            and outputs it to the (binary, must be binary) file stores in
+            and outputs it to the (binary, must be binary) file stored in
             fileObject
         """
         self.sendEncryptedDict({"CMDType": "downloadFile",
@@ -201,4 +201,3 @@ class Connection:
         data = json.loads("".join(encryption.decrypt(encryptedData, self.key)))["payload"]["file"]
 
         fileObject.write(base64.b64decode(data))
-        
