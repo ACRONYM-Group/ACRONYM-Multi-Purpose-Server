@@ -226,7 +226,11 @@ class Connection:
     def downloadFile(self, fileName, fileObject):
         self.sendEncryptedDict({"CMDType": "downloadFile",
                                 "data":{"filePath": fileName,
-                                        "windowID": -42}}, "__CMD__")
+                                        "windowID": -42,
+                                        "filePathModifier":""}}, "__CMD__",)
 
-        fileObject.write(self.getDownloadPacket())
-        #print(self.recievePacketVerify(True))
+        encryptedData = "".join(Packet.getPacket(self.socket)['payload'])
+        data = json.loads("".join(encryption.decrypt(encryptedData, self.key)))["payload"]["file"]
+
+        fileObject.write(base64.b64decode(data))
+        

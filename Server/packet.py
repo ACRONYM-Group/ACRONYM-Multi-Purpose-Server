@@ -67,3 +67,40 @@ def readPacket(connection):
         data += data2
         data = data.decode()
     return data
+
+def packetGenerator(connection):
+    dataQueue = ""
+
+    while True:
+        dataQueue += readPacket(connection)
+
+        while "-ENDACROFTPPACKET-/" in dataQueue:
+            current = dataQueue.split("-ENDACROFTPPACKET-/")[0]
+
+            dataQueue = "-ENDACROFTPPACKET-/".join(dataQueue.split("-ENDACROFTPPACKET-/")[1:])
+
+            yield json.loads(current)
+
+def getPacket(connection):
+    gen = packetGenerator(connection)
+
+    packet = next(gen)
+
+    if packet['packetType'] != '__LPW__':
+        return packet
+    
+    fullData = [(packet['ind'], packet['payload'])]
+
+    countLeft = packet['len']
+
+    while countLeft > 1:
+        packet = next(gen)
+        fullData.append((packet['ind'], packet['payload']))
+        countLeft -= 1
+
+    fullText = ""
+
+    for pair in sorted(fullData):
+        fullText += pair[1]
+
+    return json.loads(fullText)
