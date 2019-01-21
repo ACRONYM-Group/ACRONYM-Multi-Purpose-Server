@@ -26,6 +26,7 @@ var fileWriteQueue = {};
 var lastHeartbeatTime = Date.now();
 var randomID = Math.floor(Math.random()*5000)*Date.now();
 var hostID = -1;
+var computerName = "";
 
 const ipc = require('node-ipc');
 
@@ -74,7 +75,47 @@ ipc.connectTo('world', () => {
   ipc.of.world.on('login', (message) => {
     if (message["target"] == randomID) {
       consoleOutput("Loging In...", ipc.of.world);
-      commandToSend = {CMDType:"login", data:JSON.stringify({username:message["username"],password:message["password"]})};
+      commandToSend = {CMDType:"login", data:JSON.stringify({username:message["username"], password:message["password"], computerName:message["computerName"]})};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+    }
+  });
+
+  ipc.of.world.on('requestDownloadPackage', (message) => {
+    if (message["target"] == randomID) {
+      consoleOutput("Downloading Package...", ipc.of.world);
+      commandToSend = {CMDType:"downloadPackage", data:JSON.stringify({username:message["username"], package:message["package"], version:message["version"], computerName:message["computerName"]})};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+    }
+  });
+
+  ipc.of.world.on('requestInstallPackage', (message) => {
+    if (message["target"] == randomID) {
+      consoleOutput("Installing Package...", ipc.of.world);
+      commandToSend = {CMDType:"installPackage", data:JSON.stringify({username:message["username"], package:message["package"], version:message["version"], computerName:message["computerName"]})};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+
+      consoleOutput("Downloading Package...", ipc.of.world);
+      commandToSend = {CMDType:"downloadPackage", data:JSON.stringify({username:message["username"], package:message["package"], version:message["version"], computerName:message["computerName"]})};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+    }
+  });
+
+  ipc.of.world.on('requestListOfPackages', (message) => {
+    if (message["target"] == randomID) {
+      consoleOutput("Downloading Package List...", ipc.of.world);
+      commandToSend = {CMDType:"downloadPackageList", data:JSON.stringify({username:message["username"], computerName:message["computerName"]})};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+    }
+  });
+
+  ipc.of.world.on('checkForPackageUpdates', (message) => {
+    if (message["target"] == randomID) {
+      commandToSend = {CMDType:"checkForPackageUpdates", data:{computerName:message["computerName"]}};
       dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
     }
@@ -270,6 +311,10 @@ function packetReceiveHander(data, alreadyDecrypted) {
 
     command = JSON.parse(decryptedPacketData);
 
+    if (command["CMDType"] == "avaliablePackages") {
+      ipc.of.world.emit('command', {type:"avaliablePackages", data:command["data"], ID:randomID, target:hostID});
+    }
+
     if (command["CMDType"] == "avaliablePackageUpdates") {
       ipc.of.world.emit('command', {type:"avaliablePackageUpdates", data:command["data"], ID:randomID, target:hostID});
     }
@@ -290,9 +335,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
         //dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
         //client.write(constructPacket("__CMD__",dataToSend));
 
-        commandToSend = {CMDType:"checkForPackageUpdates"};
-        dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
-        client.write(constructPacket("__CMD__",dataToSend));
+        
 
         //commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
         //dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);

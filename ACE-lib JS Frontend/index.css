@@ -74,6 +74,7 @@
 .packEditButton {
     width:40px;
     margin-right:10px;
+    margin-top:5px;
     background-color:#333333;
     position: absolute;
     right:15px;
@@ -83,6 +84,10 @@
     text-align:center;
     font-size:15px;
     height:17px;
+    border-width:2px;
+    border-style: outset;
+    border-color: buttonface;
+    border-image: initial;
 }
 
 .packEditButton:hover {
@@ -92,6 +97,7 @@
 .packInstallButton {
     width:65px;
     margin-right:10px;
+    margin-top:5px;
     background-color:#333333;
     position: absolute;
     right:70px;
@@ -101,6 +107,10 @@
     text-align:center;
     font-size:15px;
     height:17px;
+    border-width:2px;
+    border-style: outset;
+    border-color: buttonface;
+    border-image: initial;
 }
 
 .packInstallButton:hover {
@@ -117,6 +127,10 @@
     cursor:pointer;
     text-align:center;
     font-size:15px;
+    border-width:2px;
+    border-style: outset;
+    border-color: buttonface;
+    border-image: initial;
 
 }
 
@@ -131,7 +145,7 @@
 .updateList {
     color:white;
     text-align:center;
-    height:100px;
+    height:125px;
     background-color:#333333;
     overflow-y: auto;
     width:80%;
