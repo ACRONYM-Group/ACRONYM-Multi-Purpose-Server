@@ -249,9 +249,8 @@ Returns:
   &nbsp;&nbsp;&nbsp;&nbsp;None
 
 Docstring:  
-&nbsp;&nbsp;&nbsp;&nbsp;`
-Downloads the file with the given filename on the server, and outputs it to the
-(binary, must be binary) file stored in fileObject
+&nbsp;&nbsp;&nbsp;&nbsp;`Downloads the file with the given filename on the
+server, and outputs it to the (binary, must be binary) file stored in fileObject
 `
 
 Description:  
