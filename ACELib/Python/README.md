@@ -83,7 +83,7 @@ Arguments:
   &nbsp;&nbsp;&nbsp;&nbsp;\[host= "127.0.0.1"\]  
   &nbsp;&nbsp;&nbsp;&nbsp;\[port= 4242\]
 
-Returns:
+Returns:  
   &nbsp;&nbsp;&nbsp;&nbsp;None
 
 Docstring:  
@@ -105,7 +105,7 @@ function be called.
 Arguments:  
   &nbsp;&nbsp;&nbsp;&nbsp;None
 
-Returns:
+Returns:  
   &nbsp;&nbsp;&nbsp;&nbsp;None
 
 Docstring:  
@@ -128,7 +128,7 @@ by making use of the `ACELib.Connection.connect()`,
 Arguments:  
   &nbsp;&nbsp;&nbsp;&nbsp;None
 
-Returns:
+Returns:  
   &nbsp;&nbsp;&nbsp;&nbsp;None
 
 Docstring:  
@@ -146,7 +146,7 @@ Connects the internal socket to the server using the host, port pair provided.
 Arguments:  
   &nbsp;&nbsp;&nbsp;&nbsp;None
 
-Returns:
+Returns:  
   &nbsp;&nbsp;&nbsp;&nbsp;None
 
 Docstring:  
@@ -166,7 +166,7 @@ the `ACELib.Connection.connect()` for the server to respond correctly.
 Arguments:  
   &nbsp;&nbsp;&nbsp;&nbsp;None
 
-Returns:
+Returns:  
   &nbsp;&nbsp;&nbsp;&nbsp;Shared Key
 
 Docstring:  
@@ -178,3 +178,82 @@ between the AMPS Server and client
 Description:  
 Causes the connection and the server to share a key for encryption. Returns the
 agreed upon key.
+
+### setData()
+
+<b>`ACELib.Connection.setData()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;name  
+  &nbsp;&nbsp;&nbsp;&nbsp;value  
+  &nbsp;&nbsp;&nbsp;&nbsp;\[dataType="str"\]
+
+Returns:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`
+Sets data in the cache on the server, Specificly, sets the data under name to value
+`
+
+Description:  
+Sets the value for the variable given by `name` to `value`, with the optional
+datatype setting
+
+### getData()
+
+<b>`ACELib.Connection.getData()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;name  
+
+Returns:  
+  &nbsp;&nbsp;&nbsp;&nbsp;Value
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`
+Gets data by name from the server
+`
+
+Description:  
+Gets the value for the variable given by `name`, and returns it.
+
+### loginServer()
+
+<b>`ACELib.Connection.loginServer()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;username  
+    &nbsp;&nbsp;&nbsp;&nbsp;password  
+
+Returns:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`
+Starts the login process with the AMPS server
+`
+
+Description:  
+Performs the login with the server using the given `username` and `password`
+
+### downloadFile()
+
+<b>`ACELib.Connection.downloadFile()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;fileName  
+    &nbsp;&nbsp;&nbsp;&nbsp;fileObject  
+
+Returns:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`
+Downloads the file with the given filename on the server, and outputs it to the
+(binary, must be binary) file stored in `fileObject`
+`
+
+Description:  
+Downloads the file in `fileName` on the server and writes it to the given file
+object, which must be binary for the writing and decoding to work correctly.
