@@ -70,4 +70,47 @@ The following example files can be found in the examples folder.
 
 <b>Example1.py</b>
 
+The first example file simply opens a connection with the AMPS server, and
+then performs the login procedure.
+
 ## ACELib Documentation 
+
+### Classes
+
+<b>`ACELib.Connection`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;\[host= "127.0.0.1"\]  
+  &nbsp;&nbsp;&nbsp;&nbsp;\[port= 4242\]  
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`
+Connection class wraps the connection to an AMPS Server
+`
+
+Description:  
+The Connection class handles all of the operations that
+can be performed with the AMPS server from ACELib. The initalization function
+simply sets the host and port variables, and does not connect to the server,
+connecting to the server requires the `ACELib.Connection.initConnection()`
+function be called. 
+
+### Functions
+
+<b>`ACELib.Connection.initConnection()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`
+Does the initalization of the connection with the server, Does the connection, handshake, and the keyexchange
+`
+
+Description:  
+The `initConnection()` function simply starts the connection to the server by
+doing the initial connection (this can fail due to the server not being found
+at the host, port pair given), perform the handshake and the keyexchange to
+enable encrypted data transfer. These functions can all be performed seperately
+by making use of the `ACELib.Connection.connect()`,
+`ACELib.Connection.handshake()`, and `ACELib.Connection.getKey()` functions.

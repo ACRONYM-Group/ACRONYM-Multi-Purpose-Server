@@ -4,5 +4,7 @@ conn = ACELib.Connection()
 
 conn.initConnection()
 
-if conn.loginServer("CarterDev", "pass"):
+if conn.loginServer("Username", "Password"):
     print("Login Good")
+else:
+    print("Login Failed")
