@@ -95,9 +95,10 @@ Description:
 The Connection class handles all of the operations that
 can be performed with the AMPS server from ACELib. The initalization function
 simply sets the host and port variables, and does not connect to the server,
-connecting to the server requires the `ACELib.Connection.initConnection()`
+connecting to the server requires the <a href='#initConnection'>`ACELib.Connection.initConnection()`</a>
 function be called. 
 
+<span id="initConnection"></span>
 ### initConnection()
 
 <b>`ACELib.Connection.initConnection()`</b>
