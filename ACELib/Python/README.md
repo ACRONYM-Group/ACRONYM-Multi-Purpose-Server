@@ -75,13 +75,16 @@ then performs the login procedure.
 
 ## ACELib Documentation 
 
-### Classes
+### Connection
 
 <b>`ACELib.Connection`</b>
 
 Arguments:  
   &nbsp;&nbsp;&nbsp;&nbsp;\[host= "127.0.0.1"\]  
-  &nbsp;&nbsp;&nbsp;&nbsp;\[port= 4242\]  
+  &nbsp;&nbsp;&nbsp;&nbsp;\[port= 4242\]
+
+Returns:
+  &nbsp;&nbsp;&nbsp;&nbsp;None
 
 Docstring:  
 &nbsp;&nbsp;&nbsp;&nbsp;`
@@ -95,11 +98,14 @@ simply sets the host and port variables, and does not connect to the server,
 connecting to the server requires the `ACELib.Connection.initConnection()`
 function be called. 
 
-### Functions
+### initConnection()
 
 <b>`ACELib.Connection.initConnection()`</b>
 
 Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Returns:
   &nbsp;&nbsp;&nbsp;&nbsp;None
 
 Docstring:  
@@ -114,3 +120,61 @@ at the host, port pair given), perform the handshake and the keyexchange to
 enable encrypted data transfer. These functions can all be performed seperately
 by making use of the `ACELib.Connection.connect()`,
 `ACELib.Connection.handshake()`, and `ACELib.Connection.getKey()` functions.
+
+### connect()
+
+<b>`ACELib.Connection.connect()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Returns:
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`
+Connects to the AMPS Server, and initalizes the connection
+`
+
+Description:  
+Connects the internal socket to the server using the host, port pair provided.
+
+### handshake()
+
+<b>`ACELib.Connection.handshake()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Returns:
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`
+Performs the standard handshake with an AMPS Server
+`
+
+Description:  
+Ensures the server the library is connected to is an AMPS Server by ensuring it
+correctly responds to the handshake message, can only be called directly after
+the `ACELib.Connection.connect()` for the server to respond correctly.
+
+### getKey()
+
+<b>`ACELib.Connection.getKey()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Returns:
+  &nbsp;&nbsp;&nbsp;&nbsp;Shared Key
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`
+Performs the other half of the key exchange, resulting in the sharing of keys 
+between the AMPS Server and client
+`
+
+Description:  
+Causes the connection and the server to share a key for encryption. Returns the
+agreed upon key.
