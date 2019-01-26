@@ -14,6 +14,7 @@ import packet as Packet
 import dataOverString as DataString
 
 import json
+import base64
 
 import ACEExceptions as ACEE
 
@@ -22,7 +23,7 @@ class Connection:
     """
         Connection class wraps the connection to an AMPS Server
     """
-    def __init__(self, host="", port=4242):
+    def __init__(self, host="127.0.0.1", port=4242):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.host = host
@@ -184,3 +185,19 @@ class Connection:
         result = self.recievePacketVerify(encrypted=True)
 
         return result["data"]
+
+    def downloadFile(self, fileName, fileObject):
+        """
+            Downloads the file with the given filename on the server,
+            and outputs it to the (binary, must be binary) file stored in
+            fileObject
+        """
+        self.sendEncryptedDict({"CMDType": "downloadFile",
+                                "data":{"filePath": fileName,
+                                        "windowID": -42,
+                                        "filePathModifier":""}}, "__CMD__",)
+
+        encryptedData = "".join(Packet.getPacket(self.socket)['payload'])
+        data = json.loads("".join(encryption.decrypt(encryptedData, self.key)))["payload"]["file"]
+
+        fileObject.write(base64.b64decode(data))

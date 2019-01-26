@@ -1,0 +1,12 @@
+{
+    "StatusCards": {
+        "desc":"Used to keep program display cards up to date.",
+        "dataDir":"/Data/Packages/StatusCards/",
+        "updateTime":1546576926
+    },
+    "CrystalMagitech": {
+        "desc":"Minecraft Modpack",
+        "dataDir":"/Data/Packages/CrystalMagitech/",
+        "updateTime":1546576926
+    }
+}

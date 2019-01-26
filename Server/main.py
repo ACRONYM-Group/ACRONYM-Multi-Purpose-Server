@@ -29,7 +29,7 @@ programStartTime = datetime.now()
 
 OSName = platform.platform()
 
-programInstallDirectory = "Z:/AcroFTP/"
+programInstallDirectory = ""
 
 
 def onCorrectStart():
@@ -125,7 +125,7 @@ def checkUserPass(user, password):
         if items == [user, password]:
             print ("User Accepted")
             return True
-            
+
     return False
 
 def tempPassCheck(username, password):

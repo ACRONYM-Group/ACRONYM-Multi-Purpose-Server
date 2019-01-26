@@ -1,0 +1,28 @@
+{
+    "Jordan":{
+        "username":"Jordan",
+        "password":"admin",
+        "subbedPackages":{
+            "StatusCards":{
+                "mostRecentUpdate":-1
+            },
+            "CrystalMagitech":{
+                "mostRecentUpdate":-1
+            }
+        }
+    },
+
+
+    "JordanDev":{
+        "username":"JordanDev",
+        "password":"admin2",
+        "subbedPackages":{}
+    },
+
+
+    "CarterDev":{
+        "username":"CarterDev",
+        "password":"pass",
+        "subbedPackages":{}
+    }
+}
