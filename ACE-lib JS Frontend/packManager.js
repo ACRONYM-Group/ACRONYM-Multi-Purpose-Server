@@ -1,14 +1,30 @@
 require('./renderer.js');
 var packages = {};
+var subbedPackages = {};
 
 function initialLoad() {
-    ipcRenderer.send('requestAvaliablePackages', "Ping");
+    ipcRenderer.send('requestSubbedPackages', "Ping");
 }
 
 initialLoad()
 
 function installPackage(id) {
     ipcRenderer.send('installPackage', {name:id, version:packages[id]["defaultVersion"]});
+    console.log("Installing Package");
+}
+
+function uninstallPackage(id) {
+    ipcRenderer.send('uninstallPackage', {name:id});
+    console.log("Uninstalling Package");
+}
+
+function requestSubbedPackages() {
+    ipcRenderer.send('requestSubbedPackages', "Ping");
+}
+
+function installingResponse(id) {
+    alert("package is already being installed");
+    console.log("package is already being installed");
 }
 
 function drawCards(data) {
@@ -17,7 +33,20 @@ function drawCards(data) {
     var cardTextToAdd = "";
     for (var property in data) {
         if (data.hasOwnProperty(property)) {
-            cardTextToAdd += "<div class='packageDisplay'><div class='packDescription'><h4>" + property + "</h4><h6>" + data[property]["desc"] + "</h6></div><div class='cardHorizontalSpacer' style='width:1px; height:25px; background-color:black;'></div><div id='" + property + "' class='packInstallButton' onclick='installPackage(this.id)'>Install</div><div class='packEditButton'>Details</div></div>"
+            if (subbedPackages[property] == undefined) {
+                packageStatus = "install";
+                installButtonOnclick = 'installPackage(this.id)';
+            } else if (subbedPackages[property]["status"] == "installed") {
+                packageStatus = "uninstall"
+                installButtonOnclick = 'uninstallPackage(this.id)';
+            } else if (subbedPackages[property]["status"] == "installing") {
+                packageStatus = "installing"
+                installButtonOnclick = 'installingResponse(this.id)';
+            } else {
+                packageStatus = "install"
+                installButtonOnclick = 'installPackage(this.id)';
+            }
+            cardTextToAdd += "<div class='packageDisplay'><div class='packDescription'><h4>" + property + "</h4><h6>" + data[property]["desc"] + "</h6></div><div class='cardHorizontalSpacer' style='width:1px; height:25px; background-color:black;'></div><div id='" + property + "' class='packInstallButton' onclick='" + installButtonOnclick + "'>" + packageStatus + "</div><div class='packEditButton'>More</div></div>"
         }
     }
     document.getElementById("bodyGroup").innerHTML = cardTextToAdd;
@@ -27,6 +56,13 @@ ipcRenderer.on('avaliablePackages', (event, arg) => {
     drawCards(arg);
 })
 
-ipcRenderer.on('installingPackages', (event, arg) => {
-    document.getElementById(arg).innerText = "Installing...";
+ipcRenderer.on('subbedPackages', (event, arg) => {
+    subbedPackages = arg;
+    ipcRenderer.send('requestAvaliablePackages', "Ping");
 })
+
+ipcRenderer.on('installingPackage', (event, arg) => {
+    //document.getElementById(arg["name"]).innerText = "Installing";
+})
+
+setInterval(requestSubbedPackages, 1000);

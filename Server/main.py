@@ -234,7 +234,7 @@ def fix_xinvalid(m):
 def fix(s):
     return xinvalid.sub(fix_xinvalid, s)
 
-def downloadDirHandler(conn, commandRec, key, dir, shouldIncludeFinalFolder=True):
+def downloadDirHandler(conn, commandRec, key, dir, shouldIncludeFinalFolder=True, isPackage=False, packageName=None):
     print("Client would like to download " + dir)
     for root, directories, filenames in os.walk(dir):
         for directory in directories:
@@ -250,6 +250,9 @@ def downloadDirHandler(conn, commandRec, key, dir, shouldIncludeFinalFolder=True
             else:
                 filePathModifier = ""
             downloadFileHandler(conn, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":commandRec["data"]["filePathModifier"] + filePathModifier}}, key)
+    if isPackage:
+        dataToSend = encryption.encrypt(json.dumps({"CMDType":"packageDownloadComplete", "payload": {"package":packageName}}), key)
+        Packet.Packet(dataToSend,"__CMD__").send(conn, -1)
 
 def downloadFileHandler(conn, commandRec, key):
     print("Client has requested to download " + commandRec["data"]["filePath"])
@@ -257,7 +260,6 @@ def downloadFileHandler(conn, commandRec, key):
     fileName = commandRec["data"]["filePath"][::-1][:commandRec["data"]["filePath"][::-1].find("/")][::-1]
     fileLength = os.stat(commandRec["data"]["filePath"]).st_size
 
-    print("File Path Modifier: " + commandRec["data"]["filePathModifier"])
     try:
         filePathModifier = commandRec["data"]["filePathModifier"]
     except:
@@ -340,6 +342,10 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
             username = userCredentials["username"]
 
         if hasUserAuthenticated:
+            
+            if commandRec["CMDType"] == "updateSubbedPackages":
+                computers[json.loads(commandRec["data"])["computerName"]]["subbedPackages"] = json.loads(commandRec["data"])["subbedPackages"]
+                writeComputersToDisk()
 
             if commandRec["CMDType"] == "installPackage":
                 commandRec["data"] = json.loads(commandRec["data"])
@@ -369,7 +375,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
 
             if commandRec["CMDType"] == "downloadPackage":
                 commandRec["data"] = json.loads(commandRec["data"])
-                downloadDirHandler(conn, {"data":{"filePathModifier":packages[commandRec["data"]["package"]]["dataDir"]}}, key, programInstallDirectory[:-1] + packages[commandRec["data"]["package"]]["dataDir"] + commandRec["data"]["version"], False)
+                downloadDirHandler(conn, {"data":{"filePathModifier":packages[commandRec["data"]["package"]]["dataDir"]}}, key, programInstallDirectory[:-1] + packages[commandRec["data"]["package"]]["dataDir"] + commandRec["data"]["version"], False, True, commandRec["data"]["package"])
                 computers[commandRec["data"]["computerName"]]["subbedPackages"][commandRec["data"]["package"]]["version"] = commandRec["data"]["version"]
                 writeComputersToDisk()
 

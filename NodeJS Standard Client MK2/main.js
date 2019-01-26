@@ -1,6 +1,9 @@
 const {app, BrowserWindow, dialog, ipcMain} = require('electron')
 var seedrandom = require('seedrandom');
 var fs = require('fs');
+var fse = require('fs-extra');
+const del = require('del');
+var rimraf = require('rimraf');
 var bigInt = require("big-integer");
 var aesjs = require("aes-js");
 var path = require("path");
@@ -32,6 +35,42 @@ const ipc = require('node-ipc');
 
 function consoleOutput(data, ipcHost) {
   ipcHost.emit('command', {type:"printToConsole", data: data, ID:randomID, target:hostID})
+}
+
+function rmdir(d) {
+  var self = arguments.callee
+  if (fs.existsSync(d)) {
+      fs.readdirSync(d).forEach(function(file) {
+          var C = d + '/' + file
+          if (fs.statSync(C).isDirectory()) self(C)
+          else fs.unlinkSync(C)
+      })
+      fs.rmdirSync(d)
+  }
+}
+
+function cleanEmptyFoldersRecursively(folder) {
+  var isDir = fs.statSync(folder).isDirectory();
+  if (!isDir) {
+    return;
+  }
+  var files = fs.readdirSync(folder);
+  if (files.length > 0) {
+    files.forEach(function(file) {
+      var fullPath = path.join(folder, file);
+      cleanEmptyFoldersRecursively(fullPath);
+    });
+
+    // re-evaluate files; after deleting subfolder
+    // we may have parent folder empty now
+    files = fs.readdirSync(folder);
+  }
+
+  if (files.length == 0) {
+    console.log("removing: ", folder);
+    fs.rmdirSync(folder);
+    return;
+  }
 }
 
 ipc.config.id = 'hello';
@@ -101,6 +140,21 @@ ipc.connectTo('world', () => {
       commandToSend = {CMDType:"downloadPackage", data:JSON.stringify({username:message["username"], package:message["package"], version:message["version"], computerName:message["computerName"]})};
       dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
+    }
+  });
+
+  ipc.of.world.on('requestUninstallPackage', (message) => {
+    if (message["target"] == randomID) {
+      consoleOutput("Uninstalling Package " + message["package"] + "...", ipc.of.world);
+      commandToSend = {CMDType:"updateSubbedPackages", data:JSON.stringify({username:message["username"], computerName:message["computerName"], subbedPackages:message["subbedPackages"]})};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+
+      rimraf(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\*.*", fs, function() {
+        setTimeout(function() {fs.rmdir(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\")}, 10000);
+      });
+
+      consoleOutput(message["package"] + " uninstalled.", ipc.of.world);
     }
   });
 
@@ -310,6 +364,10 @@ function packetReceiveHander(data, alreadyDecrypted) {
     }
 
     command = JSON.parse(decryptedPacketData);
+    if (command["CMDType"] == "packageDownloadComplete") {
+      ipc.of.world.emit('command', {type:"packageDownloadComplete", data:command["payload"]["package"], ID:randomID, target:hostID})
+      consoleOutput(command["payload"]["package"] + " installation Complete!", ipc.of.world);
+    }
 
     if (command["CMDType"] == "avaliablePackages") {
       ipc.of.world.emit('command', {type:"avaliablePackages", data:command["data"], ID:randomID, target:hostID});

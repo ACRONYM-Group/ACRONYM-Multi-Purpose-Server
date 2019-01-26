@@ -10,7 +10,9 @@
   "author": "Jordan Hofstrand",
   "license": "ISC",
   "dependencies": {
+    "del": "^3.0.0",
     "electron": "^4.0.0",
+    "fs-extra": "^7.0.1",
     "node-ipc": "^9.1.1"
   }
 }

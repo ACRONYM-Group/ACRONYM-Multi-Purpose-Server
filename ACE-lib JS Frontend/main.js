@@ -14,8 +14,11 @@ var CardsData = "<div class='programStatusCard' style='height:45px;'><h5 style='
 var programInstallDirectory = "Z:/AcroFTPClient/";
 
 var config = {};
+var subbedPackages = {};
 
 config = JSON.parse(fs.readFileSync(programInstallDirectory + "data/config.json"));
+
+subbedPackages = JSON.parse(fs.readFileSync(programInstallDirectory + "data/subbedPackages.json"));
 
 console.log("Config loaded. I am " + config["computerName"])
 
@@ -43,6 +46,10 @@ function createUpdateDialog(data) {
   return updateWin;
 }
 
+function writeSubbedPackagesToDisk() {
+  fs.writeFileSync(programInstallDirectory + "\\data\\subbedPackages.json", JSON.stringify(subbedPackages));
+}
+
 createNewACE();
 
 ipc.config.id = 'world';
@@ -59,7 +66,6 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
     ownedACEs.push(message["ID"]);
     ownedACEsData[message["ID"]] = {type:requiredACEs[0]["type"], socket:socket};
     requiredACEs.shift();
-    console.log("Gained ownership of ACE #" + message["ID"]);
   }
   if (ownedACEs.indexOf(message["ID"]) != -1 && message["target"] == randomID) {
     if (message["type"] == "heartbeat") {
@@ -86,7 +92,6 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
     } 
     
     else if (message["type"] == "avaliablePackageUpdates") {
-      console.log("avaliablePackageUpdates: " + message["data"]);
       avaliablePackageUpdates = message["data"];
       createUpdateDialog(message["data"]);
     }
@@ -100,6 +105,12 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
 
       avaliablePackages = message["data"];
     }
+
+    else if (message["type"] == "packageDownloadComplete") {
+      console.log(message["data"] + " installation complete");
+      subbedPackages[message["data"]]["status"] = "installed";
+      writeSubbedPackagesToDisk();
+    }
   }
 }
 ));
@@ -108,10 +119,7 @@ ipc.server.start()
 
 function findGeneralPurposeACE(ownedACEs, ownedACEsData) {
   for (var i = 0; i < ownedACEs.length; i++) {
-    console.log("Searching ACES... " + i);
-    console.log(ownedACEsData[ownedACEs[i]]["type"]);
     if (ownedACEsData[ownedACEs[i]]["type"] == "generalPurpose") {
-      console.log("Found generalPurposeACE")
       return ownedACEs[i];
       i = ownedACEs.length + 1;
     } 
@@ -149,17 +157,14 @@ ipcMain.on('openPackManager', (event, arg) => {
 });
 
 ipcMain.on('requestAvaliablePackageUpdates', (event, arg) => {
-  console.log("Window has requested list of Updates.");
   event.sender.send("avaliablePackageUpdates", avaliablePackageUpdates);
 });
 
 ipcMain.on('requestAvaliablePackages', (event, arg) => {
-  console.log("Window has requested list of Packages.");
   event.sender.send("avaliablePackages", avaliablePackages);
 });
 
 ipcMain.on('updatePackage', (event, arg) => {
-  console.log("Window has requested to update " + arg);
   event.sender.send("updatingPackage", arg);
 
   var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
@@ -168,12 +173,34 @@ ipcMain.on('updatePackage', (event, arg) => {
 });
 
 ipcMain.on('installPackage', (event, arg) => {
-  console.log("Window has requested to installb " + arg);
   event.sender.send("installingPackage", arg);
 
   var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
   dataToSend = {target:ACEID, username:username, package:arg["name"], version:arg["version"], computerName:config["computerName"]};
   ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestInstallPackage", dataToSend);
+
+  subbedPackages[arg["name"]] = {
+    status: "installing",
+    version: arg["version"],
+    specificMajor: -1
+  };
+
+  writeSubbedPackagesToDisk();
+});
+
+ipcMain.on('uninstallPackage', (event, arg) => {
+
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:username, package:arg["name"], computerName:config["computerName"], subbedPackages:subbedPackages, programInstallDirectory:programInstallDirectory};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestUninstallPackage", dataToSend);
+
+  subbedPackages[arg["name"]] = undefined;
+  writeSubbedPackagesToDisk();
+});
+
+ipcMain.on('requestSubbedPackages', (event, arg) => {
+  event.sender.send("subbedPackages", subbedPackages);
+
 });
 
 
