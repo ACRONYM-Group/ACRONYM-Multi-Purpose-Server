@@ -201,3 +201,15 @@ class Connection:
         data = json.loads("".join(encryption.decrypt(encryptedData, self.key)))["payload"]["file"]
 
         fileObject.write(base64.b64decode(data))
+
+    def uploadFile(self, fileObject, fileName):
+        """
+            Uploads the data from the fileObject and stores it in the file
+            designated by fileName
+        """
+        self.sendEncryptedDict({"CMDType": "uploadFile",
+                                "data":{"filePath": fileName,
+                                        "index": 0,
+                                        "file":base64.b64encode(
+                                            fileObject.read()
+                                            ).decode("ascii")}}, "__CMD__")
