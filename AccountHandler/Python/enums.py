@@ -1,0 +1,6 @@
+# Error Codes
+BAD_USERNAME = 0
+BAD_PASSWORD = 1
+
+# Success Codes
+LOGIN_SUCCESSFUL = 2
