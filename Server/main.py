@@ -35,6 +35,8 @@ OSName = platform.platform()
 
 programInstallDirectory = ""
 
+AccountHandler.DATA_FILE_PATH = ""
+
 AccountHandler.import_data()
 
 def check_user_passhash(username, password_hash):
