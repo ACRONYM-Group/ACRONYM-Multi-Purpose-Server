@@ -52,6 +52,15 @@ def check_user_passhash(username, password_hash):
 
     return False
 
+def add_new_user(username, password=None, password_hash=None):
+    assert not (password == None and password_hash == None)
+
+    if password_hash == None:
+        password_hash = hashlib.sha3_256(password).hexdigest()
+
+    AccountHandler.add_credentials(username, password_hash)
+    AccountHandler.export_data()
+
 def onCorrectStart():
     print(" ")
     print("AMPS Starting Up...")
