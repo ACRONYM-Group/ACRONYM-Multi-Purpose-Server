@@ -6,15 +6,17 @@
 
 import socket
 
+import json
+import base64
+
+import hashlib
+
 import keyExchange
 
 import encryption
 
 import packet as Packet
 import dataOverString as DataString
-
-import json
-import base64
 
 import ACEExceptions as ACEE
 
@@ -177,6 +179,8 @@ class Connection:
         """
             Starts the login process with the AMPS server
         """
+        password = hashlib.sha3_256(password.encode()).hexdigest()
+
         self.sendEncryptedDict({"CMDType": "login",
                                 "data": {"username": username,
                                          "password": password}},
@@ -201,3 +205,15 @@ class Connection:
         data = json.loads("".join(encryption.decrypt(encryptedData, self.key)))["payload"]["file"]
 
         fileObject.write(base64.b64decode(data))
+
+    def uploadFile(self, fileObject, fileName):
+        """
+            Uploads the data from the fileObject and stores it in the file
+            designated by fileName
+        """
+        self.sendEncryptedDict({"CMDType": "uploadFile",
+                                "data":{"filePath": fileName,
+                                        "index": 0,
+                                        "file":base64.b64encode(
+                                            fileObject.read()
+                                            ).decode("ascii")}}, "__CMD__")

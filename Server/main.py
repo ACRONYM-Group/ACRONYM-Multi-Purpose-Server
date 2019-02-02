@@ -25,6 +25,10 @@ import math
 from datetime import datetime
 from datetime import timedelta
 
+import hashlib
+
+import AccountHandler
+
 
 programStartTime = datetime.now()
 
@@ -32,6 +36,19 @@ OSName = platform.platform()
 
 programInstallDirectory = "Z:/AcroFTP/"
 
+AccountHandler.import_data()
+
+def check_user_passhash(username, password_hash):
+    print(username, password_hash)
+    print(AccountHandler.global_data)
+    SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
+    result = AccountHandler.check_credentials(username, password_hash)
+    if result == SUCCESS:
+        return True
+
+    print(result)
+
+    return False
 
 def onCorrectStart():
     print(" ")
@@ -338,7 +355,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
                 userCredentials = json.loads(commandRec["data"])
             except TypeError:
                 userCredentials = commandRec["data"]
-            hasUserAuthenticated = tempPassCheck(userCredentials["username"], userCredentials["password"])
+            hasUserAuthenticated = check_user_passhash(userCredentials["username"], userCredentials["password"])
             dataToSend = encryption.encrypt(json.dumps({"CMDType":"AuthResult", "data":hasUserAuthenticated}), key)
             Packet.Packet(dataToSend,"__CMD__").send(conn)
             username = userCredentials["username"]
