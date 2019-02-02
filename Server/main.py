@@ -36,7 +36,7 @@ OSName = platform.platform()
 
 programInstallDirectory = "Z:/AcroFTP/"
 
-AccountHandler.DATA_FILE_PATH = ""
+AccountHandler.DATA_FILE_PATH = "" + "data.json"
 
 AccountHandler.import_data()
 
