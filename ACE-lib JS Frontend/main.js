@@ -203,6 +203,12 @@ ipcMain.on('requestSubbedPackages', (event, arg) => {
 
 });
 
+ipcMain.on('openPackageEditor', (event, arg) => {
+  packageEditorWin = new BrowserWindow({width: 325, height: 450, frame: false, show: true});
+  packageEditorWin.loadFile('packageEditor.html')
+  console.log("Opening Package Editor");
+});
+
 
 
 

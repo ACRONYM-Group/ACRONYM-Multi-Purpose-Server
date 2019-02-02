@@ -8,6 +8,8 @@ var bigInt = require("big-integer");
 var aesjs = require("aes-js");
 var path = require("path");
 var readDir = require("recursive-readdir");
+var sha256 = require('js-sha256').sha256;
+
 var latestMinecraftData = {};
 var keyExchangeInts = [];
 var keyExchangeLargerPrime = 0;
@@ -115,8 +117,8 @@ ipc.connectTo('world', () => {
 
   ipc.of.world.on('login', (message) => {
     if (message["target"] == randomID) {
-      consoleOutput("Loging In...", ipc.of.world);
-      commandToSend = {CMDType:"login", data:JSON.stringify({username:message["username"], password:message["password"], computerName:message["computerName"]})};
+      consoleOutput("Loging In... with " + sha256(message["password"]), ipc.of.world);
+      commandToSend = {CMDType:"login", data:JSON.stringify({username:message["username"], password: sha256(message["password"]), computerName:message["computerName"]})};
       dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
     }

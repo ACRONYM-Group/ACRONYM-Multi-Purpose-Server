@@ -18,6 +18,10 @@
     margin-top:3px;
   }
 
+  input[type=smallNumber], select {
+    width: 15px;
+  }
+
   ErrorDisplay {
     color:red;
   }

@@ -27,6 +27,11 @@ function installingResponse(id) {
     console.log("package is already being installed");
 }
 
+function openpackage(packageName) {
+    console.log("opening package editor");
+    ipcRenderer.send('openPackageEditor', packageName);
+}
+
 function drawCards(data) {
     packages = data;
 
@@ -46,7 +51,7 @@ function drawCards(data) {
                 packageStatus = "install"
                 installButtonOnclick = 'installPackage(this.id)';
             }
-            cardTextToAdd += "<div class='packageDisplay'><div class='packDescription'><h4>" + property + "</h4><h6>" + data[property]["desc"] + "</h6></div><div class='cardHorizontalSpacer' style='width:1px; height:25px; background-color:black;'></div><div id='" + property + "' class='packInstallButton' onclick='" + installButtonOnclick + "'>" + packageStatus + "</div><div class='packEditButton'>More</div></div>"
+            cardTextToAdd += "<div class='packageDisplay'><div class='packDescription'><h4>" + property + "</h4><h6>" + data[property]["desc"] + "</h6></div><div class='cardHorizontalSpacer' style='width:1px; height:25px; background-color:black;'></div><div id='" + property + "' class='packInstallButton' onclick='" + installButtonOnclick + "'>" + packageStatus + "</div><div class='packEditButton' onclick='openpackage(\"" + property + "\" );'>More</div></div>"
         }
     }
     document.getElementById("bodyGroup").innerHTML = cardTextToAdd;

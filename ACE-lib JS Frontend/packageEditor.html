@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="index.css">
+        <meta charset="UTF-8">
+        <title>Hello World!</title>
+        <script src="blank.js"></script>
+    </head>
+    <body style="background-color:#383838; height:100%;">
+        <div id="titlebarGroup" style="width:100%;">
+            <div id="banner" style="-webkit-app-region: drag; width:100%; display:flex;";>
+                <div style="display:flex; height: 26px; width:100%;">
+                    <img src="ACRONYM.png" alt="A.C.R.O.N.Y.M. Logo" style="width:30px; margin:4px; margin-left:10px; height:16px;">
+                    <h5 style="margin-left:0px; text-align: center; color:white; padding-top:6px; padding-left: 5px;">Package Editor</h5>
+                </div>
+
+                <div id="MinButton" style=" float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE921;</div>
+                <div id="MaxButton" style="float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE922;</div>
+                <div id="RestoreButton" style="float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE923</div>
+                <div id="CloseButton" style="float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center;">&#xE8BB;</div>
+            </div>
+        </div>
+        
+        <div id="bodyGroup" class="wrapper">
+            <h2 style="color:white; margin-left:10px; margin-bottom:25px;">{Package Name}</h2>
+            <h3 style="color:white; margin-left:15px; margin-bottom:15px;">Installation Settings</h3>
+                <form>
+                    <h5 style="color:white; margin-left:15px; margin-bottom:10px;">Specific Major:</h5>
+                    <input type="smallNumber" name="SpecificMajor" style="margin-left:25px;"><br>
+                </form>
+
+                <div style="display: flex;">
+                    <button class="packUpdateButton" onclick="updateInstallationData()" style="margin-left: 15px; margin-top: 10px;">Update</button>
+                    <button class="packUpdateButton" onclick="forceUninstall()" style="margin-left: 15px; margin-top: 10px; width:135px;">Force Uninstall</button>
+                </div>
+            <h2 style="color:white; margin-left:15px; margin-top:50px;">Package Versions</h3>
+                <form>
+                    <h5 style="color:white; margin-left:15px; margin-bottom:10px;">Default Version:</h5>
+                    <input type="smallNumber" name="defaultVersion" style="margin-left:25px; width:125px;"><br>
+                </form>
+                <button class="packUpdateButton" onclick="updateInstallationData()" style="margin-left: 15px; margin-top: 10px; margin-bottom:50px;">Update</button>
+
+                
+
+                <form>
+                    <h5 style="color:white; margin-left:15px; margin-bottom:10px;">New Version#:</h5>
+                    <input type="smallNumber" name="newVersion" style="margin-left:25px; width:125px;"><br>
+                </form> 
+                <div style="display: flex;">
+                    <h6 style="color:white; margin-left: 15px; margin-top: 15px;">{Browse For File}</h6>
+                    <button class="packUpdateButton" onclick="forceUninstall()" style="margin-left: 15px; margin-top: 10px;">Add</button>
+                </div>
+        </div>
+
+    </div>
+    <script src="./renderer.js"></script>
+    <script src="./packageEditor.js"></script>
+    </body>
+
+</html>
