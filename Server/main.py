@@ -2,6 +2,7 @@ import socket
 import threading
 
 import keyExchange
+import errno
 
 import primes as Primes
 import dataOverStream as DataStream
@@ -29,7 +30,7 @@ programStartTime = datetime.now()
 
 OSName = platform.platform()
 
-programInstallDirectory = ""
+programInstallDirectory = "Z:/AcroFTP/"
 
 
 def onCorrectStart():
@@ -48,9 +49,9 @@ try:
     users = json.loads(contents)
     print("Successfully loaded data for " + str(len(users)) + " Users...")
 
-except:
+except Exception as error:
     print("FAILED TO LOAD USER DATA!")
-
+    print(error)
 
 try:
     with open(programInstallDirectory + "Data/packages.json","r") as f:
@@ -58,8 +59,9 @@ try:
     packages = json.loads(contents)
     print("Successfully loaded data for " + str(len(packages)) + " Packages...")
 
-except:
+except Exception as error:
     print("FAILED TO LOAD PACKAGE DATA!")
+    print(error)
 
 
 try:
@@ -68,9 +70,9 @@ try:
     computers = json.loads(contents)
     print("Successfully loaded data for " + str(len(computers)) + " Computers...")
 
-except:
+except Exception as error:
     print("FAILED TO LOAD COMPUTER DATA!")
-
+    print(error)
 
 def writeUsersToDisk():
     f = open(programInstallDirectory + "Data/users.json","w")
@@ -426,6 +428,13 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
                 Packet.Packet(dataToSend,"__CMD__").send(conn)
 
             if commandRec["CMDType"] == "uploadFile":
+                if not os.path.exists(os.path.dirname(commandRec["data"]["filePath"])):
+                    try:
+                        os.makedirs(os.path.dirname(commandRec["data"]["filePath"]))
+                    except OSError as exc: # Guard against race condition
+                        if exc.errno != errno.EEXIST:
+                            raise
+
                 if not commandRec["data"]["filePath"] in fileWriteQueue:
                     fileWriteQueue[commandRec["data"]["filePath"]] = {"index":0, "outOfOrderPackets":{}, "startTime": datetime.now()}
                 if fileWriteQueue[commandRec["data"]["filePath"]]["index"] == commandRec["data"]["index"]:
