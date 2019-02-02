@@ -6,15 +6,17 @@
 
 import socket
 
+import json
+import base64
+
+import hashlib
+
 import keyExchange
 
 import encryption
 
 import packet as Packet
 import dataOverString as DataString
-
-import json
-import base64
 
 import ACEExceptions as ACEE
 
@@ -177,6 +179,8 @@ class Connection:
         """
             Starts the login process with the AMPS server
         """
+        password = hashlib.sha3_256(password.encode()).hexdigest()
+
         self.sendEncryptedDict({"CMDType": "login",
                                 "data": {"username": username,
                                          "password": password}},

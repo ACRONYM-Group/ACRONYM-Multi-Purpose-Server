@@ -9,7 +9,7 @@ DATA_FILE_PATH = "data.json"
 global_data = {'account_database': True, 'data': {}}
 
 
-def import_data(filename):
+def import_data(filename=DATA_FILE_PATH):
     global global_data
 
     try:
@@ -20,7 +20,7 @@ def import_data(filename):
         export_data(filename)
 
 
-def export_data(filename):
+def export_data(filename=DATA_FILE_PATH):
     file_object = open(filename, 'w')
 
     string_type_data = json.dumps(global_data)
@@ -65,6 +65,3 @@ class ExportWrapper:
     def __exit__(self, exc_type, exc_val, exc_tb):
         export_data(DATA_FILE_PATH)
 
-
-with ExportWrapper() as wrapper:
-    verify_global_data()
