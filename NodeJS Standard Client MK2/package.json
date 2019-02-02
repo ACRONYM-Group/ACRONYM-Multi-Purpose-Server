@@ -13,6 +13,7 @@
     "node-ipc": "^9.1.1",
     "path": "^0.12.7",
     "rebuild": "^0.1.2",
+    "recursive-readdir": "^2.2.2",
     "rimraf": "^2.6.3",
     "seedrandom": "^2.4.4",
     "systeminformation": "^3.45.6"

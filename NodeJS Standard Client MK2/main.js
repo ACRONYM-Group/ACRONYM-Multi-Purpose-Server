@@ -7,6 +7,7 @@ var rimraf = require('rimraf');
 var bigInt = require("big-integer");
 var aesjs = require("aes-js");
 var path = require("path");
+var readDir = require("recursive-readdir");
 var latestMinecraftData = {};
 var keyExchangeInts = [];
 var keyExchangeLargerPrime = 0;
@@ -30,6 +31,7 @@ var lastHeartbeatTime = Date.now();
 var randomID = Math.floor(Math.random()*5000)*Date.now();
 var hostID = -1;
 var computerName = "";
+var serverInstallDir = "Z:/AcroFTP/"
 
 const ipc = require('node-ipc');
 
@@ -168,6 +170,14 @@ ipc.connectTo('world', () => {
   });
 
   ipc.of.world.on('checkForPackageUpdates', (message) => {
+    if (message["target"] == randomID) {
+      commandToSend = {CMDType:"checkForPackageUpdates", data:{computerName:message["computerName"]}};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+    }
+  });
+
+  ipc.of.world.on('uploadDir', (message) => {
     if (message["target"] == randomID) {
       commandToSend = {CMDType:"checkForPackageUpdates", data:{computerName:message["computerName"]}};
       dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
@@ -393,6 +403,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
         //dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
         //client.write(constructPacket("__CMD__",dataToSend));
 
+        uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\", "Z:\\AcroFTP\\NewDir\\");
         
 
         //commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
@@ -645,6 +656,25 @@ function uploadFile(filePath, uploadPath, windowID) {
 
 }
 
+function uploadDir(dir, serverWriteDir, windowID) {
+  if (serverWriteDir != undefined) {
+    dirToWrite = serverWriteDir;
+  } else {
+    dirToWrite = serverInstallDir;
+  }
+
+  files = readDir(dir).then(
+    function(files) {
+      consoleOutput("Uploading Directory: " + dir, ipc.of.world);
+      consoleOutput(JSON.stringify(files), ipc.of.world);
+      for (var i = 0; i < files.length; i++) {
+        consoleOutput("Uploading " + dirToWrite + path.basename(dir) + "\\" + path.basename(files[i]) + " \n baseDir: " + path.basename(dir) + "\n", ipc.of.world);
+        uploadFile(files[i],  dirToWrite + path.basename(dir) + "\\" + path.basename(files[i]));
+      }
+  });
+}
+
+
 function uploadFileChunk(fileSize, totalBytesRead, readChunkSize, index, bufferSize, uploadPath, windowID, filePath, filePosition) {
   fs.open(filePath, 'r', (err, fd) => {
     bufferSize = readChunkSize;
@@ -667,7 +697,9 @@ function uploadFileChunk(fileSize, totalBytesRead, readChunkSize, index, bufferS
 
     totalBytesRead = totalBytesRead + bytesRead;
     if (windowID != -1) {
-      BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
+      if (windowID != undefined) {
+        BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
+      }
     }
 
     index = index + 1;
@@ -688,7 +720,9 @@ function uploadFinishedCallback(uploadPath, index, windowID, totalBytesRead, fil
   client.write(constructPacket("__CMD__",dataToSend));
   totalBytesRead = totalBytesRead + bytesRead;
   if (windowID != -1) {
-    BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
+    if (windowID != undefined) {
+      BrowserWindow.fromId(windowID).send("EncryptionProgressReport", {y:totalBytesRead, yMax:fileSize});
+    }
   }
 }
 
