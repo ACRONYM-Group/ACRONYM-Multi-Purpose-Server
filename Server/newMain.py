@@ -103,13 +103,38 @@ def initalize_connection():
     server_socket.bind((host_name, port))
 
 
+def dump_data():
+    f = open(programInstallDirectory + "Data/users.json","w")
+    f.write(json.dumps(users_data))
+    f = open(programInstallDirectory + "Data/computers.json","w")
+    f.write(json.dumps(computers_data))
+
+
 class ClientConnection:
-    def __init__(self, connection):
+    def __init__(self, connection, address):
         self.connection = connection
+        self.address = address
+
+        self.packet_recieve_generator = Packet.fullGenerator(self.connection)
+
         self.shared_key = None
 
+    def perform_handshake(self):
+        Packet.Packet('31415', "__HDS__").send(self.connection)
+
+        data = next(self.packet_recieve_generator)
+
+        if data["payload"] == "31415":
+            print ("Handshake with " + str(self.address[0]) + " sucessful!")
+            return True
+        else:
+            print ("Handshake with " + str(self.address[0]) + " failed!")
+            print ("Responce Recieved: ")
+            print (data)
+            return False
+
     def connection_handler(self):
-        pass
+        self.perform_handshake()
 
 
 def listener():
@@ -117,7 +142,7 @@ def listener():
         server_socket.listen(1)
         conn, addr = server_socket.accept()
 
-        connection = ClientConnection(conn)
+        connection = ClientConnection(conn, addr)
 
         threading.Thread(target=connection.connection_handler, args=()).start()
 

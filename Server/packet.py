@@ -104,3 +104,33 @@ def getPacket(connection):
         fullText += pair[1]
 
     return json.loads(fullText)
+
+def getPacketGenerator(generator):
+    gen = generator
+
+    packet = next(gen)
+
+    if packet['packetType'] != '__LPW__':
+        return packet
+    
+    fullData = [(packet['ind'], packet['payload'])]
+
+    countLeft = packet['len']
+
+    while countLeft > 1:
+        packet = next(gen)
+        fullData.append((packet['ind'], packet['payload']))
+        countLeft -= 1
+
+    fullText = ""
+
+    for pair in sorted(fullData):
+        fullText += pair[1]
+
+    return json.loads(fullText)
+
+def fullGenerator(connection):
+    gen = packetGenerator(connection)
+
+    while True:
+        yield getPacketGenerator(gen)
