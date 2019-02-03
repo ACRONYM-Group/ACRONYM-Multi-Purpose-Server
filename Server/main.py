@@ -512,7 +512,6 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
 
 
 def connectionHandler(conn, addr):
-
     doHandshake(conn, addr)
     key = doKeyExchange(conn)
 

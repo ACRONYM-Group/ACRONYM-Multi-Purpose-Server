@@ -104,9 +104,9 @@ def initalize_connection():
 
 
 def dump_data():
-    f = open(programInstallDirectory + "Data/users.json","w")
+    f = open(programInstallDirectory + "Data/users.json", "w")
     f.write(json.dumps(users_data))
-    f = open(programInstallDirectory + "Data/computers.json","w")
+    f = open(programInstallDirectory + "Data/computers.json", "w")
     f.write(json.dumps(computers_data))
 
 
@@ -118,6 +118,9 @@ class ClientConnection:
         self.packet_recieve_generator = Packet.fullGenerator(self.connection)
 
         self.shared_key = None
+        self.authenticated = False
+
+        self.username = ""
 
     def perform_handshake(self):
         Packet.Packet('31415', "__HDS__").send(self.connection)
@@ -133,8 +136,63 @@ class ClientConnection:
             print (data)
             return False
 
+    def perform_key_exchange(self):
+        primePair = Primes.getPrimePair()
+        exchange = keyExchange.KeyExchange(primePair)
+        exchange.randomSecret()
+
+        mixed = exchange.calculateMixed()
+
+
+        Packet.Packet(chr(0) + chr(1) + DataString.convertIntToData(primePair[0]),"__DAT__").send(self.connection)
+        time.sleep(0.1)
+        Packet.Packet(chr(0) + chr(2) + DataString.convertIntToData(primePair[1]),"__DAT__").send(self.connection)
+        time.sleep(0.1)
+        Packet.Packet(chr(0) + chr(3) + DataString.convertIntToData(mixed),"__DAT__").send(self.connection)
+
+        packet = next(self.packet_recieve_generator)
+
+        val = DataString.convertDataToInt(packet["payload"][2:])
+
+        self.shared_key = exchange.getSharedKey(val)
+
     def connection_handler(self):
         self.perform_handshake()
+        self.perform_key_exchange()
+
+        print(self.shared_key)
+
+        while True:
+            packet = next(self.packet_recieve_generator)
+
+            #If the packet is a command, it is encrypted, so decrypt that quick
+            if packet["packetType"] == "__CMD__":
+                packet = encryption.decrypt(packet["payload"], self.shared_key)
+                packet = "".join(packet)
+
+                try:
+                    packet = json.loads(packet)
+                except TypeError as e:
+                    print("Packet Unable to be parsed")
+                    print(packet)
+                    continue
+
+            self.process_packet(packet)
+
+    def process_packet(self, packet):
+         if packet["CMDType"] == "login":
+            try:
+                userCredentials = json.loads(packet["data"])
+            except TypeError:
+                userCredentials = packet["data"]
+            
+            self.authenticated = check_user_passhash(userCredentials["username"], userCredentials["password"])
+
+            dataToSend = encryption.encrypt(json.dumps({"CMDType":"AuthResult", "data":self.authenticated}), self.shared_key)
+            Packet.Packet(dataToSend, "__CMD__").send(self.connection)
+            self.username = userCredentials["username"]
+
+            print(self.username + " has attempted to login: " + str(self.authenticated))
 
 
 def listener():
