@@ -22,33 +22,44 @@
         </div>
         
         <div id="bodyGroup" class="wrapper">
-            <h2 style="color:white; margin-left:10px; margin-bottom:25px;">{Package Name}</h2>
+            <h2 id="packageName" style="color:white; margin-left:10px; margin-bottom:25px;">{Package Name}</h2>
             <h3 style="color:white; margin-left:15px; margin-bottom:15px;">Installation Settings</h3>
                 <form>
                     <h5 style="color:white; margin-left:15px; margin-bottom:10px;">Specific Major:</h5>
-                    <input type="smallNumber" name="SpecificMajor" style="margin-left:25px;"><br>
+                    <input id="SpecificMajorDisplay" type="smallNumber" name="SpecificMajor" style="margin-left:25px;"><br>
                 </form>
 
                 <div style="display: flex;">
-                    <button class="packUpdateButton" onclick="updateInstallationData()" style="margin-left: 15px; margin-top: 10px;">Update</button>
+                    <button class="packUpdateButton" onclick="updateInstallationData()" style="margin-left: 15px; margin-top: 10px;">Apply</button>
                     <button class="packUpdateButton" onclick="forceUninstall()" style="margin-left: 15px; margin-top: 10px; width:135px;">Force Uninstall</button>
                 </div>
             <h2 style="color:white; margin-left:15px; margin-top:50px;">Package Versions</h3>
                 <form>
                     <h5 style="color:white; margin-left:15px; margin-bottom:10px;">Default Version:</h5>
-                    <input type="smallNumber" name="defaultVersion" style="margin-left:25px; width:125px;"><br>
+                    <input id="defaultVersion" type="smallNumber" name="defaultVersion" style="margin-left:25px; width:125px;"><br>
                 </form>
-                <button class="packUpdateButton" onclick="updateInstallationData()" style="margin-left: 15px; margin-top: 10px; margin-bottom:50px;">Update</button>
+                <button class="packUpdateButton" onclick="updateDefaultVersion()" style="margin-left: 15px; margin-top: 10px; margin-bottom:50px;">Apply</button>
 
                 
 
-                <form>
-                    <h5 style="color:white; margin-left:15px; margin-bottom:10px;">New Version#:</h5>
-                    <input type="smallNumber" name="newVersion" style="margin-left:25px; width:125px;"><br>
-                </form> 
-                <div style="display: flex;">
-                    <h6 style="color:white; margin-left: 15px; margin-top: 15px;">{Browse For File}</h6>
-                    <button class="packUpdateButton" onclick="forceUninstall()" style="margin-left: 15px; margin-top: 10px;">Add</button>
+                <div style="display:flex;">
+                    <div>
+                        <form>
+                            <h5 style="color:white; margin-left:15px; margin-bottom:10px;">New Version#:</h5>
+                            <input id="newVersionNumber" type="smallNumber" name="newVersion" style="margin-left:25px; width:125px;"><br>
+                        </form> 
+                        <div style="display: flex;">
+                            <h6 style="color:white; margin-left: 15px; margin-top: 15px;">{Browse For File}</h6>
+                            <button class="packUpdateButton" onclick="uploadNewVersion()" style="margin-left: 15px; margin-top: 10px;">Upload</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h5 style="color:white; margin-left:25px;">Versions:</h5>
+                        <div id="versionList" style="background-color:white; width:95px; height:60px; margin-left: 25px; overflow-y: scroll;">
+
+                        </div>
+                    </div>
                 </div>
         </div>
 

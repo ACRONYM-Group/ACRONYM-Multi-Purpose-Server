@@ -12,6 +12,7 @@ var waitingToOpenPackManager = false;
 var username = "NOTLOGGEDIN";
 var CardsData = "<div class='programStatusCard' style='height:45px;'><h5 style='color:white; width:100%; background-color:#444444;'>Minecraft Server</h5><div style='width:100%; height:1px; background-color:black;'></div><div style='display:flex; width:100%;'><div style='display:flex;'><h5 style='color:white;'>Status: Online </h5><div class='cardHorizontalSpacer' style='width:1px; height:25px; background-color:black;'></div><h5 style='color:white;'>Players: 3 </h5></div></div></div>";
 var programInstallDirectory = "Z:/AcroFTPClient/";
+var packageToDisplay = "StatusCards";
 
 var config = {};
 var subbedPackages = {};
@@ -48,6 +49,13 @@ function createUpdateDialog(data) {
 
 function writeSubbedPackagesToDisk() {
   fs.writeFileSync(programInstallDirectory + "\\data\\subbedPackages.json", JSON.stringify(subbedPackages));
+}
+
+function checkForPackageUpdates() {
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+
+  dataToSend = {target:ACEID, username:username, computerName:config["computerName"]};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "checkForPackageUpdates", dataToSend);
 }
 
 createNewACE();
@@ -101,6 +109,7 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
         packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true});
         packManagerWin.loadFile('packManager.html');
         packManagerWin.openDevTools();
+        waitingToOpenPackManager = false;
       }
 
       avaliablePackages = message["data"];
@@ -204,11 +213,58 @@ ipcMain.on('requestSubbedPackages', (event, arg) => {
 });
 
 ipcMain.on('openPackageEditor', (event, arg) => {
-  packageEditorWin = new BrowserWindow({width: 325, height: 450, frame: false, show: true});
-  packageEditorWin.loadFile('packageEditor.html')
+  packageToDisplay = arg;
+  packageEditorWin = new BrowserWindow({width: 325, height: 520, frame: false, show: true});
+  packageEditorWin.loadFile('packageEditor.html');
+  packageEditorWin.webContents.openDevTools();
   console.log("Opening Package Editor");
 });
 
+ipcMain.on('requestPackageToDisplay', (event, arg) => {
+  event.sender.send("packageToDisplay", packageToDisplay);
+});
+
+ipcMain.on('requestPackageInfo', (event, arg) => {
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:username, computerName:config["computerName"]};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestListOfPackages", dataToSend);
+
+  setTimeout(function(){
+    event.sender.send("localPackageInfo", subbedPackages[arg]);
+    event.sender.send("serverPackageInfo", avaliablePackages[arg]);
+  }, 1000);
+});
+
+ipcMain.on('newSpecificMajor', (event, arg) => {
+  subbedPackages[arg["name"]]["specificMajor"] = arg["newSpecificMajor"];
+
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:username, computerName:config["computerName"], subbedPackages: subbedPackages};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "updateSubbedPackages", dataToSend);
+
+  checkForPackageUpdates();
+
+});
+
+ipcMain.on('newPackageDefaultVersion', (event, arg) => {
+
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:username, computerName:config["computerName"], package:arg["name"], newDefaultVersion:arg["newDefaultVersion"]};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "updatePackageDefaultVersion", dataToSend);
+
+  checkForPackageUpdates();
+
+});
+
+ipcMain.on('uploadNewVersion', (event, arg) => {
+
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:username, computerName:config["computerName"], package:arg["name"], newVersionNumber:arg["newVersionNumber"], uploadDir:arg["newVersionPath"]};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "uploadNewVersion", dataToSend);
+
+  checkForPackageUpdates();
+
+});
 
 
 

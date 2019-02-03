@@ -110,6 +110,10 @@ def writeComputersToDisk():
     f = open(programInstallDirectory + "Data/computers.json","w")
     f.write(json.dumps(computers))
 
+def writePackageDataToDisk():
+    f = open(programInstallDirectory + "Data/packages.json","w")
+    f.write(json.dumps(packages))
+
 def PrintProgress(y, yMax, progressData):
     print("Progress: " + str(y/yMax*100) + "%")
 
@@ -373,6 +377,16 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
 
         if hasUserAuthenticated:
             
+            if commandRec["CMDType"] == "uploadNewVersion":
+                print("uploading new package version")
+                packages[commandRec["data"]["package"]]["versions"][commandRec["data"]["newVersionNumber"]] = {}
+                writePackageDataToDisk()
+
+            if commandRec["CMDType"] == "updatePackageDefaultVersion":
+                print("updating package default version")
+                packages[commandRec["data"]["package"]]["defaultVersion"] = commandRec["data"]["newDefaultVersion"]
+                writePackageDataToDisk()
+
             if commandRec["CMDType"] == "updateSubbedPackages":
                 computers[json.loads(commandRec["data"])["computerName"]]["subbedPackages"] = json.loads(commandRec["data"])["subbedPackages"]
                 writeComputersToDisk()

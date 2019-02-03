@@ -16,7 +16,7 @@ var keyExchangeLargerPrime = 0;
 var keyExchangeSmallerPrime = 0;
 var key = bigInt(0);
 var theirMixed = 0;
-//var ServerIP = "172.25.76.132";
+//var ServerIP = "74.127.130.100";
 var ServerIP = "192.168.1.104";
 var ServerPort = 4242;
 var MOTD = "Message Of The Day...";
@@ -162,6 +162,14 @@ ipc.connectTo('world', () => {
     }
   });
 
+  ipc.of.world.on('updateSubbedPackages', (message) => {
+    if (message["target"] == randomID) {
+      commandToSend = {CMDType:"updateSubbedPackages", data:JSON.stringify({username:message["username"], computerName:message["computerName"], subbedPackages:message["subbedPackages"]})};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+    }
+  });
+
   ipc.of.world.on('requestListOfPackages', (message) => {
     if (message["target"] == randomID) {
       consoleOutput("Downloading Package List...", ipc.of.world);
@@ -184,6 +192,24 @@ ipc.connectTo('world', () => {
       commandToSend = {CMDType:"checkForPackageUpdates", data:{computerName:message["computerName"]}};
       dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
+    }
+  });
+
+  ipc.of.world.on('updatePackageDefaultVersion', (message) => {
+    if (message["target"] == randomID) {
+      commandToSend = {CMDType:"updatePackageDefaultVersion", data:{computerName:message["computerName"], package:message["package"], newDefaultVersion:message["newDefaultVersion"]}};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+    }
+  });
+
+  ipc.of.world.on('uploadNewVersion', (message) => {
+    if (message["target"] == randomID) {
+      commandToSend = {CMDType:"uploadNewVersion", data:{computerName:message["computerName"], package:message["package"], newVersionNumber:message["newVersionNumber"]}};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+
+      uploadDir(message["uploadDir"], serverInstallDir + "Data/packages/" + message["package"] + "/");
     }
   });
 });
@@ -506,6 +532,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
 
   } else if (packet["packetType"] == "__HDS__") {
     client.write(constructPacket("__HDS__", packet["payload"]));
+    consoleOutput("Server sent handshake, responding with " + packet["payload"], ipc.of.world);
 
   } else if (packet["packetType"] == "__LPW__") {
     LPWPacket = packet["payload"];
