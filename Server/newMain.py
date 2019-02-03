@@ -92,20 +92,41 @@ def read_data_files():
     except Exception as error:
         print("FAILED TO LOAD COMPUTER DATA!")
         print(error)
-        
+     
 
 def initalize_connection():
+    global server_socket
+
     print("Connecting to address " + str(host_name) + ":" + str(port))
-          
-    socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host_name, port))
+
 
 class ClientConnection:
     def __init__(self, connection):
         self.connection = connection
-        
         self.shared_key = None
-        
+
+    def connection_handler(self):
+        pass
+
+
+def listener():
+    while True:
+        server_socket.listen(1)
+        conn, addr = server_socket.accept()
+
+        connection = ClientConnection(conn)
+
+        threading.Thread(target=connection.connection_handler, args=()).start()
+
+
+def start_listener():
+    threading.Thread(target=listener, args=()).start()
+       
 if __name__ == "__main__":
     read_data_files()
     initalize_connection()
+
+    start_listener()
