@@ -115,6 +115,10 @@ def dump_data():
     f.write(json.dumps(computers_data))
 
 
+def file_download_process(packet):
+    file_name = packet["data"]["filePath"]
+
+
 class ClientConnection:
     def __init__(self, connection, address):
         self.connection = connection
@@ -217,6 +221,8 @@ class ClientConnection:
             encr = encryption.encrypt(json.dumps(data), self.shared_key)
             Packet.Packet(encr, "__DAT__").send(self.connection)
 
+        elif packet["CMDType"] == "downloadFile":
+            threading.Thread(target=file_download_process, args=(packet,)).start()
 
 
 def listener():
