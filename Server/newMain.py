@@ -38,6 +38,10 @@ programInstallDirectory = "Z:/AcroFTP/"
 AccountHandler.DATA_FILE_PATH = programInstallDirectory + "\\data\\data.json"
 AccountHandler.import_data()
 
+AccountHandler.add_credentials("carter", hashlib.sha3_256("password".encode()).hexdigest())
+
+AccountHandler.export_data()
+
 users_data = None
 packages_data = None
 computers_data = None
@@ -47,6 +51,7 @@ server_socket = None
 port = 4242
 host_name = ""
 
+global_cache = {}
 
 def check_user_passhash(username, password_hash):
     SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
@@ -180,7 +185,7 @@ class ClientConnection:
             self.process_packet(packet)
 
     def process_packet(self, packet):
-         if packet["CMDType"] == "login":
+        if packet["CMDType"] == "login":
             try:
                 userCredentials = json.loads(packet["data"])
             except TypeError:
@@ -193,6 +198,25 @@ class ClientConnection:
             self.username = userCredentials["username"]
 
             print(self.username + " has attempted to login: " + str(self.authenticated))
+        
+        elif packet["CMDType"] == "setData":
+            print("Set Data", packet["name"], "=", packet["value"])
+            value = packet["value"]
+
+            global_cache[packet["name"]] = value
+
+            print(global_cache)
+        
+        elif packet["CMDType"] == "getData":
+            if packet["name"] in global_cache:
+                value = global_cache[packet["name"]]
+            else:
+                value = ""
+            
+            data = {"packetType":"__DAT__","payload":value}
+            encr = encryption.encrypt(json.dumps(data), self.shared_key)
+            Packet.Packet(encr, "__DAT__").send(self.connection)
+
 
 
 def listener():

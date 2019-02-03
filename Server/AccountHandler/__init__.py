@@ -9,8 +9,11 @@ DATA_FILE_PATH = "data.json"
 global_data = {'account_database': True, 'data': {}}
 
 
-def import_data(filename=DATA_FILE_PATH):
+def import_data(filename=None):
     global global_data
+
+    if filename is None:
+        filename = DATA_FILE_PATH
 
     try:
         file_object = open(filename, 'r')
@@ -20,7 +23,10 @@ def import_data(filename=DATA_FILE_PATH):
         export_data(filename)
 
 
-def export_data(filename=DATA_FILE_PATH):
+def export_data(filename=None):
+    if filename is None:
+        filename = DATA_FILE_PATH
+
     file_object = open(filename, 'w')
 
     string_type_data = json.dumps(global_data)
