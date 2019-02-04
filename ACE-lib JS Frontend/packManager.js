@@ -1,4 +1,5 @@
 require('./renderer.js');
+const dialog = require('electron').remote.dialog 
 var packages = {};
 var subbedPackages = {};
 
@@ -30,6 +31,20 @@ function installingResponse(id) {
 function openpackage(packageName) {
     console.log("opening package editor");
     ipcRenderer.send('openPackageEditor', packageName);
+}
+
+function checkForUpdates() {
+    ipcRenderer.send('checkForUpdates', "Ping");
+}
+
+function uploadNewPackage() {
+    var dirToUpload = dialog.showOpenDialog({properties: ['openDirectory']})[0];
+    var newVersionNumber = document.getElementById("newPackageVersion").value;
+    var packageName = document.getElementById("newPackageName").value;
+    var packageDesc = document.getElementById("newPackageDesc").value;
+    console.log(packageDesc);
+
+    ipcRenderer.send('uploadNewPackage', {name:packageName, newVersionNumber: newVersionNumber, newVersionPath:dirToUpload, packageDesc:packageDesc});
 }
 
 function drawCards(data) {
