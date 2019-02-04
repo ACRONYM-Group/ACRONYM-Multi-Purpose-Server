@@ -8,3 +8,5 @@ if conn.loginServer("carter", "password"):
     print("Login Good")
 else:
     print("Login Failed")
+
+conn.setData("name", "value")
