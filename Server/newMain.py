@@ -115,9 +115,34 @@ def dump_data():
     f.write(json.dumps(computers_data))
 
 
-def file_download_process(packet):
+def file_download_process(self, packet):
     file_name = packet["data"]["filePath"]
+    file_object = open(file_name, 'rb')
 
+    file_data = file_object.read()
+    file_length = len(file_data)
+    index = 0
+    packet_index = 0
+    
+    while len(file_data) > 2000000:
+        current_chunk = file_data[:2000000]
+
+        fileDataB64 = base64.b64encode(current_chunk).decode("ascii")
+        data_to_send = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packet_index, "length": file_length, "filePath":packet["data"]["filePath"], "fileName": file_name, "filePathModifier":"", "windowID":packet["data"]["windowID"]}}), self.shared_key)
+        
+        Packet.Packet(data_to_send, "__CMD__").send(self.connection, packet["data"]["windowID"])\
+        
+        index += 2000000
+        packet_index += 1
+
+    current_chunk = file_data[:]
+    fileDataB64 = base64.b64encode(current_chunk).decode("ascii")
+    data_to_send = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packet_index, "length": file_length, "filePath":packet["data"]["filePath"], "fileName": file_name, "filePathModifier":"", "windowID":packet["data"]["windowID"]}}), self.shared_key)
+    
+    Packet.Packet(data_to_send, "__CMD__").send(self.connection, packet["data"]["windowID"])
+
+    data_to_send = encryption.encrypt(json.dumps({"CMDType":"fileTransferComplete", "payload": {"fileName":file_name, "finalPacketIndex":packet_index, "filePathModifier":""}}), self.shared_key)
+    Packet.Packet(data_to_send, "__CMD__").send(self.connection, packet["data"]["windowID"])
 
 class ClientConnection:
     def __init__(self, connection, address):
@@ -217,12 +242,12 @@ class ClientConnection:
             else:
                 value = ""
             
-            data = {"packetType":"__DAT__","payload":value}
+            data = {"packetType":"__DAT__", "payload":value}
             encr = encryption.encrypt(json.dumps(data), self.shared_key)
             Packet.Packet(encr, "__DAT__").send(self.connection)
 
         elif packet["CMDType"] == "downloadFile":
-            threading.Thread(target=file_download_process, args=(packet,)).start()
+            threading.Thread(target=file_download_process, args=(self, packet)).start()
 
 
 def listener():

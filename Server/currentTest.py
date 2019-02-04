@@ -10,3 +10,4 @@ else:
     print("Login Failed")
 
 conn.setData("name", "value")
+conn.downloadFile("ACELib.py", open("datafile.txt", 'wb'))
