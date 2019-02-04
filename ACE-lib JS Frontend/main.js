@@ -27,15 +27,6 @@ console.log("Config loaded. I am " + config["computerName"])
 var avaliablePackageUpdates = [];
 var avaliablePackages = {};
 
-function createNewACE() {
-  const command = 'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/launch.bat';
-  const parameters = [];
-
-  const child = spawn(command, parameters, {cwd: 'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/'});
-
-  requiredACEs.push({type:"generalPurpose"});
-}
-
 function createHubWindow() {
   hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true});
   hubWin.loadFile('hub.html')
@@ -55,84 +46,6 @@ function writeSubbedPackagesToDisk() {
 
 function checkForPackageUpdates() {
   mainACE.send("checkForPackageUpdates", {username:username, computerName:config["computerName"]});
-}
-
-//createNewACE();
-
-/*ipc.config.id = 'world';
-ipc.config.retry = 1500;
-ipc.config.silent = true;
-ipc.serve(() => ipc.server.on('command', (message, socket) => {
-  console.log(message);
-  if (message["type"] == "connectionRequest") {
-    if (requiredACEs.length > 0) {
-      ipc.server.emit(socket, "connectionResponse", {target:message["ID"], hostID:randomID, role:requiredACEs[0]["type"]});
-    }
-  }
-
-  if (message["type"] == "connectionAccepted" && message["target"] == randomID) {
-    ownedACEs.push(message["ID"]);
-    ownedACEsData[message["ID"]] = {type:requiredACEs[0]["type"], socket:socket};
-    requiredACEs.shift();
-  }
-  if (ownedACEs.indexOf(message["ID"]) != -1 && message["target"] == randomID) {
-    if (message["type"] == "heartbeat") {
-      ipc.server.emit(socket, "heartbeat", {target:message["ID"]});
-    } 
-    
-    else if (message["type"] == "rawMessage") {
-      console.log(message["data"]);
-      ipc.server.emit(socket, "message", {target:message["ID"], data:"Hello ACE!"});
-    } 
-    
-    else if (message["type"] == "loginResult") {
-      if (message["data"]) {
-        loginWin.send("authResult", message["data"]);
-        loginWin.close();
-        hubWin = createHubWindow();
-      } else {
-        loginWin.send("authResult", message["data"]);
-      }
-    } 
-    
-    else if (message["type"] == "printToConsole") {
-      console.log("ACE Output: " + message["data"]);
-    } 
-    
-    else if (message["type"] == "avaliablePackageUpdates") {
-      avaliablePackageUpdates = message["data"];
-      createUpdateDialog(message["data"]);
-    }
-
-    else if (message["type"] == "avaliablePackages") {
-      if (waitingToOpenPackManager) {
-        packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true});
-        packManagerWin.loadFile('packManager.html');
-        packManagerWin.openDevTools();
-        waitingToOpenPackManager = false;
-      }
-
-      avaliablePackages = message["data"];
-    }
-
-    else if (message["type"] == "packageDownloadComplete") {
-      console.log(message["data"] + " installation complete");
-      subbedPackages[message["data"]]["status"] = "installed";
-      writeSubbedPackagesToDisk();
-    }
-  }
-}
-));
-ipc.server.start()*/
-
-
-function findGeneralPurposeACE(ownedACEs, ownedACEsData) {
-  for (var i = 0; i < ownedACEs.length; i++) {
-    if (ownedACEsData[ownedACEs[i]]["type"] == "generalPurpose") {
-      return ownedACEs[i];
-      i = ownedACEs.length + 1;
-    } 
-  }
 }
 
 class frontendClass {
@@ -183,6 +96,12 @@ class frontendClass {
 frontend = new frontendClass();
 
 mainACE = new ACE("generalPurpose", frontend);
+
+
+
+
+
+
 
 
 
