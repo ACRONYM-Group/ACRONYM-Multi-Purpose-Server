@@ -2,6 +2,7 @@ const ipc = require('node-ipc');
 const spawn = require('child_process').spawn;
 const {app, BrowserWindow, dialog, ipcMain} = require('electron');
 const fs = require("fs");
+const ACE = require("./ACEManager.js");
 
 var randomID = Math.floor(Math.random()*5000)*Date.now();
 var requiredACEs = [];
@@ -24,6 +25,7 @@ subbedPackages = JSON.parse(fs.readFileSync(programInstallDirectory + "data/subb
 console.log("Config loaded. I am " + config["computerName"])
 
 var avaliablePackageUpdates = [];
+var avaliablePackages = {};
 
 function createNewACE() {
   const command = 'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/launch.bat';
@@ -35,7 +37,7 @@ function createNewACE() {
 }
 
 function createHubWindow() {
-  hubWin = new BrowserWindow({width: 425, height: 340, frame: false, show: true});
+  hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true});
   hubWin.loadFile('hub.html')
   return hubWin;
 }
@@ -52,18 +54,16 @@ function writeSubbedPackagesToDisk() {
 }
 
 function checkForPackageUpdates() {
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-
-  dataToSend = {target:ACEID, username:username, computerName:config["computerName"]};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "checkForPackageUpdates", dataToSend);
+  mainACE.send("checkForPackageUpdates", {username:username, computerName:config["computerName"]});
 }
 
-createNewACE();
+//createNewACE();
 
-ipc.config.id = 'world';
+/*ipc.config.id = 'world';
 ipc.config.retry = 1500;
 ipc.config.silent = true;
 ipc.serve(() => ipc.server.on('command', (message, socket) => {
+  console.log(message);
   if (message["type"] == "connectionRequest") {
     if (requiredACEs.length > 0) {
       ipc.server.emit(socket, "connectionResponse", {target:message["ID"], hostID:randomID, role:requiredACEs[0]["type"]});
@@ -123,7 +123,7 @@ ipc.serve(() => ipc.server.on('command', (message, socket) => {
   }
 }
 ));
-ipc.server.start()
+ipc.server.start()*/
 
 
 function findGeneralPurposeACE(ownedACEs, ownedACEsData) {
@@ -135,32 +135,71 @@ function findGeneralPurposeACE(ownedACEs, ownedACEsData) {
   }
 }
 
+class frontendClass {
+  constructor() {
+    
+  }
+
+  loginResult(message) {
+    if (message["data"]) {
+      loginWin.send("authResult", message["data"]);
+      loginWin.close();
+      hubWin = createHubWindow();
+    } else {
+      loginWin.send("authResult", message["data"]);
+    }
+  }
+
+  genericHandler(message) {
+    console.log("Receiving Generic Command");
+    if (message["type"] == "avaliablePackageUpdates") {
+      avaliablePackageUpdates = message["data"];
+      createUpdateDialog(message["data"]);
+    }
+
+    else if (message["type"] == "avaliablePackages") {
+      if (waitingToOpenPackManager) {
+        var packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true});
+        packManagerWin.loadFile('packManager.html');
+        packManagerWin.openDevTools();
+        waitingToOpenPackManager = false;
+      }
+
+      avaliablePackages = message["data"];
+    }
+
+    else if (message["type"] == "packageDownloadComplete") {
+      console.log(message["data"] + " installation complete");
+      subbedPackages[message["data"]]["status"] = "installed";
+      writeSubbedPackagesToDisk();
+    }
+
+    else if (message["type"] == "printToConsole") {
+      console.log("ACE Output: " + message["data"]);
+    }
+  }
+}
+
+frontend = new frontendClass();
+
+mainACE = new ACE("generalPurpose", frontend);
 
 
 
 ipcMain.on('login', (event, arg) => {
   console.log("Attempting Login")
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:arg["username"], password:arg["password"], computerName:config["computerName"]};
-  username = arg["username"];
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "login", dataToSend);
 
-  dataToSend = {target:ACEID, username:arg["username"], password:arg["password"], computerName:config["computerName"]};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "checkForPackageUpdates", dataToSend);
+  mainACE.login(arg["username"], arg["password"], config["computerName"]);
+  username = arg["username"];
+  checkForPackageUpdates();
 });
 
 ipcMain.on('requestProgramStatusCards', (event, arg) => {
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:username};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestProgramStatusCards", dataToSend);
-
   event.sender.send("programStatusCards", CardsData);
 });
 
 ipcMain.on('openPackManager', (event, arg) => {
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:username, computerName:config["computerName"]};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestListOfPackages", dataToSend);
+  mainACE.send("requestListOfPackages", {username:username, computerName:config["computerName"]});
 
   waitingToOpenPackManager = true;
 });
@@ -176,17 +215,18 @@ ipcMain.on('requestAvaliablePackages', (event, arg) => {
 ipcMain.on('updatePackage', (event, arg) => {
   event.sender.send("updatingPackage", arg);
 
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:username, package:arg["package"], version:arg["version"], computerName:config["computerName"]};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestDownloadPackage", dataToSend);
+  dataToSend = {username:username, package:arg["package"], version:arg["version"], computerName:config["computerName"]};
+  mainACE.send("requestDownloadPackage", dataToSend);
+
+  subbedPackages[arg["package"]]["version"] = arg["version"]; 
+  writeSubbedPackagesToDisk();
 });
 
 ipcMain.on('installPackage', (event, arg) => {
   event.sender.send("installingPackage", arg);
 
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:username, package:arg["name"], version:arg["version"], computerName:config["computerName"]};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestInstallPackage", dataToSend);
+  dataToSend = {username:username, package:arg["name"], version:arg["version"], computerName:config["computerName"]};
+  mainACE.send("requestInstallPackage", dataToSend);
 
   subbedPackages[arg["name"]] = {
     status: "installing",
@@ -199,9 +239,8 @@ ipcMain.on('installPackage', (event, arg) => {
 
 ipcMain.on('uninstallPackage', (event, arg) => {
 
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:username, package:arg["name"], computerName:config["computerName"], subbedPackages:subbedPackages, programInstallDirectory:programInstallDirectory};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestUninstallPackage", dataToSend);
+  dataToSend = {username:username, package:arg["name"], computerName:config["computerName"], subbedPackages:subbedPackages, programInstallDirectory:programInstallDirectory};
+  mainACE.send("requestUninstallPackage", dataToSend);
 
   subbedPackages[arg["name"]] = undefined;
   writeSubbedPackagesToDisk();
@@ -225,9 +264,8 @@ ipcMain.on('requestPackageToDisplay', (event, arg) => {
 });
 
 ipcMain.on('requestPackageInfo', (event, arg) => {
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:username, computerName:config["computerName"]};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestListOfPackages", dataToSend);
+  dataToSend = {username:username, computerName:config["computerName"]};
+  mainACE.send("requestListOfPackages", dataToSend);
 
   setTimeout(function(){
     event.sender.send("localPackageInfo", subbedPackages[arg]);
@@ -238,9 +276,8 @@ ipcMain.on('requestPackageInfo', (event, arg) => {
 ipcMain.on('newSpecificMajor', (event, arg) => {
   subbedPackages[arg["name"]]["specificMajor"] = arg["newSpecificMajor"];
 
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:username, computerName:config["computerName"], subbedPackages: subbedPackages};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "updateSubbedPackages", dataToSend);
+  dataToSend = {username:username, computerName:config["computerName"], subbedPackages: subbedPackages};
+  mainACE.send("updateSubbedPackages", dataToSend);
 
   checkForPackageUpdates();
 
@@ -248,9 +285,8 @@ ipcMain.on('newSpecificMajor', (event, arg) => {
 
 ipcMain.on('newPackageDefaultVersion', (event, arg) => {
 
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:username, computerName:config["computerName"], package:arg["name"], newDefaultVersion:arg["newDefaultVersion"]};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "updatePackageDefaultVersion", dataToSend);
+  dataToSend = {username:username, computerName:config["computerName"], package:arg["name"], newDefaultVersion:arg["newDefaultVersion"]};
+  mainACE.send("updatePackageDefaultVersion", dataToSend);
 
   checkForPackageUpdates();
 
@@ -258,12 +294,40 @@ ipcMain.on('newPackageDefaultVersion', (event, arg) => {
 
 ipcMain.on('uploadNewVersion', (event, arg) => {
 
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:username, computerName:config["computerName"], package:arg["name"], newVersionNumber:arg["newVersionNumber"], uploadDir:arg["newVersionPath"]};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "uploadNewVersion", dataToSend);
+  dataToSend = {username:username, computerName:config["computerName"], package:arg["name"], newVersionNumber:arg["newVersionNumber"], uploadDir:arg["newVersionPath"]};
+  mainACE.send("uploadNewVersion", dataToSend);
 
   checkForPackageUpdates();
 
+});
+
+ipcMain.on('uploadNewPackage', (event, arg) => {
+
+  dataToSend = {username:username, computerName:config["computerName"], package:arg["name"], newVersionNumber:arg["newVersionNumber"], packageDesc: arg["packageDesc"], uploadDir:arg["newVersionPath"]};
+  mainACE.send("uploadNewPackage", dataToSend);
+
+  checkForPackageUpdates();
+
+  dataToSend = {username:username, computerName:config["computerName"]};
+  mainACE.send("requestListOfPackages", dataToSend);
+
+});
+
+ipcMain.on('checkForUpdates', (event, arg) => {
+  checkForPackageUpdates();
+});
+
+ipcMain.on('deletePackage', (event, arg) => {
+  dataToSend = {username:username, computerName:config["computerName"], package:arg};
+  mainACE.send("deletePackage", dataToSend);
+
+  dataToSend = {username:username, computerName:config["computerName"]};
+  mainACE.send("requestListOfPackages", dataToSend);
+
+  /*
+  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
+  dataToSend = {target:ACEID, username:username, computerName:config["computerName"]};
+  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestListOfPackages", dataToSend);*/
 });
 
 

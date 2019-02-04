@@ -154,9 +154,21 @@ ipc.connectTo('world', () => {
       dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
 
-      rimraf(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\*.*", fs, function() {
-        setTimeout(function() {fs.rmdir(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\")}, 10000);
-      });
+      try {
+        rimraf(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\*.*", fs, function() {
+          setTimeout(function() {
+            try {
+              if (fs.existsSync(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\")) {
+                fs.rmdir(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\");
+              }
+            } catch (error) {
+
+            }
+          }, 10000);
+        });
+      } catch (error) {
+
+      }
 
       consoleOutput(message["package"] + " uninstalled.", ipc.of.world);
     }
@@ -210,6 +222,24 @@ ipc.connectTo('world', () => {
       client.write(constructPacket("__CMD__",dataToSend));
 
       uploadDir(message["uploadDir"], serverInstallDir + "Data/packages/" + message["package"] + "/");
+    }
+  });
+
+  ipc.of.world.on('uploadNewPackage', (message) => {
+    if (message["target"] == randomID) {
+      commandToSend = {CMDType:"uploadNewPackage", data:{computerName:message["computerName"], package:message["package"], newVersionNumber:message["newVersionNumber"], packageDesc:message["packageDesc"]}};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
+
+      uploadDir(message["uploadDir"], serverInstallDir + "Data/packages/" + message["package"] + "/");
+    }
+  });
+
+  ipc.of.world.on('deletePackage', (message) => {
+    if (message["target"] == randomID) {
+      commandToSend = {CMDType:"deletePackage", data:{computerName:message["computerName"], package:message["package"]}};
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
     }
   });
 });

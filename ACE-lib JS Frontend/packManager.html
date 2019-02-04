@@ -7,7 +7,7 @@
         <script src="blank.js"></script>
     </head>
     <body style="background-color:#383838; height:100%;">
-        <div id="titlebarGroup" style="width:100%;">
+        <div id="titlebarGroup" style="width:100%; z-index: 150;">
             <div id="banner" style="-webkit-app-region: drag; width:100%; display:flex;";>
                 <div style="display:flex; height: 26px; width:100%;">
                     <img src="ACRONYM.png" alt="A.C.R.O.N.Y.M. Logo" style="width:30px; margin:4px; margin-left:10px; height:16px;">
@@ -20,9 +20,26 @@
                 <div id="CloseButton" style="float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center;">&#xE8BB;</div>
             </div>
         </div>
-        
-        <div id="bodyGroup" class="wrapper">
-            
+        <div style="position: relative; height:100%; width:100%;"></div>
+            <div id="bodyGroup" class="wrapper" style="z-index: -50; position:absolute; bottom:85px; top:26px; overflow-y:scroll;">
+                
+            </div>
+
+            <div style="position: fixed; height:75px; bottom:0;">
+                <div style="display:flex;">
+                    <form>
+                        <input id="newPackageName" type="smallNumber" name="defaultVersion" style="margin-left:15px; width:100px;" placeholder="Name"><br>
+                    </form>
+                    <form>
+                        <input id="newPackageVersion" type="smallNumber" name="defaultVersion" style="margin-left:5px; width:100px;" placeholder="Version"><br>
+                    </form>
+                    <button class="packUpdateButton" onclick="uploadNewPackage()" style="margin-left: 5px; width: 100px;">New Package</button>            
+                </div>
+                <div style="display:flex;"> 
+                    <textarea id="newPackageDesc" rows="2" cols="18" style="margin-left:15px;" placeholder="Description"></textarea>
+                    <button class="packUpdateButton" onclick="checkForUpdates()" style="margin-left: 15px; width: 140px; margin-top:5px;">Check For Updates</button>
+                </div>
+            </div>
         </div>
 
     </div>

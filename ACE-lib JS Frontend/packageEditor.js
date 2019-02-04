@@ -1,5 +1,5 @@
 require('./renderer.js');
-const dialog = require('electron').remote.dialog 
+const dialog = require('electron').remote.dialog
 var packageName = "Loading";
 
 function updateInstallationData() {
@@ -20,6 +20,24 @@ function uploadNewVersion() {
     var newVersionNumber = document.getElementById("newVersionNumber").value;
 
     ipcRenderer.send('uploadNewVersion', {name:packageName, newVersionNumber: newVersionNumber, newVersionPath:dirToUpload});
+}
+
+function deletePackage() {
+    ipcRenderer.send('deletePackage', packageName);
+
+    var window = remote.getCurrentWindow();
+    window.close();
+}
+
+function promptDelete() {
+    console.log("Are you SURE you want to delete?");
+    document.getElementById("deleteConfirmDiv").style.display = "inline";
+    document.getElementById("deletePromptButton").style.display = "none";
+}
+
+function dontDelete() {
+    document.getElementById("deleteConfirmDiv").style.display = "none";
+    document.getElementById("deletePromptButton").style.display = "inline";
 }
 
 function initialLoad() {

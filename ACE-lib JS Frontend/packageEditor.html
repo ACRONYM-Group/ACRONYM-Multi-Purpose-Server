@@ -34,11 +34,25 @@
                     <button class="packUpdateButton" onclick="forceUninstall()" style="margin-left: 15px; margin-top: 10px; width:135px;">Force Uninstall</button>
                 </div>
             <h2 style="color:white; margin-left:15px; margin-top:50px;">Package Versions</h3>
-                <form>
-                    <h5 style="color:white; margin-left:15px; margin-bottom:10px;">Default Version:</h5>
-                    <input id="defaultVersion" type="smallNumber" name="defaultVersion" style="margin-left:25px; width:125px;"><br>
-                </form>
-                <button class="packUpdateButton" onclick="updateDefaultVersion()" style="margin-left: 15px; margin-top: 10px; margin-bottom:50px;">Apply</button>
+                <div style="display:flex;">
+                    <div>
+                        <form>
+                            <h5 style="color:white; margin-left:15px; margin-bottom:10px;">Default Version:</h5>
+                            <input id="defaultVersion" type="smallNumber" name="defaultVersion" style="margin-left:25px; width:125px;"><br>
+                        </form>
+                        <button class="packUpdateButton" onclick="updateDefaultVersion()" style="margin-left: 15px; margin-top: 10px; margin-bottom:50px;">Apply</button>
+                    </div>
+                    
+                    <button id="deletePromptButton" class="packUpdateButton" onclick="promptDelete()" style="margin-left: 35px; margin-top: 20px; margin-bottom:40px; width:120px; background-color:red">Delete Package</button>
+
+                    <div id="deleteConfirmDiv" style="display:none;">
+                            <h4 style="color:red; margin-left:10px;">Are you SURE? This cannot be undone.</h4>
+                            <div style="display:flex;">
+                                <button class="packUpdateButton" onclick="deletePackage()" style="margin-left: 15px; margin-top: 10px; margin-bottom:50px; background-color: red;">Yes</button>
+                                <button class="packUpdateButton" onclick="dontDelete()" style="margin-left: 15px; margin-top: 10px; margin-bottom:50px;">No</button>
+                            </div>
+                        </div>
+                </div>
 
                 
 

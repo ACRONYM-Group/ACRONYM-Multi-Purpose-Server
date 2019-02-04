@@ -377,13 +377,24 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
 
         if hasUserAuthenticated:
             
+            if commandRec["CMDType"] == "deletePackage":
+                print("DELETING Package")
+                print(commandRec["data"]["package"])
+                del packages[commandRec["data"]["package"]]
+                writePackageDataToDisk()
+
+            if commandRec["CMDType"] == "uploadNewPackage":
+                print("Uploading New Package")
+                packages[commandRec["data"]["package"]] = {"desc":commandRec["data"]["packageDesc"], "dataDir":"/Data/Packages/" + commandRec["data"]["package"] + "/",  "versions":{commandRec["data"]["newVersionNumber"]:{}}, "defaultVersion":commandRec["data"]["newVersionNumber"]}
+                writePackageDataToDisk() 
+
             if commandRec["CMDType"] == "uploadNewVersion":
-                print("uploading new package version")
+                print("Uploading New Package Version")
                 packages[commandRec["data"]["package"]]["versions"][commandRec["data"]["newVersionNumber"]] = {}
                 writePackageDataToDisk()
 
             if commandRec["CMDType"] == "updatePackageDefaultVersion":
-                print("updating package default version")
+                print("Updating Package Default Version")
                 packages[commandRec["data"]["package"]]["defaultVersion"] = commandRec["data"]["newDefaultVersion"]
                 writePackageDataToDisk()
 
@@ -404,14 +415,17 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
                 packagesToUpdate = {}
                 index = 0
                 for s in computers[commandRec["data"]["computerName"]]["subbedPackages"]:
-                    usersCurrentVersion = computers[commandRec["data"]["computerName"]]["subbedPackages"][s]["version"]
-                    usersSpecificMajor = computers[commandRec["data"]["computerName"]]["subbedPackages"][s]["specificMajor"]
-                    highestVersion = getHighestVersion(packages[s]["versions"], computers[commandRec["data"]["computerName"]]["subbedPackages"][s]["specificMajor"])
-                    print("Checking " + str(s) + " for updates. user: " + str(usersCurrentVersion) + " specificMajor: " + str(usersSpecificMajor) + " highest: " + str(highestVersion))
-                    if compareGreaterVersion(highestVersion, usersCurrentVersion):
-                        print("     Found updated version!")
-                        packagesToUpdate[index] = {"package":s, "currentVersion":usersCurrentVersion, "newVersion":highestVersion}
-                        index = index + 1
+                    try:
+                        usersCurrentVersion = computers[commandRec["data"]["computerName"]]["subbedPackages"][s]["version"]
+                        usersSpecificMajor = computers[commandRec["data"]["computerName"]]["subbedPackages"][s]["specificMajor"]
+                        highestVersion = getHighestVersion(packages[s]["versions"], computers[commandRec["data"]["computerName"]]["subbedPackages"][s]["specificMajor"])
+                        print("Checking " + str(s) + " for updates. user: " + str(usersCurrentVersion) + " specificMajor: " + str(usersSpecificMajor) + " highest: " + str(highestVersion))
+                        if compareGreaterVersion(highestVersion, usersCurrentVersion):
+                            print("     Found updated version!")
+                            packagesToUpdate[index] = {"package":s, "currentVersion":usersCurrentVersion, "newVersion":highestVersion}
+                            index = index + 1
+                    except:
+                        print("Unable to check updates for " + s + " moving on.")
                         
                 if len(packagesToUpdate) > 0:
                     dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackageUpdates", "data":packagesToUpdate}), key)
@@ -419,6 +433,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
 
             if commandRec["CMDType"] == "downloadPackage":
                 commandRec["data"] = json.loads(commandRec["data"])
+                print()
                 downloadDirHandler(conn, {"data":{"filePathModifier":packages[commandRec["data"]["package"]]["dataDir"]}}, key, programInstallDirectory[:-1] + packages[commandRec["data"]["package"]]["dataDir"] + commandRec["data"]["version"], False, True, commandRec["data"]["package"])
                 computers[commandRec["data"]["computerName"]]["subbedPackages"][commandRec["data"]["package"]]["version"] = commandRec["data"]["version"]
                 writeComputersToDisk()
