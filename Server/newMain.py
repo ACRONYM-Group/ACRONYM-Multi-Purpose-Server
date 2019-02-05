@@ -251,7 +251,6 @@ class ClientConnection:
             threading.Thread(target=file_download_process, args=(self, packet)).start()
 
         elif packet["CMDType"] == "uploadFile":
-            print(packet)
             file_name = programInstallDirectory + packet["data"]["filePath"]
             if not os.path.exists(os.path.dirname(file_name)):
                 try:
@@ -284,7 +283,7 @@ class ClientConnection:
                         file_write_queue[file_name]["index"] += 1
                 else:
                     hasFoundEmptyPacket = True
-                i = i + 1
+                i += 1
 
             if "finalPacketIndex" in file_write_queue[file_name]:
                 if file_write_queue[file_name]["finalPacketIndex"] == file_write_queue[file_name]["index"]:
@@ -292,7 +291,16 @@ class ClientConnection:
                     #fileWriteQueue[commandRec["data"]["filePath"]]["fileReference"].close()
                     #fileWriteQueue[commandRec["data"]["filePath"]] = None
 
-
+        elif packet["CMDType"] == "requestFiles":
+                filesDataToSend = []
+                commandData = packet["data"]
+                directory = os.listdir(commandData["path"])
+                for s in directory:
+                    fileData = {"name":s,"size":os.stat(packet["data"]["path"] + s).st_size}
+                    filesDataToSend.append(fileData)
+                
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"updateFiles", "data":{"files":filesDataToSend, "window":commandData["windowID"], "path": packet["data"]["path"]}}), self.shared_key)
+                Packet.Packet(dataToSend,"__CMD__").send(self.connection)
 
 def listener():
     while True:
