@@ -52,6 +52,7 @@ port = 4242
 host_name = ""
 
 global_cache = {}
+file_write_queue = {}
 
 def check_user_passhash(username, password_hash):
     SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
@@ -248,6 +249,49 @@ class ClientConnection:
 
         elif packet["CMDType"] == "downloadFile":
             threading.Thread(target=file_download_process, args=(self, packet)).start()
+
+        elif packet["CMDType"] == "uploadFile":
+            print(packet)
+            file_name = programInstallDirectory + packet["data"]["filePath"]
+            if not os.path.exists(os.path.dirname(file_name)):
+                try:
+                    os.makedirs(os.path.dirname(file_name))
+                except OSError as exc: # Guard against race condition
+                    if exc.errno != errno.EEXIST:
+                        raise
+
+            if not file_name in file_write_queue:
+                file_write_queue[file_name] = {"index":0, "outOfOrderPackets":{}, "startTime": datetime.now()}
+            if file_write_queue[file_name]["index"] == packet["data"]["index"]:
+                if not "fileReference" in file_write_queue[file_name]:
+                    file = open(file_name, "wb")
+                    file.write(base64.b64decode(packet["data"]["file"]))
+                    file.close()
+                    file_write_queue[file_name]["fileReference"] = open(file_name, "ab")
+                    file_write_queue[file_name]["index"] += 1
+                else:
+                    file_write_queue[file_name]["fileReference"].write(base64.b64decode(packet["data"]["file"]))
+                    file_write_queue[file_name]["index"] += 1
+            else:
+                file_write_queue[file_name]["outOfOrderPackets"][packet["data"]["index"]] = packet["data"]["file"]
+
+            i = file_write_queue[file_name]["index"] + 1
+            hasFoundEmptyPacket = False
+            while (i <= 5):
+                if i in file_write_queue[file_name]["outOfOrderPackets"] and "fileReference" in file_write_queue[file_name]:
+                    if hasFoundEmptyPacket == False:
+                        file_write_queue[file_name]["fileReference"].write(base64.b64decode(file_write_queue[file_name]["outOfOrderPackets"][i]))
+                        file_write_queue[file_name]["index"] += 1
+                else:
+                    hasFoundEmptyPacket = True
+                i = i + 1
+
+            if "finalPacketIndex" in file_write_queue[file_name]:
+                if file_write_queue[file_name]["finalPacketIndex"] == file_write_queue[file_name]["index"]:
+                    print("Write of " + file_name + " Complete! Took " + millis(file_write_queue[file_name]["startTime"]) + " Milliseconds")
+                    #fileWriteQueue[commandRec["data"]["filePath"]]["fileReference"].close()
+                    #fileWriteQueue[commandRec["data"]["filePath"]] = None
+
 
 
 def listener():

@@ -10,4 +10,4 @@ else:
     print("Login Failed")
 
 conn.setData("name", "value")
-conn.downloadFile("ACELib.py", open("datafile.txt", 'wb'))
+conn.uploadFile(open("C://Users//Plasek//Desktop//Programming//Python//Server File Transfer//ACRONYM-File-Transfer-System//Server//main.py", 'rb'), "/data.txt")
