@@ -376,7 +376,17 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
             username = userCredentials["username"]
 
         if hasUserAuthenticated:
-            
+
+            if commandRec["CMDType"] == "requestUserData":
+                print("Sending a User Their User Data!")
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"userData", "data":{"username":users[username]["username"], "statusCardSubs":users[username]["statusCardSubs"]}}), key)
+                Packet.Packet(dataToSend,"__CMD__").send(conn)
+                
+
+            if commandRec["CMDType"] == "requestInstallationDir":
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"installationDir", "data":programInstallDirectory}), key)
+                Packet.Packet(dataToSend,"__CMD__").send(conn)
+
             if commandRec["CMDType"] == "deletePackage":
                 print("DELETING Package")
                 print(commandRec["data"]["package"])
@@ -427,7 +437,7 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
                     except:
                         print("Unable to check updates for " + s + " moving on.")
                         
-                if len(packagesToUpdate) > 0:
+                if len(packagesToUpdate) > -1:
                     dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackageUpdates", "data":packagesToUpdate}), key)
                     Packet.Packet(dataToSend,"__CMD__").send(conn)
 

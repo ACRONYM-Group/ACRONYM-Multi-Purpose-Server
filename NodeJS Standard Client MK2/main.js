@@ -126,6 +126,12 @@ ipc.connectTo('world', () => {
 
   ipc.of.world.on('requestDownloadPackage', (message) => {
     if (message["target"] == randomID) {
+      try {
+        rimraf(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\*.*", fs, function() {});
+      } catch (error) {
+
+      }
+
       consoleOutput("Downloading Package...", ipc.of.world);
       commandToSend = {CMDType:"downloadPackage", data:JSON.stringify({username:message["username"], package:message["package"], version:message["version"], computerName:message["computerName"]})};
       dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
@@ -232,6 +238,14 @@ ipc.connectTo('world', () => {
       client.write(constructPacket("__CMD__",dataToSend));
 
       uploadDir(message["uploadDir"], serverInstallDir + "Data/packages/" + message["package"] + "/");
+    }
+  });
+
+  ipc.of.world.on('proxyCommand', (message) => {
+    if (message["target"] == randomID) {
+      commandToSend =  message["command"];
+      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+      client.write(constructPacket("__CMD__",dataToSend));
     }
   });
 
@@ -432,27 +446,33 @@ function packetReceiveHander(data, alreadyDecrypted) {
     }
 
     command = JSON.parse(decryptedPacketData);
+
     if (command["CMDType"] == "packageDownloadComplete") {
       ipc.of.world.emit('command', {type:"packageDownloadComplete", data:command["payload"]["package"], ID:randomID, target:hostID})
       consoleOutput(command["payload"]["package"] + " installation Complete!", ipc.of.world);
     }
 
-    if (command["CMDType"] == "avaliablePackages") {
+    else if (command["CMDType"] == "avaliablePackages") {
       ipc.of.world.emit('command', {type:"avaliablePackages", data:command["data"], ID:randomID, target:hostID});
     }
 
-    if (command["CMDType"] == "avaliablePackageUpdates") {
+    else if (command["CMDType"] == "avaliablePackageUpdates") {
       ipc.of.world.emit('command', {type:"avaliablePackageUpdates", data:command["data"], ID:randomID, target:hostID});
     }
 
-    if (command["CMDType"] == "updateMOTD") {
+    else if (command["CMDType"] == "updateMOTD") {
       MOTD = command["data"];
       console.log("New MOTD: ");
       console.log(MOTD);
       console.log(" ");
     }
 
-    if (command["CMDType"] == "AuthResult") {
+    else if (command["CMDType"] == "installationDir") {
+      serverInstallDir = command["data"];
+      consoleOutput("Server installation Directory: " + serverInstallDir, ipc.of.world);
+    }
+
+    else if (command["CMDType"] == "AuthResult") {
       ipc.of.world.emit('command', {type:"loginResult", data:command["data"], ID:randomID, target:hostID});
       if (command["data"] == true) {
         console.log("Login Successful!");
@@ -461,7 +481,12 @@ function packetReceiveHander(data, alreadyDecrypted) {
         //dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
         //client.write(constructPacket("__CMD__",dataToSend));
 
-        uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\", "Z:\\AcroFTP\\NewDir\\");
+        commandToSend = {CMDType:"requestInstallationDir"};
+        dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+        client.write(constructPacket("__CMD__",dataToSend));
+
+
+        uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\")
         
 
         //commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
@@ -471,14 +496,14 @@ function packetReceiveHander(data, alreadyDecrypted) {
         console.log("Login Failed!");
       }
     }
-     if (command["CMDType"] == "updateFiles") {
+    else if (command["CMDType"] == "updateFiles") {
       dataToSend = {currentDir: command["data"]["path"], files: command["data"]["files"]};
       if (command["data"]["window"] != -1) {
         BrowserWindow.fromId(command["data"]["window"]).send('FileList', JSON.stringify(dataToSend));
       }
     }
 
-    if (command["CMDType"] == "downloadFile") {
+    else if (command["CMDType"] == "downloadFile") {
       data = command["payload"]["file"]
       data = Buffer.from(data, 'base64');
       fs.writeFile("Z:/AcroFTPClient/" + command["payload"]["fileName"], data, (err) => {
@@ -486,7 +511,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
       });
     }
 
-    if (command["CMDType"] == "downloadFileChunk") {
+    else if (command["CMDType"] == "downloadFileChunk") {
       packet = command["payload"];
       packetData = Buffer.from(packet["file"], "base64");
 
@@ -534,11 +559,11 @@ function packetReceiveHander(data, alreadyDecrypted) {
       }
   }
 
-    if (command["CMDType"] == "fileTransferProgressReport" && command["data"]["windowID"] != -1) {
+  else if (command["CMDType"] == "fileTransferProgressReport" && command["data"]["windowID"] != -1) {
       BrowserWindow.fromId(command["data"]["windowID"]).send("EncryptionProgressReport", command["data"]);
     }
 
-    if (command["CMDType"] == "fileTransferComplete") {
+    else if (command["CMDType"] == "fileTransferComplete") {
       packet = command["payload"];
       if (packet["filePathModifier"] == undefined) {
         filePathModifier = "";
@@ -558,6 +583,10 @@ function packetReceiveHander(data, alreadyDecrypted) {
         fileWriteQueue[writeDir]["hasServerSentEndPacket"] = true;
         fileWriteQueue[writeDir]["finalPacketIndex"] = packet["finalPacketIndex"];
       }
+    }
+
+    else {
+      ipc.of.world.emit('command', {type:"unknownCommand", data:command, ID:randomID, target:hostID});
     }
 
   } else if (packet["packetType"] == "__HDS__") {

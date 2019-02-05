@@ -17,6 +17,7 @@ var packageToDisplay = "StatusCards";
 
 var config = {};
 var subbedPackages = {};
+var user = {};
 
 config = JSON.parse(fs.readFileSync(programInstallDirectory + "data/config.json"));
 
@@ -30,6 +31,7 @@ var avaliablePackages = {};
 function createHubWindow() {
   hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true});
   hubWin.loadFile('hub.html')
+  hubWin.webContents.openDevTools();
   return hubWin;
 }
 
@@ -48,6 +50,7 @@ function checkForPackageUpdates() {
   mainACE.send("checkForPackageUpdates", {username:username, computerName:config["computerName"]});
 }
 
+
 class frontendClass {
   constructor() {
     
@@ -58,6 +61,8 @@ class frontendClass {
       loginWin.send("authResult", message["data"]);
       loginWin.close();
       hubWin = createHubWindow();
+
+      mainACE.sendCommand({CMDType:"requestUserData"});
     } else {
       loginWin.send("authResult", message["data"]);
     }
@@ -90,6 +95,17 @@ class frontendClass {
     else if (message["type"] == "printToConsole") {
       console.log("ACE Output: " + message["data"]);
     }
+
+    else if (message["type"] == "unknownCommand") {
+      console.log("Receiving ACEManager Unknown Command.");
+      
+      var command = message["data"];
+
+      if (command["CMDType"] == "userData") {
+        user = command["data"];
+        console.log("Receiving New User Data");
+      }
+    }
   }
 }
 
@@ -114,7 +130,8 @@ ipcMain.on('login', (event, arg) => {
 });
 
 ipcMain.on('requestProgramStatusCards', (event, arg) => {
-  event.sender.send("programStatusCards", CardsData);
+  console.log("Sending a Window Status Card Data");
+  event.sender.send("programStatusCards", {statusCardInstallDir:programInstallDirectory + "/Data/Packages/StatusCards/", subbedStatusCards: user["statusCardSubs"]});
 });
 
 ipcMain.on('openPackManager', (event, arg) => {

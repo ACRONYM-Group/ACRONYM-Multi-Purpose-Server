@@ -63,17 +63,16 @@ class ACE {
     }
 
     login(username, password, computer) {
-        var ACEID = this.ownedACEs[0];
-        var dataToSend = {target:ACEID, username:username, password:password, computerName:computer};
         this.username = username
-        this.ipc.server.emit(this.ownedACEsData[ACEID]["socket"], "login", dataToSend);
+
+        var dataToSend = {username:username, password:password, computerName:computer};
+        this.send("login", dataToSend);
     }
 
     send(channel, data, ACEID) {
         if (ACEID == undefined) {
             ACEID = 0;
         }
-
         ACEID = this.ownedACEs[ACEID];
         
         data["target"] = ACEID;
@@ -81,6 +80,14 @@ class ACE {
         console.log(data);
         this.ipc.server.emit(this.ownedACEsData[ACEID]["socket"], channel, data);
 
+    }
+
+    sendCommand(data, ACEID) {
+        if (ACEID == undefined) {
+            ACEID = 0;
+        }
+
+        this.send("proxyCommand", {command:data}, ACEID)
     }
 
 }
