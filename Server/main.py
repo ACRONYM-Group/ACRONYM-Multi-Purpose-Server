@@ -443,7 +443,6 @@ def packetHandler(packetRec, key, hasUserAuthenticated, conn, LPWPackets, fileWr
 
             if commandRec["CMDType"] == "downloadPackage":
                 commandRec["data"] = json.loads(commandRec["data"])
-                print()
                 downloadDirHandler(conn, {"data":{"filePathModifier":packages[commandRec["data"]["package"]]["dataDir"]}}, key, programInstallDirectory[:-1] + packages[commandRec["data"]["package"]]["dataDir"] + commandRec["data"]["version"], False, True, commandRec["data"]["package"])
                 computers[commandRec["data"]["computerName"]]["subbedPackages"][commandRec["data"]["package"]]["version"] = commandRec["data"]["version"]
                 writeComputersToDisk()

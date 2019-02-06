@@ -159,8 +159,30 @@ class ClientConnection:
 
         self.username = ""
 
-    def download_directory(self, packet):
-        pass
+    def download_directory(self, packet, isPackage=False, packageName=None):
+        key = self.shared_key
+        dir = packet["data"]["filePath"]
+
+        print("Client would like to download " + dir)
+
+        for root, directories, filenames in os.walk(dir):
+            for directory in directories:
+
+                directory_path = os.path.join(root, directory)
+
+        for filename in filenames:
+
+            file_path = os.path.join(root,filename).replace("\\", "/")
+            if not isPackage:
+                filePathModifier = os.path.dirname(file_path)
+                filePathModifier = filePathModifier[len(os.path.dirname(dir))+1:] + "/"
+            else:
+                filePathModifier = ""
+            file_download_process(self, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":packet["data"]["filePathModifier"] + filePathModifier}})
+        
+        if isPackage:
+            dataToSend = encryption.encrypt(json.dumps({"CMDType":"packageDownloadComplete", "payload": {"package":packageName}}), self.shared_key)
+            Packet.Packet(dataToSend,"__CMD__").send(self.connection)
 
     def perform_handshake(self):
         Packet.Packet('31415', "__HDS__").send(self.connection)
@@ -322,6 +344,11 @@ class ClientConnection:
 
         elif packet["CMDType"] == "downloadDir":
             self.download_directory(packet)
+
+        elif packet["CMDType"] == "downloadPackage":
+            self.download_directory({"data":{"filePathModifier":packages[packet["data"]["package"]]["dataDir"], "filePath":programInstallDirectory[:-1] + packages[packet["data"]["package"]]["dataDir"] + packet["data"]["version"]}} True, packet["data"]["package"])
+            computers_data[packet["data"]["computerName"]]["subbedPackages"][packet["data"]["package"]]["version"] = packet["data"]["version"]
+            dump_data()
 
 def listener():
     while True:
