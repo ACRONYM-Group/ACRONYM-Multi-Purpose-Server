@@ -159,6 +159,9 @@ class ClientConnection:
 
         self.username = ""
 
+    def download_directory(self, packet):
+        pass
+
     def perform_handshake(self):
         Packet.Packet('31415', "__HDS__").send(self.connection)
 
@@ -312,12 +315,13 @@ class ClientConnection:
 
         if packet["CMDType"] == "uploadFileFinish":
             if fileWriteQueue[packet["data"]["filePath"]]["index"] >= packet["data"]["finalPacketIndex"]:
-                print("Write of " + packet["data"]["filePath"] + " Complete! Took " + str(millis(fileWriteQueue[packet["data"]["filePath"]]["startTime"])) + " Milliseconds")
                 fileWriteQueue[packet["data"]["filePath"]]["fileReference"].close()
                 fileWriteQueue[packet["data"]["filePath"]] = None
             else:
                 fileWriteQueue[packet["data"]["filePath"]]["finalPacketIndex"] = packet["data"]["finalPacketIndex"]
-        
+
+        elif packet["CMDType"] == "downloadDir":
+            self.download_directory(packet)
 
 def listener():
     while True:
