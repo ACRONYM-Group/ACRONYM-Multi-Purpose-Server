@@ -346,7 +346,7 @@ class ClientConnection:
             self.download_directory(packet)
 
         elif packet["CMDType"] == "downloadPackage":
-            self.download_directory({"data":{"filePathModifier":packages[packet["data"]["package"]]["dataDir"], "filePath":programInstallDirectory[:-1] + packages[packet["data"]["package"]]["dataDir"] + packet["data"]["version"]}} True, packet["data"]["package"])
+            self.download_directory({"data":{"filePathModifier":packages[packet["data"]["package"]]["dataDir"], "filePath":programInstallDirectory[:-1] + packages[packet["data"]["package"]]["dataDir"] + packet["data"]["version"]}}, True, packet["data"]["package"])
             computers_data[packet["data"]["computerName"]]["subbedPackages"][packet["data"]["package"]]["version"] = packet["data"]["version"]
             dump_data()
 
