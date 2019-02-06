@@ -45,6 +45,10 @@ function openPackManager() {
     ipcRenderer.send('openPackManager', "Ping");
 }
 
+function disconnectFromAmps() {
+    ipcRenderer.send('disconnectFromAmps', "Ping");
+}
+
 initialLoad()
 
 ipcRenderer.on('programStatusCards', (event, arg) => {

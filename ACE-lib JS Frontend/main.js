@@ -1,6 +1,6 @@
 const ipc = require('node-ipc');
 const spawn = require('child_process').spawn;
-const {app, BrowserWindow, dialog, ipcMain} = require('electron');
+const {app, BrowserWindow, dialog, ipcMain, Tray, Menu} = require('electron');
 const fs = require("fs");
 const ACE = require("./ACEManager.js");
 
@@ -14,11 +14,13 @@ var username = "NOTLOGGEDIN";
 var CardsData = "<div class='programStatusCard' style='height:45px;'><h5 style='color:white; width:100%; background-color:#444444;'>Minecraft Server</h5><div style='width:100%; height:1px; background-color:black;'></div><div style='display:flex; width:100%;'><div style='display:flex;'><h5 style='color:white;'>Status: Online </h5><div class='cardHorizontalSpacer' style='width:1px; height:25px; background-color:black;'></div><h5 style='color:white;'>Players: 3 </h5></div></div></div>";
 var programInstallDirectory = "Z:/AcroFTPClient/";
 var taskBarLogoDir = "/Data/ACRONYM.png"
+var trayLogoDir = "/Data/ACRONYM.ico"
 var packageToDisplay = "StatusCards";
-
 var config = {};
 var subbedPackages = {};
 var user = {};
+var hasAuthenticated = false;
+let tray = null;
 
 config = JSON.parse(fs.readFileSync(programInstallDirectory + "data/config.json"));
 
@@ -32,14 +34,14 @@ var avaliablePackages = {};
 function createHubWindow() {
   hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
   hubWin.loadFile('hub.html')
-  hubWin.webContents.openDevTools();
+  //hubWin.webContents.openDevTools();
   return hubWin;
 }
 
 function createUpdateDialog(data) {
   updateWin = new BrowserWindow({width: 375, height: 225, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
   updateWin.loadFile('update.html')
-  updateWin.webContents.openDevTools();
+  //updateWin.webContents.openDevTools();
   return updateWin;
 }
 
@@ -59,8 +61,10 @@ class frontendClass {
 
   loginResult(message) {
     if (message["data"]) {
+      hasAuthenticated = message["data"];
       loginWin.send("authResult", message["data"]);
       loginWin.close();
+      loginWin = null;
       hubWin = createHubWindow();
 
       mainACE.sendCommand({CMDType:"requestUserData"});
@@ -80,7 +84,7 @@ class frontendClass {
       if (waitingToOpenPackManager) {
         var packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
         packManagerWin.loadFile('packManager.html');
-        packManagerWin.openDevTools();
+        //packManagerWin.openDevTools();
         waitingToOpenPackManager = false;
       }
 
@@ -192,7 +196,7 @@ ipcMain.on('openPackageEditor', (event, arg) => {
   packageToDisplay = arg;
   packageEditorWin = new BrowserWindow({width: 325, height: 520, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
   packageEditorWin.loadFile('packageEditor.html');
-  packageEditorWin.webContents.openDevTools();
+  //packageEditorWin.webContents.openDevTools();
   console.log("Opening Package Editor");
 });
 
@@ -254,6 +258,12 @@ ipcMain.on('checkForUpdates', (event, arg) => {
   checkForPackageUpdates();
 });
 
+ipcMain.on('disconnectFromAmps', (event, arg) => {
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+});
+
 ipcMain.on('deletePackage', (event, arg) => {
   dataToSend = {username:username, computerName:config["computerName"], package:arg};
   mainACE.send("deletePackage", dataToSend);
@@ -273,8 +283,26 @@ ipcMain.on('deletePackage', (event, arg) => {
 app.on('ready', function() {
   keepAliveWin = new BrowserWindow({width: 10, height: 10, frame: false, show: false});
   loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
-  loginWin.loadFile('login.html')
+  loginWin.loadFile('login.html');
   //loginWin.webContents.openDevTools()
+
+  appIcon = new Tray(programInstallDirectory + trayLogoDir);
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Hello', type: 'radio' }
+  ])
+
+  // Call this again for Linux because we modified the context menu
+  appIcon.setContextMenu(contextMenu)
+
+  appIcon.on('click', function() {
+    if (hasAuthenticated) {
+      createHubWindow();
+      
+    } else {
+      loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
+      loginWin.loadFile('login.html');
+    }
+  })
 })
 
 app.on('window-all-closed', () => {
