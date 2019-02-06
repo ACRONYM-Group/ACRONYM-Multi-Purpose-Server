@@ -13,6 +13,7 @@ var waitingToOpenPackManager = false;
 var username = "NOTLOGGEDIN";
 var CardsData = "<div class='programStatusCard' style='height:45px;'><h5 style='color:white; width:100%; background-color:#444444;'>Minecraft Server</h5><div style='width:100%; height:1px; background-color:black;'></div><div style='display:flex; width:100%;'><div style='display:flex;'><h5 style='color:white;'>Status: Online </h5><div class='cardHorizontalSpacer' style='width:1px; height:25px; background-color:black;'></div><h5 style='color:white;'>Players: 3 </h5></div></div></div>";
 var programInstallDirectory = "Z:/AcroFTPClient/";
+var taskBarLogoDir = "/Data/ACRONYM.png"
 var packageToDisplay = "StatusCards";
 
 var config = {};
@@ -29,14 +30,14 @@ var avaliablePackageUpdates = [];
 var avaliablePackages = {};
 
 function createHubWindow() {
-  hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true});
+  hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
   hubWin.loadFile('hub.html')
   hubWin.webContents.openDevTools();
   return hubWin;
 }
 
 function createUpdateDialog(data) {
-  updateWin = new BrowserWindow({width: 375, height: 225, frame: false, show: true});
+  updateWin = new BrowserWindow({width: 375, height: 225, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
   updateWin.loadFile('update.html')
   updateWin.webContents.openDevTools();
   return updateWin;
@@ -77,7 +78,7 @@ class frontendClass {
 
     else if (message["type"] == "avaliablePackages") {
       if (waitingToOpenPackManager) {
-        var packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true});
+        var packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
         packManagerWin.loadFile('packManager.html');
         packManagerWin.openDevTools();
         waitingToOpenPackManager = false;
@@ -189,7 +190,7 @@ ipcMain.on('requestSubbedPackages', (event, arg) => {
 
 ipcMain.on('openPackageEditor', (event, arg) => {
   packageToDisplay = arg;
-  packageEditorWin = new BrowserWindow({width: 325, height: 520, frame: false, show: true});
+  packageEditorWin = new BrowserWindow({width: 325, height: 520, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
   packageEditorWin.loadFile('packageEditor.html');
   packageEditorWin.webContents.openDevTools();
   console.log("Opening Package Editor");
@@ -271,7 +272,7 @@ ipcMain.on('deletePackage', (event, arg) => {
 
 app.on('ready', function() {
   keepAliveWin = new BrowserWindow({width: 10, height: 10, frame: false, show: false});
-  loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true});
+  loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
   loginWin.loadFile('login.html')
   //loginWin.webContents.openDevTools()
 })
