@@ -54,6 +54,8 @@ host_name = ""
 global_cache = {}
 file_write_queue = {}
 
+MOTD = "I thought this was depricated?!"
+
 def check_user_passhash(username, password_hash):
     SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
     result = AccountHandler.check_credentials(username, password_hash)
@@ -292,15 +294,30 @@ class ClientConnection:
                     #fileWriteQueue[commandRec["data"]["filePath"]] = None
 
         elif packet["CMDType"] == "requestFiles":
-                filesDataToSend = []
-                commandData = packet["data"]
-                directory = os.listdir(commandData["path"])
-                for s in directory:
-                    fileData = {"name":s,"size":os.stat(packet["data"]["path"] + s).st_size}
-                    filesDataToSend.append(fileData)
-                
-                dataToSend = encryption.encrypt(json.dumps({"CMDType":"updateFiles", "data":{"files":filesDataToSend, "window":commandData["windowID"], "path": packet["data"]["path"]}}), self.shared_key)
-                Packet.Packet(dataToSend,"__CMD__").send(self.connection)
+            filesDataToSend = []
+            commandData = packet["data"]
+            directory = os.listdir(commandData["path"])
+            for s in directory:
+                fileData = {"name":s, "size":os.stat(packet["data"]["path"] + s).st_size}
+                filesDataToSend.append(fileData)
+            
+            dataToSend = encryption.encrypt(json.dumps({"CMDType":"updateFiles", "data":{"files":filesDataToSend, "window":commandData["windowID"], "path": packet["data"]["path"]}}), self.shared_key)
+            Packet.Packet(dataToSend, "__CMD__").send(self.connection)
+
+        elif packet["CMDType"] == "requestMOTD":
+            print("Sending the client the MOTD")
+            dataToSend = encryption.encrypt(json.dumps({"CMDType":"updateMOTD", "data":MOTD}), self.shared_key)
+            dataToSendDecrypt = encryption.decrypt(dataToSend, key)
+            Packet.Packet(dataToSend, "__CMD__").send(self.connection)
+
+        if packet["CMDType"] == "uploadFileFinish":
+            if fileWriteQueue[packet["data"]["filePath"]]["index"] >= packet["data"]["finalPacketIndex"]:
+                print("Write of " + packet["data"]["filePath"] + " Complete! Took " + str(millis(fileWriteQueue[packet["data"]["filePath"]]["startTime"])) + " Milliseconds")
+                fileWriteQueue[packet["data"]["filePath"]]["fileReference"].close()
+                fileWriteQueue[packet["data"]["filePath"]] = None
+            else:
+                fileWriteQueue[packet["data"]["filePath"]]["finalPacketIndex"] = packet["data"]["finalPacketIndex"]
+        
 
 def listener():
     while True:
