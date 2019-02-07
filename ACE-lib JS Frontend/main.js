@@ -270,12 +270,21 @@ ipcMain.on('deletePackage', (event, arg) => {
 
   dataToSend = {username:username, computerName:config["computerName"]};
   mainACE.send("requestListOfPackages", dataToSend);
-
-  /*
-  var ACEID = findGeneralPurposeACE(ownedACEs, ownedACEsData);
-  dataToSend = {target:ACEID, username:username, computerName:config["computerName"]};
-  ipc.server.emit(ownedACEsData[ACEID]["socket"], "requestListOfPackages", dataToSend);*/
 });
+
+ipcMain.on('openNotificationCenter', (event, arg) => {
+  notificationCenterWin = new BrowserWindow({width: 325, height: 280, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
+  notificationCenterWin.loadFile('notificationSend.html');
+  notificationCenterWin.webContents.openDevTools();
+  console.log("Opening Notification Center");
+});
+
+ipcMain.on('sendNotification', (event, arg) => {
+  dataToSend = {username:username, computerName:config["computerName"], notification:arg};
+  mainACE.sendCommand("sendNotification", dataToSend);
+});
+
+
 
 
 

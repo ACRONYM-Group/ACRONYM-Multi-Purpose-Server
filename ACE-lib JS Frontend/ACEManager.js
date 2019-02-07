@@ -87,7 +87,7 @@ class ACE {
             ACEID = 0;
         }
 
-        this.send("proxyCommand", {command:data}, ACEID)
+        this.send("proxyCommand", {command:data})
     }
 
 }

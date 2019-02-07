@@ -288,6 +288,9 @@ class ClientConnection:
             self.process_packet(packet)
 
     def process_packet(self, packet):
+        if isinstance(packet, str):
+            packet = json.loads(packet)
+
         if packet["CMDType"] == "login":
             try:
                 userCredentials = json.loads(packet["data"])
@@ -407,6 +410,12 @@ class ClientConnection:
         elif packet["CMDType"] == "downloadPackageList":
             dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackages", "data":packages_data}), self.shared_key)
             Packet.Packet(dataToSend,"__CMD__").send(self.connection)
+
+        elif packet["CMDType"] == "sendNotification":
+            print(" ")
+            print("Broadcasting Notification: ")
+            print(packet["data"]["notification"]["subject"])
+            print(packet["data"]["notification"]["body"])
 
 def listener():
     while True:

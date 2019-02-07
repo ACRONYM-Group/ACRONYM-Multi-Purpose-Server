@@ -6,12 +6,12 @@
         <title>Hello World!</title>
         <script src="blank.js"></script>
     </head>
-    <body style="background-color:#282828; height:100%;">
+    <body style="background-color:#383838; height:100%;">
         <div id="titlebarGroup" style="width:100%;">
             <div id="banner" style="-webkit-app-region: drag; width:100%; display:flex;";>
                 <div style="display:flex; height: 26px; width:100%;">
                     <img src="ACRONYM.png" alt="A.C.R.O.N.Y.M. Logo" style="width:30px; margin:4px; margin-left:10px; height:16px;">
-                    <h5 style="margin-left:0px; text-align: center; color:white; padding-top:6px; padding-left: 5px;">LCARS Hub</h5>
+                    <h5 style="margin-left:0px; text-align: center; color:white; padding-top:6px; padding-left: 5px;">Notification Center</h5>
                 </div>
 
                 <div id="MinButton" style=" float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE921;</div>
@@ -21,25 +21,18 @@
             </div>
         </div>
         
-        <div id="bodyGroup" class="wrapper" style=" display:flex;">
-            <div id="LaunchArea" style="width: 30%; position: absolute; top: 25px; bottom: 0px;">
-                <div class="launchButton">File System</div>
-                <div class="launchButton">Settings</div>
-                <div class="launchButton" onclick="openNotificationCenter()">Notifications</div>
-                <div class="launchButton">Server Status</div>
-                <div class="launchButton">App Control</div>
-                <div class="launchButton">SSH Client</div>
-                <div class="launchButton" onclick="openPackManager()">Package Manager</div>
-                <div class="launchButton" onclick="disconnectFromAmps()" style="background-color:darkred;">Disconnect</div>    
-            </div>
-            <div style="width:0.3%; background-color:black; position: absolute; top: 26px; bottom: 1px; left:30%;"></div>
-            <div id="CardArea" style="width: 69.7%; background-color:#383838; position: absolute; top: 25px; bottom: 0px; left:30.3%;">
-            </div>
+        <div id="bodyGroup" class="wrapper" style="display:inline;">
+            <h4 style="color:white; margin:15px;">Send Notification</h4>
+            <textarea id="subjectBox" rows="1" cols="25" style="margin-left:15px;" placeholder="Subject"></textarea>
+            <textarea id="bodyBox" rows="10" cols="34" style="margin-left:15px;" placeholder="Body"></textarea>
+            
+
+            <button class="packUpdateButton" onclick="sendNotification()" style="margin-left: 15px; margin-top: 10px;">Send</button>
         </div>
 
     </div>
     <script src="./renderer.js"></script>
-    <script src="./hub.js"></script>
+    <script src="./notificationSend.js"></script>
     </body>
 
 </html>

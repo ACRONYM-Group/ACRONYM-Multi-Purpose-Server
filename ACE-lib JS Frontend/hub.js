@@ -45,6 +45,10 @@ function openPackManager() {
     ipcRenderer.send('openPackManager', "Ping");
 }
 
+function openNotificationCenter() {
+    ipcRenderer.send('openNotificationCenter', "Ping");
+}
+
 function disconnectFromAmps() {
     ipcRenderer.send('disconnectFromAmps', "Ping");
 }
