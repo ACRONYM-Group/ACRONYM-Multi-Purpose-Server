@@ -56,6 +56,13 @@ file_write_queue = {}
 
 MOTD = "I thought this was depricated?!"
 
+print(" ")
+print("AMPS Starting Up...")
+print("====================")
+print("Current AMPS Software Version: 2019.2.7.1")
+print("Current Software Platform: " + OSName)
+print(" ")
+
 def check_user_passhash(username, password_hash):
     SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
     result = AccountHandler.check_credentials(username, password_hash)
@@ -118,8 +125,11 @@ def dump_data():
     f.write(json.dumps(computers_data))
 
 
-def file_download_process(self, packet):
+def file_download_process(self, packet, isPackage=False, shouldIncludeFinalFolder=True):
+    if isPackage:
+        shouldIncludeFinalFolder = False
     file_name = packet["data"]["filePath"]
+    actual_file_name = os.path.basename(file_name)
     file_object = open(file_name, 'rb')
 
     file_data = file_object.read()
@@ -131,20 +141,56 @@ def file_download_process(self, packet):
         current_chunk = file_data[:2000000]
 
         fileDataB64 = base64.b64encode(current_chunk).decode("ascii")
-        data_to_send = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packet_index, "length": file_length, "filePath":packet["data"]["filePath"], "fileName": file_name, "filePathModifier":"", "windowID":packet["data"]["windowID"]}}), self.shared_key)
+        if programInstallDirectory in packet["data"]["filePath"]:
+            lengthInstallDir = len(programInstallDirectory)
+        else:
+            lengthInstallDir = 3
+
+        filePathToSend = packet["data"]["filePath"][lengthInstallDir:]
+        print(filePathToSend)
+        if isPackage:
+            filePathModifier = filePathToSend[:-len(actual_file_name)]
+            if not shouldIncludeFinalFolder:
+                filePathModifier = os.path.dirname(os.path.dirname(filePathModifier))
+        else:
+            filePathModifier = ""
+
+        print(filePathModifier)
+
         
-        Packet.Packet(data_to_send, "__CMD__").send(self.connection, packet["data"]["windowID"])\
+        data_to_send = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packet_index, "length": file_length, "filePath": filePathToSend, "fileName": actual_file_name, "filePathModifier":filePathModifier, "windowID":packet["data"]["windowID"]}}), self.shared_key)
+        
+        Packet.Packet(data_to_send, "__CMD__").send(self.connection, packet["data"]["windowID"])
         
         index += 2000000
         packet_index += 1
 
+    if programInstallDirectory in packet["data"]["filePath"]:
+        lengthInstallDir = len(programInstallDirectory)
+    else:
+        lengthInstallDir = 3
+
+    filePathToSend = packet["data"]["filePath"][lengthInstallDir:]
+    print(filePathToSend)
+    if isPackage:
+        filePathModifier = filePathToSend[:-len(actual_file_name)]
+        print("File Path Modifier: " + filePathModifier)
+        if not shouldIncludeFinalFolder:
+            print("Basename: " + os.path.dirname(os.path.dirname(filePathModifier)))
+            filePathModifier = os.path.dirname(os.path.dirname(filePathModifier)) + "/"
+            print("File Path Modifier: " + filePathModifier)
+    else:
+        filePathModifier = ""
+
+    print(actual_file_name)
+        
     current_chunk = file_data[:]
     fileDataB64 = base64.b64encode(current_chunk).decode("ascii")
-    data_to_send = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packet_index, "length": file_length, "filePath":packet["data"]["filePath"], "fileName": file_name, "filePathModifier":"", "windowID":packet["data"]["windowID"]}}), self.shared_key)
+    data_to_send = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packet_index, "length": file_length, "filePath":filePathToSend, "fileName": actual_file_name, "filePathModifier":filePathModifier, "windowID":packet["data"]["windowID"]}}), self.shared_key)
     
     Packet.Packet(data_to_send, "__CMD__").send(self.connection, packet["data"]["windowID"])
 
-    data_to_send = encryption.encrypt(json.dumps({"CMDType":"fileTransferComplete", "payload": {"fileName":file_name, "finalPacketIndex":packet_index, "filePathModifier":""}}), self.shared_key)
+    data_to_send = encryption.encrypt(json.dumps({"CMDType":"fileTransferComplete", "payload": {"fileName":actual_file_name, "finalPacketIndex":packet_index, "filePathModifier":filePathModifier}}), self.shared_key)
     Packet.Packet(data_to_send, "__CMD__").send(self.connection, packet["data"]["windowID"])
 
 class ClientConnection:
@@ -178,7 +224,7 @@ class ClientConnection:
                 filePathModifier = filePathModifier[len(os.path.dirname(dir))+1:] + "/"
             else:
                 filePathModifier = ""
-            file_download_process(self, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":packet["data"]["filePathModifier"] + filePathModifier}})
+            file_download_process(self, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":packet["data"]["filePathModifier"] + filePathModifier}}, isPackage)
         
         if isPackage:
             dataToSend = encryption.encrypt(json.dumps({"CMDType":"packageDownloadComplete", "payload": {"package":packageName}}), self.shared_key)
@@ -346,9 +392,21 @@ class ClientConnection:
             self.download_directory(packet)
 
         elif packet["CMDType"] == "downloadPackage":
-            self.download_directory({"data":{"filePathModifier":packages[packet["data"]["package"]]["dataDir"], "filePath":programInstallDirectory[:-1] + packages[packet["data"]["package"]]["dataDir"] + packet["data"]["version"]}}, True, packet["data"]["package"])
+            packet["data"] = json.loads(packet["data"])
+            self.download_directory({"data":{"filePathModifier":packages_data[packet["data"]["package"]]["dataDir"], "filePath":programInstallDirectory[:-1] + packages_data[packet["data"]["package"]]["dataDir"] + packet["data"]["version"]}}, True, packet["data"]["package"])
+            if not packet["data"]["package"] in computers_data[packet["data"]["computerName"]]["subbedPackages"]:
+                computers_data[packet["data"]["computerName"]]["subbedPackages"][packet["data"]["package"]] = {"specificMajor":-1}
             computers_data[packet["data"]["computerName"]]["subbedPackages"][packet["data"]["package"]]["version"] = packet["data"]["version"]
             dump_data()
+
+        elif packet["CMDType"] == "requestUserData":
+                print("Sending a User Their User Data!")
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"userData", "data":{"username":users_data[self.username]["username"], "statusCardSubs":users_data[self.username]["statusCardSubs"]}}), self.shared_key)
+                Packet.Packet(dataToSend,"__CMD__").send(self.connection)
+
+        elif packet["CMDType"] == "downloadPackageList":
+            dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackages", "data":packages_data}), self.shared_key)
+            Packet.Packet(dataToSend,"__CMD__").send(self.connection)
 
 def listener():
     while True:

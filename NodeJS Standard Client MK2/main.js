@@ -367,10 +367,14 @@ function CarterEncryptWrapperOLD(data, key) {
   return output;
 }
 
-function constructPacket(type, payload, addEndStatement) {
+function constructPacket(type, payload, addEndStatement, LPWIndex, LPWLen) {
   var packet = {"packetType":type, "payload":payload};
+  if (type == "__LPW__") {
+    packet["index"] = LPWIndex;
+    packet["len"] = LPWLen;
+  }
   packet = JSON.stringify(packet);
-  if (addEndStatement == undefined) {
+  if (addEndStatement == undefined || addEndStatement == "default") {
     addEndStatement = true;
   }
 
@@ -486,7 +490,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
         client.write(constructPacket("__CMD__",dataToSend));
 
 
-        uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\")
+        //uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\")
         
 
         //commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
@@ -643,7 +647,7 @@ function sendLPWPacket(data) {
       }
       commandToSend = {LPWPayload:LPWPayload, index:index, LPWID:LPWID, len:numLPWPackets};
       dataToSend = JSON.stringify(commandToSend);
-      client.write(constructPacket("__LPW__",dataToSend));
+      client.write(constructPacket("__LPW__", dataToSend, true, index, numLPWPackets));
 
       dataIndex = dataIndex + LPWPacketLength;
       data = data.slice(LPWPacketLength, data.length);
