@@ -97,7 +97,6 @@ def read_data_files():
         print("FAILED TO LOAD PACKAGE DATA!")
         print(error)
 
-
     try:
         with open(programInstallDirectory + "Data/computers.json","r") as f:
             contents = f.read()
@@ -121,8 +120,12 @@ def initalize_connection():
 def dump_data():
     f = open(programInstallDirectory + "Data/users.json", "w")
     f.write(json.dumps(users_data))
+    
     f = open(programInstallDirectory + "Data/computers.json", "w")
     f.write(json.dumps(computers_data))
+    
+    f = open(programInstallDirectory + "Data/packages.json", "w")
+    f.write(json.dumps(packages_data))
 
 
 def file_download_process(self, packet, isPackage=False, shouldIncludeFinalFolder=True):
@@ -464,6 +467,40 @@ class ClientConnection:
             print("Broadcasting Notification: ")
             print(packet["data"]["notification"]["subject"])
             print(packet["data"]["notification"]["body"])
+            
+        elif packet["CMDType"] == "requestInstallationDir":
+            dataToSend = encryption.encrypt(json.dumps({"CMDType":"installationDir", "data":programInstallDirectory}), self.shared_key)
+            Packet.Packet(dataToSend,"__CMD__").send(self.connection)
+
+        elif packet["CMDType"] == "deletePackage":
+            print("DELETING Package")
+            print(packet["data"]["package"])
+            del packages[packet["data"]["package"]]
+            dump_data()
+
+        elif packet["CMDType"] == "uploadNewPackage":
+            print("Uploading New Package")
+            packages[packet["data"]["package"]] = {"desc":packet["data"]["packageDesc"], "dataDir":"/Data/Packages/" + packet["data"]["package"] + "/",  "versions":{packet["data"]["newVersionNumber"]:{}}, "defaultVersion":packet["data"]["newVersionNumber"]}
+            dump_data() 
+
+        elif packet["CMDType"] == "uploadNewVersion":
+            print("Uploading New Package Version")
+            packages[packet["data"]["package"]]["versions"][packet["data"]["newVersionNumber"]] = {}
+            dump_data()
+
+        elif packet["CMDType"] == "updatePackageDefaultVersion":
+            print("Updating Package Default Version")
+            packages[packet["data"]["package"]]["defaultVersion"] = packet["data"]["newDefaultVersion"]
+            dump_data()
+
+        elif packet["CMDType"] == "updateSubbedPackages":
+            computers[json.loads(packet["data"])["computerName"]]["subbedPackages"] = json.loads(packet["data"])["subbedPackages"]
+            dump_data()
+
+        elif packet["CMDType"] == "installPackage":
+            packet["data"] = json.loads(packet["data"])
+            computers[packet["data"]["computerName"]]["subbedPackages"][packet["data"]["package"]] = {"specificMajor":-1, "version":"0.0.0"}
+            dump_data()
 
 def listener():
     while True:
