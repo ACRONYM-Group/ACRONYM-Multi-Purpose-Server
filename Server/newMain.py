@@ -56,6 +56,8 @@ file_write_queue = {}
 
 MOTD = "I thought this was depricated?!"
 
+alert_subscriptions = {}
+
 print(" ")
 print("AMPS Starting Up...")
 print("====================")
@@ -242,6 +244,15 @@ def get_highest_version(verList, specificMajor=-1):
                         highest = s
 
     return highest
+
+
+def subscribe_to_data_changes(data_title, connection):
+    global alert_subscriptions
+    
+    if data_title in alert_subscriptions:
+        alert_subscriptions[data_title].append(connection)
+    else:
+        alert_subscriptions[data_title] = [connection]
 
     
 class ClientConnection:
@@ -501,6 +512,10 @@ class ClientConnection:
             packet["data"] = json.loads(packet["data"])
             computers[packet["data"]["computerName"]]["subbedPackages"][packet["data"]["package"]] = {"specificMajor":-1, "version":"0.0.0"}
             dump_data()
+            
+        elif packet["CMDType"] == "subscribeToEvent":
+            data_title = packet["data"]["dataTitle"]
+            subscribe_to_data_changes(data_title, self)
 
 def listener():
     while True:
