@@ -193,6 +193,54 @@ def file_download_process(self, packet, isPackage=False, shouldIncludeFinalFolde
     data_to_send = encryption.encrypt(json.dumps({"CMDType":"fileTransferComplete", "payload": {"fileName":actual_file_name, "finalPacketIndex":packet_index, "filePathModifier":filePathModifier}}), self.shared_key)
     Packet.Packet(data_to_send, "__CMD__").send(self.connection, packet["data"]["windowID"])
 
+    
+def get_ver_part(version, part):
+    versionParts = version.split(".")
+    if part == "major":
+        return int(versionParts[0])
+
+    if part == "minor":
+        return int(versionParts[1])
+
+    if part == "patch":
+        return int(versionParts[2])
+
+    
+def compare_greater_version(firstVersion, secondVersion):
+    if getVerPart(firstVersion, "major") > getVerPart(secondVersion, "major"):
+        return True
+    elif getVerPart(firstVersion, "major") == getVerPart(secondVersion, "minor"):
+        if getVerPart(firstVersion, "minor") > getVerPart(secondVersion, "minor"):
+            return True
+        elif getVerPart(firstVersion, "minor") == getVerPart(secondVersion, "minor"):
+            if getVerPart(firstVersion, "patch") > getVerPart(secondVersion, "patch"):
+                return True
+            else:
+                return False
+        else:
+            return False
+    else:
+        return False
+
+    
+def get_highest_version(verList, specificMajor=-1):
+    highest = "0.0.0"
+    for s in verList:
+        if specificMajor == -1 or getVerPart(s, "major") == specificMajor:
+            if getVerPart(s, "major") > getVerPart(highest, "major"):
+                highest = s
+            
+            if getVerPart(s, "major") == getVerPart(highest, "major"):
+                if getVerPart(s, "minor") > getVerPart(highest, "minor"):
+                    highest = s
+                
+                if getVerPart(s, "minor") == getVerPart(highest, "minor"):
+                    if getVerPart(s, "patch") > getVerPart(highest, "patch"):
+                        highest = s
+
+    return highest
+
+    
 class ClientConnection:
     def __init__(self, connection, address):
         self.connection = connection
