@@ -335,7 +335,7 @@ class ClientConnection:
             dataToSendDecrypt = encryption.decrypt(dataToSend, key)
             Packet.Packet(dataToSend, "__CMD__").send(self.connection)
 
-        if packet["CMDType"] == "uploadFileFinish":
+        elif packet["CMDType"] == "uploadFileFinish":
             if fileWriteQueue[packet["data"]["filePath"]]["index"] >= packet["data"]["finalPacketIndex"]:
                 fileWriteQueue[packet["data"]["filePath"]]["fileReference"].close()
                 fileWriteQueue[packet["data"]["filePath"]] = None
