@@ -36,7 +36,7 @@ else:
 
 <b>Variable Interface</b>
 
-There are two key operations that can be made with the ACELib system, the first
+There are three key operations that can be made with the ACELib system, the first
 is interfacing with the variables that can be set on the server side. This can
 be used with AMPS packages to create widgets that can be interfaced with
 the ACELib client.
@@ -66,6 +66,36 @@ of the usage of which can be found in the following snippet:
 conn.downloadFile("serverFile.ext", open("clientFile.ext", 'wb'))
 
 conn.uploadFile(open("clientFile.ext", 'wb'), "serverFile.ext")
+```
+
+<b>Variable Events</b>
+
+The third key operation that ACELib can perform is related to the first, in that
+it is designed to interface with variables on the server, however instead of
+changing those variables, this operation responds to those variables being updated
+on the server. This is done using the 
+<a href="#addListener">`ACELib.Connection.addListener()`</a> function and the 
+<a href="#startListener">`ACELib.Connection.startListener()`</a> function. These
+two functions subscribe to a listening event and start the listening loop
+respectively. The following snippet shows the two files that would be involved
+in something akin to a remote display board being controled through AMPS:
+
+```python
+def changeDisplayBoard(newValue, oldValue):
+    print("Value Changed to: ", newValue, "\nOld Value:", oldValue)
+    #The other stuff for changing the display board would go here
+    
+eventConnection.addListener("boardText", changeDisplayBoard)
+eventConnection.startListener()
+```
+
+and the second which would update the data on the server:
+
+```python
+while True:
+    newValue = input("> ")
+    
+    conn.setData("boardText", newValue)
 ```
 
 ## ACELib Examples
