@@ -254,6 +254,12 @@ def subscribe_to_data_changes(data_title, connection):
     else:
         alert_subscriptions[data_title] = [connection]
 
+def remove_subscription(connection):
+    print("Removing Connection " + str(connection.address))
+    for key in alert_subscriptions:
+        if connection in alert_subscriptions[key]:
+            alert_subscriptions[key].remove(connection)
+
     
 class ClientConnection:
     def __init__(self, connection, address):
@@ -266,6 +272,10 @@ class ClientConnection:
         self.authenticated = False
 
         self.username = ""
+
+    def data_change(self, key, new_value, old_value):
+        dataToSend = encryption.encrypt(json.dumps({"CMDType":"dataChange", "payload": {"key":key, "oldValue": old_value, "newValue": new_value}}), self.shared_key)
+        Packet.Packet(dataToSend, "__CMD__").send(self.connection)
 
     def download_directory(self, packet, isPackage=False, packageName=None):
         key = self.shared_key
@@ -327,27 +337,32 @@ class ClientConnection:
         self.shared_key = exchange.getSharedKey(val)
 
     def connection_handler(self):
-        self.perform_handshake()
-        self.perform_key_exchange()
+        try:
+            self.perform_handshake()
+            self.perform_key_exchange()
 
-        print(self.shared_key)
+            print(self.shared_key)
 
-        while True:
-            packet = next(self.packet_recieve_generator)
+            while True:
+                packet = next(self.packet_recieve_generator)
 
-            #If the packet is a command, it is encrypted, so decrypt that quick
-            if packet["packetType"] == "__CMD__":
-                packet = encryption.decrypt(packet["payload"], self.shared_key)
-                packet = "".join(packet)
+                #If the packet is a command, it is encrypted, so decrypt that quick
+                if packet["packetType"] == "__CMD__":
+                    packet = encryption.decrypt(packet["payload"], self.shared_key)
+                    packet = "".join(packet)
 
-                try:
-                    packet = json.loads(packet)
-                except TypeError as e:
-                    print("Packet Unable to be parsed")
-                    print(packet)
-                    continue
+                    try:
+                        packet = json.loads(packet)
+                    except TypeError as e:
+                        print("Packet Unable to be parsed")
+                        print(packet)
+                        continue
 
-            self.process_packet(packet)
+                self.process_packet(packet)
+        except ConnectionResetError:
+            self.connection.close()
+            remove_subscription(self)
+            print("Connection Reset")
 
     def process_packet(self, packet):
         if isinstance(packet, str):
@@ -370,6 +385,14 @@ class ClientConnection:
         elif packet["CMDType"] == "setData":
             print("Set Data", packet["name"], "=", packet["value"])
             value = packet["value"]
+
+            if packet["name"] in alert_subscriptions:
+                for conn in alert_subscriptions[packet["name"]]:
+                    if packet["name"] in global_cache:
+                        old = global_cache[packet["name"]]
+                    else:
+                        old = None
+                    conn.data_change(packet["name"], value, old)
 
             global_cache[packet["name"]] = value
 
@@ -514,6 +537,7 @@ class ClientConnection:
             dump_data()
             
         elif packet["CMDType"] == "subscribeToEvent":
+            print(self.address, "is subscribing to the key", packet["data"]["dataTitle"])
             data_title = packet["data"]["dataTitle"]
             subscribe_to_data_changes(data_title, self)
 
@@ -523,7 +547,6 @@ def listener():
         conn, addr = server_socket.accept()
 
         connection = ClientConnection(conn, addr)
-
         threading.Thread(target=connection.connection_handler, args=()).start()
 
 

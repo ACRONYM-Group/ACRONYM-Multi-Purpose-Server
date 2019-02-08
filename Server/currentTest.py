@@ -1,13 +1,26 @@
 import ACELib
 
 conn = ACELib.Connection()
+events = ACELib.Connection()
 
 conn.initConnection()
+events.initConnection()
 
 if conn.loginServer("carter", "password"):
     print("Login Good")
 else:
     print("Login Failed")
 
+if events.loginServer("carter", "password"):
+    print("Login Good")
+else:
+    print("Login Failed")
+
+def callback(new, old):
+    print(new, old)
+
+events.addListener("name", callback)
+
 conn.setData("name", "value")
-conn.uploadFile(open("C://Users//Plasek//Desktop//Programming//Python//Server File Transfer//ACRONYM-File-Transfer-System//Server//main.py", 'rb'), "/data.txt")
+
+events.startListener()

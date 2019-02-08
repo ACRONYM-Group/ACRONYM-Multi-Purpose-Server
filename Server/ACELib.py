@@ -11,6 +11,8 @@ import base64
 
 import hashlib
 
+import threading
+
 import keyExchange
 
 import encryption
@@ -33,9 +35,7 @@ class Connection:
 
         self.key = 0
 
-        self.eventHandler = None
-
-        self.runEventHandler = True
+        self.callBacks = {}
 
     def connect(self):
         """
@@ -217,3 +217,19 @@ class Connection:
                                         "file":base64.b64encode(
                                             fileObject.read()
                                             ).decode("ascii")}}, "__CMD__")
+
+    def addListener(self, key, callBack):
+        self.callBacks[key] = callBack
+
+        self.sendEncryptedDict({"CMDType": "subscribeToEvent",
+                                "data":{"dataTitle": key}}, "__CMD__")
+  
+    def _listener(self):
+        generator = Packet.fullGenerator(self.socket)
+        while True:
+            packet = "".join(encryption.decrypt(next(generator)['payload'], self.key))
+
+            print(packet)
+
+    def startListener(self):
+        threading.Thread(target=self._listener, args=()).start()
