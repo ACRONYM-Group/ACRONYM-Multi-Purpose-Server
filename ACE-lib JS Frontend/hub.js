@@ -67,7 +67,7 @@ ipcRenderer.on('programStatusCards', (event, arg) => {
             for (var i = 0; i < arg["subbedStatusCards"].length; i++) {
                 statusCardJSFiles[i] = {};
                 statusCardJSFiles[i]["require"] = require(arg["statusCardInstallDir"] + arg["subbedStatusCards"][i] + ".js");
-                statusCardJSFiles[i]["constructed"] = new statusCardJSFiles[i]["require"]();
+                statusCardJSFiles[i]["constructed"] = new statusCardJSFiles[i]["require"](ipcRenderer);
             }
 
             function runInit(s) {
