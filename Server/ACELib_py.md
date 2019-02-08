@@ -319,3 +319,45 @@ Docstring:
 
 Description:  
 Uploads the file in `fileObject` to the server and stores it in `fileName`
+
+<span id="addListener"></span>
+### addListener()
+
+<b>`ACELib.Connection.addListener()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;key  
+    &nbsp;&nbsp;&nbsp;&nbsp;callBack
+
+Returns:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`Adds an event listener on the server to respond to the variable in
+            key being updated, upon it being updated callBack will be called, with
+            two parameters, the first being the new value, and the second, the old
+            value.`
+
+Description:  
+Subscribes to the event triggered by the changing of a variable with the key `key`, calling
+`callBack` with the new and old values as parameters
+
+<span id="startListener"></span>
+### startListener()
+
+<b>`ACELib.Connection.startListener()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Returns:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`Starts the event loop, while this occurs in a seperate thread and code
+            can be run after this is called, it is still recomended to call this
+            at the end of a file.`
+`
+Description:  
+Starts the event listener loop.
+
