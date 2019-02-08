@@ -34,7 +34,7 @@ var avaliablePackages = {};
 function createHubWindow() {
   hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
   hubWin.loadFile('hub.html')
-  //hubWin.webContents.openDevTools();
+  hubWin.webContents.openDevTools();
   return hubWin;
 }
 
@@ -284,6 +284,10 @@ ipcMain.on('sendNotification', (event, arg) => {
   mainACE.sendCommand("sendNotification", dataToSend);
 });
 
+ipcMain.on('sendServerCommand', (event, arg) => {
+  dataToSend = arg;
+  mainACE.sendCommand(dataToSend);
+});
 
 
 

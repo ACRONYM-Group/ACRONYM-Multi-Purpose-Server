@@ -549,6 +549,9 @@ class ClientConnection:
             data_title = packet["data"]["dataTitle"]
             subscribe_to_data_changes(data_title, self)
 
+        elif packet["CMDType"] == "libraryFunction":
+            print(packet)
+
 def listener():
     while True:
         server_socket.listen(1)
