@@ -227,9 +227,13 @@ class Connection:
     def _listener(self):
         generator = Packet.fullGenerator(self.socket)
         while True:
-            packet = "".join(encryption.decrypt(next(generator)['payload'], self.key))
+            packet = json.loads("".join(encryption.
+                                        decrypt(next(generator)['payload'],
+                                                self.key)))
 
-            print(packet)
+            self.callBacks[packet["payload"]["key"]](
+                packet["payload"]["newValue"],
+                packet["payload"]["oldValue"])
 
     def startListener(self):
         threading.Thread(target=self._listener, args=()).start()

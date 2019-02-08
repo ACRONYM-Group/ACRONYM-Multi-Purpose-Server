@@ -19,6 +19,7 @@ else:
 def callback(new, old):
     print(new, old)
 
+
 events.addListener("name", callback)
 
 conn.setData("name", "value")
