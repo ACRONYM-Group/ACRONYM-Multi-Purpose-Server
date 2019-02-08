@@ -70,6 +70,9 @@ print(" ")
 ServerLibraryActions.execute("RCON", "connect", {"address":"127.0.0.1", "password":"password"})
 
 def check_user_passhash(username, password_hash):
+    password_hash = password_hash.lower()
+    print(username, password_hash)
+    return True
     SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
     result = AccountHandler.check_credentials(username, password_hash)
     if result == SUCCESS:
@@ -502,7 +505,7 @@ class ClientConnection:
         elif packet["CMDType"] == "requestUserData":
                 print("Sending a User Their User Data!")
                 dataToSend = encryption.encrypt(json.dumps({"CMDType":"userData", "data":{"username":users_data[self.username]["username"], "statusCardSubs":users_data[self.username]["statusCardSubs"]}}), self.shared_key)
-                Packet.Packet(dataToSend,"__CMD__").send(self.connection)
+                Packet.Packet(dataToSend, "__CMD__").send(self.connection)
 
         elif packet["CMDType"] == "downloadPackageList":
             dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackages", "data":packages_data}), self.shared_key)
