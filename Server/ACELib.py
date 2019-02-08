@@ -225,6 +225,12 @@ class Connection:
                                             ).decode("ascii")}}, "__CMD__")
 
     def addListener(self, key, callBack):
+        """
+            Adds an event listener on the server to respond to the variable in
+            key being updated, upon it being updated callBack will be called, with
+            two parameters, the first being the new value, and the second, the old
+            value.
+        """
         self.callBacks[key] = callBack
 
         self.sendEncryptedDict({"CMDType": "subscribeToEvent",
@@ -242,5 +248,10 @@ class Connection:
                 packet["payload"]["oldValue"])
 
     def startListener(self):
+        """
+            Starts the event loop, while this occurs in a seperate thread and code
+            can be run after this is called, it is still recomended to call this
+            at the end of a file.
+        """
         threading.Thread(target=self._listener, args=()).start()
 
