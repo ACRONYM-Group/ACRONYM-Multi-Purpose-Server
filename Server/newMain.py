@@ -141,6 +141,25 @@ def file_download_process(self, packet, isPackage=False, shouldIncludeFinalFolde
     file_length = len(file_data)
     index = 0
     packet_index = 0
+
+    if programInstallDirectory in packet["data"]["filePath"]:
+        lengthInstallDir = len(programInstallDirectory)
+    else:
+        lengthInstallDir = 3
+
+    filePathToSend = packet["data"]["filePath"][lengthInstallDir:]
+    print(filePathToSend)
+    if isPackage:
+        filePathModifier = filePathToSend[:-len(actual_file_name)]
+        print("File Path Modifier: " + filePathModifier)
+        if not shouldIncludeFinalFolder:
+            print("Basename: " + os.path.dirname(os.path.dirname(filePathModifier)))
+            filePathModifier = os.path.dirname(os.path.dirname(filePathModifier)) + "/"
+            print("File Path Modifier: " + filePathModifier)
+    else:
+        filePathModifier = ""
+
+    print(actual_file_name)
     
     while len(file_data) > 2000000:
         current_chunk = file_data[:2000000]
@@ -169,25 +188,6 @@ def file_download_process(self, packet, isPackage=False, shouldIncludeFinalFolde
         
         index += 2000000
         packet_index += 1
-
-    if programInstallDirectory in packet["data"]["filePath"]:
-        lengthInstallDir = len(programInstallDirectory)
-    else:
-        lengthInstallDir = 3
-
-    filePathToSend = packet["data"]["filePath"][lengthInstallDir:]
-    print(filePathToSend)
-    if isPackage:
-        filePathModifier = filePathToSend[:-len(actual_file_name)]
-        print("File Path Modifier: " + filePathModifier)
-        if not shouldIncludeFinalFolder:
-            print("Basename: " + os.path.dirname(os.path.dirname(filePathModifier)))
-            filePathModifier = os.path.dirname(os.path.dirname(filePathModifier)) + "/"
-            print("File Path Modifier: " + filePathModifier)
-    else:
-        filePathModifier = ""
-
-    print(actual_file_name)
         
     current_chunk = file_data[:]
     fileDataB64 = base64.b64encode(current_chunk).decode("ascii")
