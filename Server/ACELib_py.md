@@ -270,3 +270,22 @@ server, and outputs it to the (binary, must be binary) file stored in fileObject
 Description:  
 Downloads the file in `fileName` on the server and writes it to the given file
 object, which must be binary for the writing and decoding to work correctly.
+
+<span id="uploadFile"></span>
+### uploadFile()
+
+<b>`ACELib.Connection.uploadFile()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;fileObject  
+    &nbsp;&nbsp;&nbsp;&nbsp;fileName
+
+Returns:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`Uploads the data from the fileObject and stores it in the file designated by fileName
+`
+
+Description:  
+Uploads the file in `fileObject` to the server and stores it in `fileName`
