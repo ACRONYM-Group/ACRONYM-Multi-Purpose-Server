@@ -357,7 +357,7 @@ Docstring:
 &nbsp;&nbsp;&nbsp;&nbsp;`Starts the event loop, while this occurs in a seperate thread and code
             can be run after this is called, it is still recomended to call this
             at the end of a file.`
-`
+
 Description:  
 Starts the event listener loop.
 
