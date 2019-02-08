@@ -156,11 +156,10 @@ def file_download_process(self, packet, isPackage=False, shouldIncludeFinalFolde
         if isPackage:
             filePathModifier = filePathToSend[:-len(actual_file_name)]
             if not shouldIncludeFinalFolder:
-                filePathModifier = os.path.dirname(os.path.dirname(filePathModifier))
+                filePathModifier = os.path.dirname(os.path.dirname(filePathModifier)) + "/"
         else:
             filePathModifier = ""
 
-        print(filePathModifier)
 
         
         data_to_send = encryption.encrypt(json.dumps({"CMDType":"downloadFileChunk", "payload":{"file":fileDataB64, "index": index, "packetIndex": packet_index, "length": file_length, "filePath": filePathToSend, "fileName": actual_file_name, "filePathModifier":filePathModifier, "windowID":packet["data"]["windowID"]}}), self.shared_key)
@@ -169,6 +168,7 @@ def file_download_process(self, packet, isPackage=False, shouldIncludeFinalFolde
         
         index += 2000000
         packet_index += 1
+        file_data = file_data[2000000:]
 
     if programInstallDirectory in packet["data"]["filePath"]:
         lengthInstallDir = len(programInstallDirectory)
@@ -176,18 +176,14 @@ def file_download_process(self, packet, isPackage=False, shouldIncludeFinalFolde
         lengthInstallDir = 3
 
     filePathToSend = packet["data"]["filePath"][lengthInstallDir:]
-    print(filePathToSend)
     if isPackage:
         filePathModifier = filePathToSend[:-len(actual_file_name)]
-        print("File Path Modifier: " + filePathModifier)
         if not shouldIncludeFinalFolder:
-            print("Basename: " + os.path.dirname(os.path.dirname(filePathModifier)))
             filePathModifier = os.path.dirname(os.path.dirname(filePathModifier)) + "/"
-            print("File Path Modifier: " + filePathModifier)
     else:
         filePathModifier = ""
 
-    print(actual_file_name)
+    print("Hello World!")
         
     current_chunk = file_data[:]
     fileDataB64 = base64.b64encode(current_chunk).decode("ascii")
@@ -281,26 +277,32 @@ class ClientConnection:
         key = self.shared_key
         dir = packet["data"]["filePath"]
 
-        print("Client would like to download " + dir)
+        if os.path.isdir(dir):
+            print("Client would like to download " + dir)
 
-        for root, directories, filenames in os.walk(dir):
-            for directory in directories:
+            for root, directories, filenames in os.walk(dir):
+                for directory in directories:
 
-                directory_path = os.path.join(root, directory)
+                    directory_path = os.path.join(root, directory)
 
-        for filename in filenames:
 
-            file_path = os.path.join(root,filename).replace("\\", "/")
-            if not isPackage:
-                filePathModifier = os.path.dirname(file_path)
-                filePathModifier = filePathModifier[len(os.path.dirname(dir))+1:] + "/"
-            else:
-                filePathModifier = ""
-            file_download_process(self, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":packet["data"]["filePathModifier"] + filePathModifier}}, isPackage)
-        
-        if isPackage:
-            dataToSend = encryption.encrypt(json.dumps({"CMDType":"packageDownloadComplete", "payload": {"package":packageName}}), self.shared_key)
-            Packet.Packet(dataToSend,"__CMD__").send(self.connection)
+            for filename in filenames:
+
+                file_path = os.path.join(root,filename).replace("\\", "/")
+                if not isPackage:
+                    filePathModifier = os.path.dirname(file_path)
+                    filePathModifier = filePathModifier[len(os.path.dirname(dir))+1:] + "/"
+                else:
+                    filePathModifier = ""
+                print(filename)
+                file_download_process(self, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":packet["data"]["filePathModifier"] + filePathModifier}}, isPackage)
+            
+            if isPackage:
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"packageDownloadComplete", "payload": {"package":packageName}}), self.shared_key)
+                Packet.Packet(dataToSend,"__CMD__").send(self.connection)
+
+        else:
+            print("Client is trying to download a nonexistant directory: " + dir)
 
     def perform_handshake(self):
         Packet.Packet('31415', "__HDS__").send(self.connection)
@@ -509,31 +511,31 @@ class ClientConnection:
         elif packet["CMDType"] == "deletePackage":
             print("DELETING Package")
             print(packet["data"]["package"])
-            del packages[packet["data"]["package"]]
+            del packages_data[packet["data"]["package"]]
             dump_data()
 
         elif packet["CMDType"] == "uploadNewPackage":
             print("Uploading New Package")
-            packages[packet["data"]["package"]] = {"desc":packet["data"]["packageDesc"], "dataDir":"/Data/Packages/" + packet["data"]["package"] + "/",  "versions":{packet["data"]["newVersionNumber"]:{}}, "defaultVersion":packet["data"]["newVersionNumber"]}
+            packages_data[packet["data"]["package"]] = {"desc":packet["data"]["packageDesc"], "dataDir":"/Data/Packages/" + packet["data"]["package"] + "/",  "versions":{packet["data"]["newVersionNumber"]:{}}, "defaultVersion":packet["data"]["newVersionNumber"]}
             dump_data() 
 
         elif packet["CMDType"] == "uploadNewVersion":
             print("Uploading New Package Version")
-            packages[packet["data"]["package"]]["versions"][packet["data"]["newVersionNumber"]] = {}
+            packages_data[packet["data"]["package"]]["versions"][packet["data"]["newVersionNumber"]] = {}
             dump_data()
 
         elif packet["CMDType"] == "updatePackageDefaultVersion":
             print("Updating Package Default Version")
-            packages[packet["data"]["package"]]["defaultVersion"] = packet["data"]["newDefaultVersion"]
+            packages_data[packet["data"]["package"]]["defaultVersion"] = packet["data"]["newDefaultVersion"]
             dump_data()
 
         elif packet["CMDType"] == "updateSubbedPackages":
-            computers[json.loads(packet["data"])["computerName"]]["subbedPackages"] = json.loads(packet["data"])["subbedPackages"]
+            computers_data[json.loads(packet["data"])["computerName"]]["subbedPackages"] = json.loads(packet["data"])["subbedPackages"]
             dump_data()
 
         elif packet["CMDType"] == "installPackage":
             packet["data"] = json.loads(packet["data"])
-            computers[packet["data"]["computerName"]]["subbedPackages"][packet["data"]["package"]] = {"specificMajor":-1, "version":"0.0.0"}
+            computers_data[packet["data"]["computerName"]]["subbedPackages"][packet["data"]["package"]] = {"specificMajor":-1, "version":"0.0.0"}
             dump_data()
             
         elif packet["CMDType"] == "subscribeToEvent":
