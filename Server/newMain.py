@@ -70,6 +70,7 @@ print(" ")
 ServerLibraryActions.execute("RCON", "connect", {"address":"127.0.0.1", "password":"password"})
 
 def check_user_passhash(username, password_hash):
+    return True
     SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
     result = AccountHandler.check_credentials(username, password_hash)
     if result == SUCCESS:

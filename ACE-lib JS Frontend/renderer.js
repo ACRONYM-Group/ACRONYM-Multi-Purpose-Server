@@ -1,4 +1,4 @@
-const remote = require('electron').remote;
+const remote = nodeRequire('electron').remote;
 
 function test() {
     console.log("Hello");

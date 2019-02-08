@@ -8,7 +8,7 @@ var bigInt = require("big-integer");
 var aesjs = require("aes-js");
 var path = require("path");
 var readDir = require("recursive-readdir");
-var sha256 = require('js-sha256').sha256;
+var sha256 = require('js-sha3').sha3_256;
 
 var latestMinecraftData = {};
 var keyExchangeInts = [];

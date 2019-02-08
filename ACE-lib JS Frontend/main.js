@@ -109,6 +109,7 @@ class frontendClass {
       if (command["CMDType"] == "userData") {
         user = command["data"];
         console.log("Receiving New User Data");
+        console.log(command["data"]);
       }
     }
   }
@@ -297,7 +298,7 @@ app.on('ready', function() {
   keepAliveWin = new BrowserWindow({width: 10, height: 10, frame: false, show: false});
   loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
   loginWin.loadFile('login.html');
-  //loginWin.webContents.openDevTools()
+  loginWin.webContents.openDevTools()
 
   appIcon = new Tray(programInstallDirectory + trayLogoDir);
   const contextMenu = Menu.buildFromTemplate([
