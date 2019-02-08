@@ -67,6 +67,8 @@ print("Current AMPS Software Version: 2019.2.7.1")
 print("Current Software Platform: " + OSName)
 print(" ")
 
+ServerLibraryActions.execute("RCON", "connect", {"address":"127.0.0.1", "password":"password"})
+
 def check_user_passhash(username, password_hash):
     SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
     result = AccountHandler.check_credentials(username, password_hash)
