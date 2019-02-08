@@ -40,8 +40,6 @@ programInstallDirectory = "Z:/AcroFTP/"
 AccountHandler.DATA_FILE_PATH = programInstallDirectory + "\\data\\data.json"
 AccountHandler.import_data()
 
-AccountHandler.add_credentials("carter", hashlib.sha3_256("password".encode()).hexdigest())
-
 AccountHandler.export_data()
 
 users_data = None
@@ -67,12 +65,11 @@ print("Current AMPS Software Version: 2019.2.7.1")
 print("Current Software Platform: " + OSName)
 print(" ")
 
-ServerLibraryActions.execute("RCON", "connect", {"address":"127.0.0.1", "password":"password"})
+#ServerLibraryActions.execute("RCON", "connect", {"address":"127.0.0.1", "password":"password"})
 
 def check_user_passhash(username, password_hash):
     password_hash = password_hash.lower()
     print(username, password_hash)
-    return True
     SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
     result = AccountHandler.check_credentials(username, password_hash)
     if result == SUCCESS:
