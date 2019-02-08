@@ -29,6 +29,8 @@ import hashlib
 
 import AccountHandler
 
+import ServerLibraryActions
+
 
 programStartTime = datetime.now()
 OSName = platform.platform()
@@ -540,6 +542,9 @@ class ClientConnection:
             print(self.address, "is subscribing to the key", packet["data"]["dataTitle"])
             data_title = packet["data"]["dataTitle"]
             subscribe_to_data_changes(data_title, self)
+
+        elif packet["CMDType"] == "libraryFunction":
+            ServerLibraryActions.execute(packet["data"]["library"], packet["data"]["function"], packet["data"]["arguments"])
 
 def listener():
     while True:
