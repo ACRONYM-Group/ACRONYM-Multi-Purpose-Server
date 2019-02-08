@@ -125,10 +125,13 @@ def getPacketGenerator(generator):
     fullText = ""
 
     for pair in sorted(fullData):
-        fullText += pair[1]
+        fullText += pair[1] 
 
     print(fullText)
-    return json.loads(fullText)
+    try:
+        return json.loads(fullText)
+    except:
+        print(fullText)
 
 def fullGenerator(connection):
     gen = packetGenerator(connection)

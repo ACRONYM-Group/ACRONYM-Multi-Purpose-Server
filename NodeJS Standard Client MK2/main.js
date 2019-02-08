@@ -381,6 +381,7 @@ function constructPacket(type, payload, addEndStatement, LPWIndex, LPWLen) {
   if (addEndStatement) {
     packet = packet + "-ENDACROFTPPACKET-/";
   }
+  consoleOutput(packet, ipc.of.world);
   return packet;
 }
 
@@ -490,7 +491,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
         client.write(constructPacket("__CMD__",dataToSend));
 
 
-        //ploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\")
+        //uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\")
         
 
         //commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};

@@ -380,6 +380,7 @@ class ClientConnection:
 
     def process_packet(self, packet):
         if isinstance(packet, str):
+            print(packet)
             packet = json.loads(packet)
 
         if packet["CMDType"] == "login":
