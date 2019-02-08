@@ -29,6 +29,8 @@ import hashlib
 
 import AccountHandler
 
+import ServerLibraryActions
+
 
 programStartTime = datetime.now()
 OSName = platform.platform()
@@ -64,6 +66,8 @@ print("====================")
 print("Current AMPS Software Version: 2019.2.7.1")
 print("Current Software Platform: " + OSName)
 print(" ")
+
+ServerLibraryActions.execute("RCON", "connect", {"address":"127.0.0.1", "password":"password"})
 
 def check_user_passhash(username, password_hash):
     SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
@@ -550,7 +554,7 @@ class ClientConnection:
             subscribe_to_data_changes(data_title, self)
 
         elif packet["CMDType"] == "libraryFunction":
-            print(packet)
+            ServerLibraryActions.execute(packet["data"]["library"], packet["data"]["function"], packet["data"]["arguments"])
 
 def listener():
     while True:

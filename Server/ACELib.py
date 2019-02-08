@@ -206,6 +206,12 @@ class Connection:
 
         fileObject.write(base64.b64decode(data))
 
+    def runLibraryFunction(self, libraryName, functionName, arguments):
+        self.sendEncryptedDict({"CMDType": "libraryFunction",
+                                "data":{"library": libraryName,
+                                        "function": functionName,
+                                        "arguments":arguments}}, "__CMD__",)
+
     def uploadFile(self, fileObject, fileName):
         """
             Uploads the data from the fileObject and stores it in the file
@@ -237,3 +243,4 @@ class Connection:
 
     def startListener(self):
         threading.Thread(target=self._listener, args=()).start()
+
