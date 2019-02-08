@@ -490,7 +490,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
         client.write(constructPacket("__CMD__",dataToSend));
 
 
-        //uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\")
+        //ploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\")
         
 
         //commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
@@ -568,6 +568,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
     }
 
     else if (command["CMDType"] == "fileTransferComplete") {
+      consoleOutput("FileTransferComplete", ipc.of.world);
       packet = command["payload"];
       if (packet["filePathModifier"] == undefined) {
         filePathModifier = "";
@@ -580,6 +581,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
         writeFileChunk("NOTHING", writeDir, false);
       }
       if (fileWriteQueue[writeDir]["packetIndex"] == packet["finalPacketIndex"] + 1) {
+        consoleOutput("File Transfer Complete, all packest received", ipc.of.world);
         var elapsedTime = Date.now() - fileWriteQueue[writeDir]["startTime"];
         consoleOutput("File Transfer of " + packet["fileName"] + " Complete! It took " + elapsedTime + " Milliseconds.", ipc.of.world);
         setTimeout(fileWriteCallback(writeDir), 5000);
@@ -723,8 +725,9 @@ function writeFileChunk(data, filePath, shouldWrite) {
     }
   }
 
-  if (fileWriteQueue[filePath]["hasServerSentEndPacket"] && fileWriteQueue[filePath]["packetIndex"] >= fileWriteQueue[filePath]["finalPacketIndex"]) {
+  if (fileWriteQueue[filePath]["hasServerSentEndPacket"] && fileWriteQueue[filePath]["packetIndex"] > fileWriteQueue[filePath]["finalPacketIndex"]) {
     var elapsedTime = Date.now() - fileWriteQueue[filePath]["startTime"];
+    consoleOutput("Received Last Packet, File Transfer Complete", ipc.of.world);
     consoleOutput("File Transfer of " + filePath + " Complete! It took " + elapsedTime + " Milliseconds.", ipc.of.world);
     setTimeout(function() {fileWriteCallback(filePath)}, 5000);
   }
