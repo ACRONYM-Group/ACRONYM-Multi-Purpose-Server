@@ -21,8 +21,8 @@ var ServerIP = "192.168.1.104";
 var ServerPort = 4242;
 var MOTD = "Message Of The Day...";
 var loginButtonPushEvent;
-let win
-let loginWin
+let win;
+let loginWin;
 var partialLPWPackets = {};
 var partiallyReceivedPacket = "";
 var buffer = require('buffer')

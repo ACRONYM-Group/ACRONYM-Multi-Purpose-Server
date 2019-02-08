@@ -1,4 +1,4 @@
-require('./renderer.js');
+nodeRequire('./renderer.js');
 
 function sendNotification() {
     alert({subject:document.getElementById("subjectBox").value, body:document.getElementById("bodyBox").value});

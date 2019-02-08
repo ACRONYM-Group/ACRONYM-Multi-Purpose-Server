@@ -45,7 +45,11 @@ def check_credentials(username, password_hash):
     stored_hash = global_data["data"][username]["hash"]
     salt = global_data["data"][username]["salt"]
 
+    print(salt)
+
     result = hashlib.sha3_256((str(password_hash) + str(salt)).encode()).hexdigest()
+
+    print(result)
 
     if result == stored_hash:
         return enums.LOGIN_SUCCESSFUL

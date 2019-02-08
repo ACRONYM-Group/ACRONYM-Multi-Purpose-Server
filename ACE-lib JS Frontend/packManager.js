@@ -1,5 +1,5 @@
-require('./renderer.js');
-const dialog = require('electron').remote.dialog 
+nodeRequire('./renderer.js');
+const dialog = nodeRequire('electron').remote.dialog 
 var packages = {};
 var subbedPackages = {};
 

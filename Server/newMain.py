@@ -1,3 +1,6 @@
+import sys
+print(sys.executable)
+
 import socket
 import threading
 
@@ -40,8 +43,6 @@ programInstallDirectory = "Z:/AcroFTP/"
 AccountHandler.DATA_FILE_PATH = programInstallDirectory + "\\data\\data.json"
 AccountHandler.import_data()
 
-AccountHandler.add_credentials("carter", hashlib.sha3_256("password".encode()).hexdigest())
-
 AccountHandler.export_data()
 
 users_data = None
@@ -67,7 +68,7 @@ print("Current AMPS Software Version: 2019.2.7.1")
 print("Current Software Platform: " + OSName)
 print(" ")
 
-ServerLibraryActions.execute("RCON", "connect", {"address":"127.0.0.1", "password":"password"})
+#ServerLibraryActions.execute("RCON", "connect", {"address":"127.0.0.1", "password":"password"})
 
 def check_user_passhash(username, password_hash):
     return True
@@ -503,7 +504,7 @@ class ClientConnection:
         elif packet["CMDType"] == "requestUserData":
                 print("Sending a User Their User Data!")
                 dataToSend = encryption.encrypt(json.dumps({"CMDType":"userData", "data":{"username":users_data[self.username]["username"], "statusCardSubs":users_data[self.username]["statusCardSubs"]}}), self.shared_key)
-                Packet.Packet(dataToSend,"__CMD__").send(self.connection)
+                Packet.Packet(dataToSend, "__CMD__").send(self.connection)
 
         elif packet["CMDType"] == "downloadPackageList":
             dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackages", "data":packages_data}), self.shared_key)

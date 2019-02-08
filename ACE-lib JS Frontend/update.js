@@ -1,4 +1,4 @@
-require('./renderer.js');
+nodeRequire('./renderer.js');
 
 function initialLoad() {
     ipcRenderer.send('requestAvaliablePackageUpdates', "Ping");

@@ -32,16 +32,16 @@ var avaliablePackageUpdates = [];
 var avaliablePackages = {};
 
 function createHubWindow() {
-  hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
+  hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
   hubWin.loadFile('hub.html')
   hubWin.webContents.openDevTools();
   return hubWin;
 }
 
 function createUpdateDialog(data) {
-  updateWin = new BrowserWindow({width: 375, height: 225, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
+  updateWin = new BrowserWindow({width: 375, height: 225, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
   updateWin.loadFile('update.html')
-  //updateWin.webContents.openDevTools();
+  updateWin.webContents.openDevTools();
   return updateWin;
 }
 
@@ -82,9 +82,9 @@ class frontendClass {
 
     else if (message["type"] == "avaliablePackages") {
       if (waitingToOpenPackManager) {
-        var packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
+        var packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
         packManagerWin.loadFile('packManager.html');
-        //packManagerWin.openDevTools();
+        packManagerWin.openDevTools();
         waitingToOpenPackManager = false;
       }
 
@@ -195,7 +195,7 @@ ipcMain.on('requestSubbedPackages', (event, arg) => {
 
 ipcMain.on('openPackageEditor', (event, arg) => {
   packageToDisplay = arg;
-  packageEditorWin = new BrowserWindow({width: 325, height: 520, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
+  packageEditorWin = new BrowserWindow({width: 325, height: 520, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
   packageEditorWin.loadFile('packageEditor.html');
   //packageEditorWin.webContents.openDevTools();
   console.log("Opening Package Editor");
@@ -274,7 +274,7 @@ ipcMain.on('deletePackage', (event, arg) => {
 });
 
 ipcMain.on('openNotificationCenter', (event, arg) => {
-  notificationCenterWin = new BrowserWindow({width: 325, height: 280, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
+  notificationCenterWin = new BrowserWindow({width: 325, height: 280, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
   notificationCenterWin.loadFile('notificationSend.html');
   notificationCenterWin.webContents.openDevTools();
   console.log("Opening Notification Center");
@@ -295,8 +295,8 @@ ipcMain.on('sendServerCommand', (event, arg) => {
 
 
 app.on('ready', function() {
-  keepAliveWin = new BrowserWindow({width: 10, height: 10, frame: false, show: false});
-  loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
+  keepAliveWin = new BrowserWindow({width: 10, height: 10, frame: false, show: false, webPreferences: {nodeIntegration: true}});
+  loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
   loginWin.loadFile('login.html');
   loginWin.webContents.openDevTools()
 
@@ -313,7 +313,7 @@ app.on('ready', function() {
       createHubWindow();
       
     } else {
-      loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir});
+      loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
       loginWin.loadFile('login.html');
     }
   })

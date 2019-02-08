@@ -1,7 +1,7 @@
-renderer = require('./renderer.js');
+renderer = nodeRequire('./renderer.js');
 currentFileSystemDirectory = "";
 loadedPageName = "";
-const {ipcRenderer} = require('electron')
+const {ipcRenderer} = nodeRequire('electron')
 
 function navigateToPage(buttonID) {
     ipcRenderer.send('requestPage', buttonID.substring(3));
