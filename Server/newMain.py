@@ -1,3 +1,6 @@
+import sys
+print(sys.executable)
+
 import socket
 import threading
 
@@ -68,8 +71,7 @@ print(" ")
 #ServerLibraryActions.execute("RCON", "connect", {"address":"127.0.0.1", "password":"password"})
 
 def check_user_passhash(username, password_hash):
-    password_hash = password_hash.lower()
-    print(username, password_hash)
+    return True
     SUCCESS = AccountHandler.enums.LOGIN_SUCCESSFUL
     result = AccountHandler.check_credentials(username, password_hash)
     if result == SUCCESS:
@@ -378,6 +380,7 @@ class ClientConnection:
 
     def process_packet(self, packet):
         if isinstance(packet, str):
+            print(packet)
             packet = json.loads(packet)
 
         if packet["CMDType"] == "login":

@@ -1,4 +1,4 @@
-require('./renderer.js');
+nodeRequire('./renderer.js');
 var statusCardJSFiles = [];
 
 function includeHTML() {
@@ -66,7 +66,7 @@ ipcRenderer.on('programStatusCards', (event, arg) => {
             
             for (var i = 0; i < arg["subbedStatusCards"].length; i++) {
                 statusCardJSFiles[i] = {};
-                statusCardJSFiles[i]["require"] = require(arg["statusCardInstallDir"] + arg["subbedStatusCards"][i] + ".js");
+                statusCardJSFiles[i]["require"] = nodeRequire(arg["statusCardInstallDir"] + arg["subbedStatusCards"][i] + ".js");
                 statusCardJSFiles[i]["constructed"] = new statusCardJSFiles[i]["require"](ipcRenderer);
             }
 
@@ -92,7 +92,7 @@ ipcRenderer.on('programStatusCards', (event, arg) => {
             setInterval(function() {
                 runLoop(0);
                 
-            }, 2000);
+            }, 1000);
         }
     }
 })

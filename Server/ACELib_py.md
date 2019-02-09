@@ -36,7 +36,7 @@ else:
 
 <b>Variable Interface</b>
 
-There are two key operations that can be made with the ACELib system, the first
+There are three key operations that can be made with the ACELib system, the first
 is interfacing with the variables that can be set on the server side. This can
 be used with AMPS packages to create widgets that can be interfaced with
 the ACELib client.
@@ -66,6 +66,36 @@ of the usage of which can be found in the following snippet:
 conn.downloadFile("serverFile.ext", open("clientFile.ext", 'wb'))
 
 conn.uploadFile(open("clientFile.ext", 'wb'), "serverFile.ext")
+```
+
+<b>Variable Events</b>
+
+The third key operation that ACELib can perform is related to the first, in that
+it is designed to interface with variables on the server, however instead of
+changing those variables, this operation responds to those variables being updated
+on the server. This is done using the 
+<a href="#addListener">`ACELib.Connection.addListener()`</a> function and the 
+<a href="#startListener">`ACELib.Connection.startListener()`</a> function. These
+two functions subscribe to a listening event and start the listening loop
+respectively. The following snippet shows the two files that would be involved
+in something akin to a remote display board being controled through AMPS:
+
+```python
+def changeDisplayBoard(newValue, oldValue):
+    print("Value Changed to: ", newValue, "\nOld Value:", oldValue)
+    #The other stuff for changing the display board would go here
+    
+eventConnection.addListener("boardText", changeDisplayBoard)
+eventConnection.startListener()
+```
+
+and the second which would update the data on the server:
+
+```python
+while True:
+    newValue = input("> ")
+    
+    conn.setData("boardText", newValue)
 ```
 
 ## ACELib Examples
@@ -270,3 +300,64 @@ server, and outputs it to the (binary, must be binary) file stored in fileObject
 Description:  
 Downloads the file in `fileName` on the server and writes it to the given file
 object, which must be binary for the writing and decoding to work correctly.
+
+<span id="uploadFile"></span>
+### uploadFile()
+
+<b>`ACELib.Connection.uploadFile()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;fileObject  
+    &nbsp;&nbsp;&nbsp;&nbsp;fileName
+
+Returns:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`Uploads the data from the fileObject and stores it in the file designated by fileName
+`
+
+Description:  
+Uploads the file in `fileObject` to the server and stores it in `fileName`
+
+<span id="addListener"></span>
+### addListener()
+
+<b>`ACELib.Connection.addListener()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;key  
+    &nbsp;&nbsp;&nbsp;&nbsp;callBack
+
+Returns:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`Adds an event listener on the server to respond to the variable in
+            key being updated, upon it being updated callBack will be called, with
+            two parameters, the first being the new value, and the second, the old
+            value.`
+
+Description:  
+Subscribes to the event triggered by the changing of a variable with the key `key`, calling
+`callBack` with the new and old values as parameters
+
+<span id="startListener"></span>
+### startListener()
+
+<b>`ACELib.Connection.startListener()`</b>
+
+Arguments:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Returns:  
+  &nbsp;&nbsp;&nbsp;&nbsp;None
+
+Docstring:  
+&nbsp;&nbsp;&nbsp;&nbsp;`Starts the event loop, while this occurs in a seperate thread and code
+            can be run after this is called, it is still recomended to call this
+            at the end of a file.`
+
+Description:  
+Starts the event listener loop.
+

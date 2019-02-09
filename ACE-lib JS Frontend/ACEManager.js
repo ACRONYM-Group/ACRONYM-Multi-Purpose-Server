@@ -1,6 +1,5 @@
 class ACE {
     createNewACE() {
-
         const spawn = require('child_process').spawn; 
         const command = 'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/launch.bat';
         const parameters = [];
@@ -8,9 +7,11 @@ class ACE {
         const child = spawn(command, parameters, {cwd: 'Z:/Files/Projects/ACRONYM-File-Transfer-System/NodeJS Standard Client MK2/'});
         
         this.requiredACEs.push({type:"generalPurpose"});
+        console.log("Spawning ACE");
     }
 
     constructor(type, responseClass) {
+        console.log("Constructing ACEManager");
         this.responseClass = responseClass;
         this.type = type;
         this.requiredACEs = [];

@@ -1,4 +1,4 @@
-require('./renderer.js')
+nodeRequire('./renderer.js')
 
 function switchToIndexPage() {
     console.log("Test")

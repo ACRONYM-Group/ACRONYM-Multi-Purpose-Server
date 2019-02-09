@@ -8,7 +8,7 @@ var bigInt = require("big-integer");
 var aesjs = require("aes-js");
 var path = require("path");
 var readDir = require("recursive-readdir");
-var sha256 = require('js-sha256').sha256;
+var sha256 = require('js-sha3').sha3_256;
 
 var latestMinecraftData = {};
 var keyExchangeInts = [];
@@ -21,8 +21,8 @@ var ServerIP = "192.168.1.104";
 var ServerPort = 4242;
 var MOTD = "Message Of The Day...";
 var loginButtonPushEvent;
-let win
-let loginWin
+let win;
+let loginWin;
 var partialLPWPackets = {};
 var partiallyReceivedPacket = "";
 var buffer = require('buffer')
@@ -381,6 +381,7 @@ function constructPacket(type, payload, addEndStatement, LPWIndex, LPWLen) {
   if (addEndStatement) {
     packet = packet + "-ENDACROFTPPACKET-/";
   }
+  consoleOutput(packet, ipc.of.world);
   return packet;
 }
 
@@ -490,7 +491,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
         client.write(constructPacket("__CMD__",dataToSend));
 
 
-        //ploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\")
+        //uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\")
         
 
         //commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
