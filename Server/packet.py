@@ -101,7 +101,7 @@ def getPacket(connection):
     fullText = ""
 
     for pair in sorted(fullData):
-        fullText += pair[1]
+        fullText += json.loads(pair[1])["LPWPayload"]
 
     return json.loads(fullText)
 
@@ -125,9 +125,8 @@ def getPacketGenerator(generator):
     fullText = ""
 
     for pair in sorted(fullData):
-        fullText += pair[1]
+        fullText += json.loads(pair[1])["LPWPayload"]
 
-    print(fullText)
     return json.loads(fullText)
 
 def fullGenerator(connection):

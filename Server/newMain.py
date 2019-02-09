@@ -424,7 +424,7 @@ class ClientConnection:
             threading.Thread(target=file_download_process, args=(self, packet)).start()
 
         elif packet["CMDType"] == "uploadFile":
-            file_name = programInstallDirectory + packet["data"]["filePath"]
+            file_name = packet["data"]["filePath"]
             if not os.path.exists(os.path.dirname(file_name)):
                 try:
                     os.makedirs(os.path.dirname(file_name))
@@ -482,11 +482,11 @@ class ClientConnection:
             Packet.Packet(dataToSend, "__CMD__").send(self.connection)
 
         elif packet["CMDType"] == "uploadFileFinish":
-            if fileWriteQueue[packet["data"]["filePath"]]["index"] >= packet["data"]["finalPacketIndex"]:
-                fileWriteQueue[packet["data"]["filePath"]]["fileReference"].close()
-                fileWriteQueue[packet["data"]["filePath"]] = None
+            if file_write_queue[packet["data"]["filePath"]]["index"] >= packet["data"]["finalPacketIndex"]:
+                file_write_queue[packet["data"]["filePath"]]["fileReference"].close()
+                file_write_queue[packet["data"]["filePath"]] = None
             else:
-                fileWriteQueue[packet["data"]["filePath"]]["finalPacketIndex"] = packet["data"]["finalPacketIndex"]
+                file_write_queue[packet["data"]["filePath"]]["finalPacketIndex"] = packet["data"]["finalPacketIndex"]
 
         elif packet["CMDType"] == "downloadDir":
             self.download_directory(packet)
