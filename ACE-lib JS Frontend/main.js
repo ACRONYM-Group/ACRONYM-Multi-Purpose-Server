@@ -157,7 +157,7 @@ ipcMain.on('requestAvaliablePackages', (event, arg) => {
 ipcMain.on('updatePackage', (event, arg) => {
   event.sender.send("updatingPackage", arg);
 
-  dataToSend = {username:username, package:arg["package"], version:arg["version"], computerName:config["computerName"]};
+  dataToSend = {username:username, package:arg["package"], version:arg["version"], computerName:config["computerName"], programInstallDirectory:programInstallDirectory};
   mainACE.send("requestDownloadPackage", dataToSend);
 
   subbedPackages[arg["package"]]["version"] = arg["version"]; 

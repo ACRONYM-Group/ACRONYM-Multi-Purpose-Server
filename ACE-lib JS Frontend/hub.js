@@ -53,6 +53,16 @@ function disconnectFromAmps() {
     ipcRenderer.send('disconnectFromAmps', "Ping");
 }
 
+function findStatusCardID(name) {
+    for (var s = 0; s < statusCardJSFiles.length; s++) {
+        if (statusCardJSFiles[s]["constructed"].name != undefined) {
+            if (statusCardJSFiles[s]["constructed"].name == name) {
+                return s;
+            }
+        }
+    }
+}
+
 initialLoad()
 
 ipcRenderer.on('programStatusCards', (event, arg) => {

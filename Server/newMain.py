@@ -220,13 +220,13 @@ def get_ver_part(version, part):
 
     
 def compare_greater_version(firstVersion, secondVersion):
-    if getVerPart(firstVersion, "major") > getVerPart(secondVersion, "major"):
+    if get_ver_part(firstVersion, "major") > get_ver_part(secondVersion, "major"):
         return True
-    elif getVerPart(firstVersion, "major") == getVerPart(secondVersion, "minor"):
-        if getVerPart(firstVersion, "minor") > getVerPart(secondVersion, "minor"):
+    elif get_ver_part(firstVersion, "major") == get_ver_part(secondVersion, "major"):
+        if get_ver_part(firstVersion, "minor") > get_ver_part(secondVersion, "minor"):
             return True
-        elif getVerPart(firstVersion, "minor") == getVerPart(secondVersion, "minor"):
-            if getVerPart(firstVersion, "patch") > getVerPart(secondVersion, "patch"):
+        elif get_ver_part(firstVersion, "minor") == get_ver_part(secondVersion, "minor"):
+            if get_ver_part(firstVersion, "patch") > get_ver_part(secondVersion, "patch"):
                 return True
             else:
                 return False
@@ -239,16 +239,16 @@ def compare_greater_version(firstVersion, secondVersion):
 def get_highest_version(verList, specificMajor=-1):
     highest = "0.0.0"
     for s in verList:
-        if specificMajor == -1 or getVerPart(s, "major") == specificMajor:
-            if getVerPart(s, "major") > getVerPart(highest, "major"):
+        if specificMajor == -1 or get_ver_part(s, "major") == specificMajor:
+            if get_ver_part(s, "major") > get_ver_part(highest, "major"):
                 highest = s
             
-            if getVerPart(s, "major") == getVerPart(highest, "major"):
-                if getVerPart(s, "minor") > getVerPart(highest, "minor"):
+            if get_ver_part(s, "major") == get_ver_part(highest, "major"):
+                if get_ver_part(s, "minor") > get_ver_part(highest, "minor"):
                     highest = s
                 
-                if getVerPart(s, "minor") == getVerPart(highest, "minor"):
-                    if getVerPart(s, "patch") > getVerPart(highest, "patch"):
+                if get_ver_part(s, "minor") == get_ver_part(highest, "minor"):
+                    if get_ver_part(s, "patch") > get_ver_part(highest, "patch"):
                         highest = s
 
     return highest
@@ -550,6 +550,27 @@ class ClientConnection:
             packet["data"] = json.loads(packet["data"])
             computers_data[packet["data"]["computerName"]]["subbedPackages"][packet["data"]["package"]] = {"specificMajor":-1, "version":"0.0.0"}
             dump_data()
+
+        elif packet["CMDType"] == "checkForPackageUpdates":
+            packagesToUpdate = {}
+            index = 0
+            for s in computers_data[packet["data"]["computerName"]]["subbedPackages"]:
+                try:
+                    usersCurrentVersion = computers_data[packet["data"]["computerName"]]["subbedPackages"][s]["version"]
+                    usersSpecificMajor = computers_data[packet["data"]["computerName"]]["subbedPackages"][s]["specificMajor"]
+                    highestVersion = get_highest_version(packages_data[s]["versions"], computers_data[packet["data"]["computerName"]]["subbedPackages"][s]["specificMajor"])
+                    print("Checking " + str(s) + " for updates. user: " + str(usersCurrentVersion) + " specificMajor: " + str(usersSpecificMajor) + " highest: " + str(highestVersion))
+                    print(compare_greater_version(highestVersion, usersCurrentVersion))
+                    if compare_greater_version(highestVersion, usersCurrentVersion):
+                        print("     Found updated version!")
+                        packagesToUpdate[index] = {"package":s, "currentVersion":usersCurrentVersion, "newVersion":highestVersion}
+                        index = index + 1
+                except:
+                    print("Unable to check updates for " + s + " moving on.")
+                    
+            if len(packagesToUpdate) > -1:
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackageUpdates", "data":packagesToUpdate}), self.shared_key)
+                Packet.Packet(dataToSend,"__CMD__").send(self.connection)
             
         elif packet["CMDType"] == "subscribeToEvent":
             print(self.address, "is subscribing to the key", packet["data"]["dataTitle"])

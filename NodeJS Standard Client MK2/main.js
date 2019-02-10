@@ -127,15 +127,14 @@ ipc.connectTo('world', () => {
   ipc.of.world.on('requestDownloadPackage', (message) => {
     if (message["target"] == randomID) {
       try {
-        rimraf(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\*.*", fs, function() {});
+        rimraf(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\*.*", fs, function() {
+          consoleOutput("Downloading Package...", ipc.of.world);
+          commandToSend = {CMDType:"downloadPackage", data:JSON.stringify({username:message["username"], package:message["package"], version:message["version"], computerName:message["computerName"]})};
+          dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
+          client.write(constructPacket("__CMD__",dataToSend));
+        });
       } catch (error) {
-
       }
-
-      consoleOutput("Downloading Package...", ipc.of.world);
-      commandToSend = {CMDType:"downloadPackage", data:JSON.stringify({username:message["username"], package:message["package"], version:message["version"], computerName:message["computerName"]})};
-      dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
-      client.write(constructPacket("__CMD__",dataToSend));
     }
   });
 
@@ -381,7 +380,7 @@ function constructPacket(type, payload, addEndStatement, LPWIndex, LPWLen) {
   if (addEndStatement) {
     packet = packet + "-ENDACROFTPPACKET-/";
   }
-  consoleOutput(packet, ipc.of.world);
+  //consoleOutput(packet, ipc.of.world);
   return packet;
 }
 
@@ -475,6 +474,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
     else if (command["CMDType"] == "installationDir") {
       serverInstallDir = command["data"];
       consoleOutput("Server installation Directory: " + serverInstallDir, ipc.of.world);
+      uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\");
     }
 
     else if (command["CMDType"] == "AuthResult") {
@@ -489,9 +489,6 @@ function packetReceiveHander(data, alreadyDecrypted) {
         commandToSend = {CMDType:"requestInstallationDir"};
         dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
         client.write(constructPacket("__CMD__",dataToSend));
-
-
-        //uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\")
         
 
         //commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
