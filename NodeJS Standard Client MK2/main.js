@@ -17,7 +17,8 @@ var keyExchangeSmallerPrime = 0;
 var key = bigInt(0);
 var theirMixed = 0;
 //var ServerIP = "74.127.130.100";
-var ServerIP = "192.168.1.104";
+//var ServerIP = "192.168.1.104";
+var ServerIP = "192.168.1.11";
 var ServerPort = 4242;
 var MOTD = "Message Of The Day...";
 var loginButtonPushEvent;
@@ -33,7 +34,8 @@ var lastHeartbeatTime = Date.now();
 var randomID = Math.floor(Math.random()*5000)*Date.now();
 var hostID = -1;
 var computerName = "";
-var serverInstallDir = "Z:/AcroFTP/"
+var serverInstallDir = "Z:/AcroFTP/";
+var installDir = "Z:/AcroFTPClient/";
 
 const ipc = require('node-ipc');
 
@@ -226,7 +228,7 @@ ipc.connectTo('world', () => {
       dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
 
-      uploadDir(message["uploadDir"], serverInstallDir + "Data/packages/" + message["package"] + "/");
+      uploadDir(message["uploadDir"], serverInstallDir + "Data/Packages/" + message["package"] + "/");
     }
   });
 
@@ -236,7 +238,7 @@ ipc.connectTo('world', () => {
       dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
       client.write(constructPacket("__CMD__",dataToSend));
 
-      uploadDir(message["uploadDir"], serverInstallDir + "Data/packages/" + message["package"] + "/");
+      uploadDir(message["uploadDir"], serverInstallDir + "Data/Packages/" + message["package"] + "/");
     }
   });
 
@@ -474,7 +476,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
     else if (command["CMDType"] == "installationDir") {
       serverInstallDir = command["data"];
       consoleOutput("Server installation Directory: " + serverInstallDir, ipc.of.world);
-      uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\");
+      //uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\");
     }
 
     else if (command["CMDType"] == "AuthResult") {
@@ -508,7 +510,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
     else if (command["CMDType"] == "downloadFile") {
       data = command["payload"]["file"]
       data = Buffer.from(data, 'base64');
-      fs.writeFile("Z:/AcroFTPClient/" + command["payload"]["fileName"], data, (err) => {
+      fs.writeFile(installDir + command["payload"]["fileName"], data, (err) => {
         if (err) throw err;
       });
     }
@@ -527,10 +529,10 @@ function packetReceiveHander(data, alreadyDecrypted) {
           filePathModifier = packet["filePathModifier"];
         }
       }
-      var writeDir = "Z:/AcroFTPClient/" + filePathModifier + packet["fileName"];
+      var writeDir = installDir + filePathModifier + packet["fileName"];
 
-      if ((!dirChainExists(path.dirname("Z:/AcroFTPClient/" + filePathModifier)))) {
-        mkDirChain(path.dirname("Z:/AcroFTPClient/" + filePathModifier));
+      if ((!dirChainExists(path.dirname(installDir + filePathModifier)))) {
+        mkDirChain(path.dirname(installDir + filePathModifier));
       }
 
       var indexToCompare = -1;
@@ -573,7 +575,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
       } else {
         filePathModifier = packet["filePathModifier"];
       }
-      var writeDir = "Z:/AcroFTPClient/" + filePathModifier + packet["fileName"];
+      var writeDir = installDir + filePathModifier + packet["fileName"];
 
       if (fileWriteQueue[writeDir] == undefined) {
         writeFileChunk("NOTHING", writeDir, false);
@@ -582,7 +584,12 @@ function packetReceiveHander(data, alreadyDecrypted) {
         consoleOutput("File Transfer Complete, all packest received", ipc.of.world);
         var elapsedTime = Date.now() - fileWriteQueue[writeDir]["startTime"];
         consoleOutput("File Transfer of " + packet["fileName"] + " Complete! It took " + elapsedTime + " Milliseconds.", ipc.of.world);
-        setTimeout(fileWriteCallback(writeDir), 5000);
+        try {
+          setTimeout(fileWriteCallback(writeDir), 5000);
+        } catch (error) {
+
+        }
+        
       } else {
         fileWriteQueue[writeDir]["hasServerSentEndPacket"] = true;
         fileWriteQueue[writeDir]["finalPacketIndex"] = packet["finalPacketIndex"];

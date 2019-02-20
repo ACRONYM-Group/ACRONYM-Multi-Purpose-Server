@@ -34,14 +34,14 @@ var avaliablePackages = {};
 function createHubWindow() {
   hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
   hubWin.loadFile('hub.html')
-  hubWin.webContents.openDevTools();
+  //hubWin.webContents.openDevTools();
   return hubWin;
 }
 
 function createUpdateDialog(data) {
   updateWin = new BrowserWindow({width: 375, height: 225, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
   updateWin.loadFile('update.html')
-  updateWin.webContents.openDevTools();
+  //updateWin.webContents.openDevTools();
   return updateWin;
 }
 
@@ -84,7 +84,7 @@ class frontendClass {
       if (waitingToOpenPackManager) {
         var packManagerWin = new BrowserWindow({width: 350, height: 360, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
         packManagerWin.loadFile('packManager.html');
-        packManagerWin.openDevTools();
+        //packManagerWin.openDevTools();
         waitingToOpenPackManager = false;
       }
 
@@ -276,7 +276,7 @@ ipcMain.on('deletePackage', (event, arg) => {
 ipcMain.on('openNotificationCenter', (event, arg) => {
   notificationCenterWin = new BrowserWindow({width: 325, height: 280, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
   notificationCenterWin.loadFile('notificationSend.html');
-  notificationCenterWin.webContents.openDevTools();
+  //notificationCenterWin.webContents.openDevTools();
   console.log("Opening Notification Center");
 });
 
@@ -298,7 +298,7 @@ app.on('ready', function() {
   keepAliveWin = new BrowserWindow({width: 10, height: 10, frame: false, show: false, webPreferences: {nodeIntegration: true}});
   loginWin = new BrowserWindow({width: 235, height: 240, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
   loginWin.loadFile('login.html');
-  loginWin.webContents.openDevTools()
+  //loginWin.webContents.openDevTools()
 
   appIcon = new Tray(programInstallDirectory + trayLogoDir);
   const contextMenu = Menu.buildFromTemplate([

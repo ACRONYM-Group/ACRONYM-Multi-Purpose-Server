@@ -427,7 +427,7 @@ class ClientConnection:
             threading.Thread(target=file_download_process, args=(self, packet)).start()
 
         elif packet["CMDType"] == "uploadFile":
-            file_name = packet["data"]["filePath"]
+            file_name = packet["data"]["filePath"].replace("\\", "/")
             if not os.path.exists(os.path.dirname(file_name)):
                 try:
                     os.makedirs(os.path.dirname(file_name))
@@ -485,6 +485,7 @@ class ClientConnection:
             Packet.Packet(dataToSend, "__CMD__").send(self.connection)
 
         elif packet["CMDType"] == "uploadFileFinish":
+            packet["data"]["filePath"] = packet["data"]["filePath"].replace("\\", "/")
             if file_write_queue[packet["data"]["filePath"]]["index"] >= packet["data"]["finalPacketIndex"]:
                 file_write_queue[packet["data"]["filePath"]]["fileReference"].close()
                 file_write_queue[packet["data"]["filePath"]] = None
@@ -508,6 +509,7 @@ class ClientConnection:
                 Packet.Packet(dataToSend, "__CMD__").send(self.connection)
 
         elif packet["CMDType"] == "downloadPackageList":
+            print("Client is requesting Package List")
             dataToSend = encryption.encrypt(json.dumps({"CMDType":"avaliablePackages", "data":packages_data}), self.shared_key)
             Packet.Packet(dataToSend,"__CMD__").send(self.connection)
 
