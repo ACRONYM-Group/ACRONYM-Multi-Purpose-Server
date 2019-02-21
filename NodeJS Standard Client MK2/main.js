@@ -9,6 +9,7 @@ var aesjs = require("aes-js");
 var path = require("path");
 var readDir = require("recursive-readdir");
 var sha256 = require('js-sha3').sha3_256;
+var sftp = require('ssh2-sftp-client');
 
 var latestMinecraftData = {};
 var keyExchangeInts = [];
@@ -736,6 +737,10 @@ function writeFileChunk(data, filePath, shouldWrite) {
     consoleOutput("File Transfer of " + filePath + " Complete! It took " + elapsedTime + " Milliseconds.", ipc.of.world);
     setTimeout(function() {fileWriteCallback(filePath)}, 5000);
   }
+  
+}
+
+function downloadFile() {
   
 }
 

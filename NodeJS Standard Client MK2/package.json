@@ -18,6 +18,7 @@
     "recursive-readdir": "^2.2.2",
     "rimraf": "^2.6.3",
     "seedrandom": "^2.4.4",
+    "ssh2-sftp-client": "^2.4.3",
     "systeminformation": "^3.45.6"
   },
   "devDependencies": {
