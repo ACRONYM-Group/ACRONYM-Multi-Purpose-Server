@@ -9,7 +9,8 @@ var aesjs = require("aes-js");
 var path = require("path");
 var readDir = require("recursive-readdir");
 var sha256 = require('js-sha3').sha3_256;
-var sftp = require('ssh2-sftp-client');
+var sftpVar = require('ssh2-sftp-client');
+var fx = require('mkdir-recursive');
 
 var latestMinecraftData = {};
 var keyExchangeInts = [];
@@ -37,6 +38,7 @@ var hostID = -1;
 var computerName = "";
 var serverInstallDir = "Z:/AcroFTP/";
 var installDir = "Z:/AcroFTPClient/";
+let sftp = new sftpVar();
 
 const ipc = require('node-ipc');
 
@@ -101,6 +103,7 @@ ipc.connectTo('world', () => {
         hostID = message["hostID"];
         ipc.of.world.emit('command', {type:"connectionAccepted", data:"ping", ID:randomID, target:hostID});
         consoleOutput("ACE has accepeted!", ipc.of.world);
+    
       }
      }
   });
@@ -170,9 +173,17 @@ ipc.connectTo('world', () => {
                 fs.rmdir(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\");
               }
             } catch (error) {
-
+              setTimeout(function() {
+                try {
+                  if (fs.existsSync(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\")) {
+                    fs.rmdir(message["programInstallDirectory"] + "\\data\\packages\\" + message["package"] + "\\");
+                  }
+                } catch (error) {
+    
+                }
+              }, 500);
             }
-          }, 10000);
+          }, 500);
         });
       } catch (error) {
 
@@ -477,6 +488,8 @@ function packetReceiveHander(data, alreadyDecrypted) {
     else if (command["CMDType"] == "installationDir") {
       serverInstallDir = command["data"];
       consoleOutput("Server installation Directory: " + serverInstallDir, ipc.of.world);
+
+      setTimeout(function() {consoleOutput(JSON.stringify(sftp.list("~")), ipc.of.world);}, 5000);
       //uploadDir("Z:\\Files\\Projects\\ACRONYM Name Plate\\");
     }
 
@@ -492,6 +505,24 @@ function packetReceiveHander(data, alreadyDecrypted) {
         commandToSend = {CMDType:"requestInstallationDir"};
         dataToSend = CarterEncrypt(JSON.stringify(commandToSend), key);
         client.write(constructPacket("__CMD__",dataToSend));
+
+        consoleOutput(JSON.stringify({Hello:"Hi"}), ipc.of.world);
+
+        sftp.connect({
+          host: '192.168.1.11',
+          port: '22',
+          username: 'sftpuser',
+          password: 'password',
+          readyTimeout: 20000
+        }).then(() => {
+          return sftp.list('/');
+        }).then((data) => {
+          consoleOutput(JSON.stringify(data) + 'the data info', ipc.of.world);
+          sftp.fastGet("/sftpuser/text.txt", "Z:/test.txt");
+          sftp.mkdir("/sftpuser/test2/")
+        }).catch((err) => {
+          consoleOutput(err + 'catch error', ipc.of.world);
+        });
         
 
         //commandToSend = {CMDType:"downloadDir", data:{filePath:"C:/Users/Jordan/Pictures/Photography"}};
@@ -506,6 +537,25 @@ function packetReceiveHander(data, alreadyDecrypted) {
       if (command["data"]["window"] != -1) {
         BrowserWindow.fromId(command["data"]["window"]).send('FileList', JSON.stringify(dataToSend));
       }
+    }
+
+    else if (command["CMDType"] == "sftpFileDownload") {
+      if (command["payload"]["FilePathRead"].indexOf("/home/") != -1) {
+        command["payload"]["FilePathRead"] = command["payload"]["FilePathRead"].substring(5, command["payload"]["FilePathRead"].length);
+      }
+      consoleOutput("Downloading File using SFTP! Writing to " + installDir + command["payload"]["filePathWrite"], ipc.of.world);
+      consoleOutput("Reading from " + command["payload"]["FilePathRead"], ipc.of.world);
+
+      consoleOutput("Creating " + (installDir + command["payload"]["filePathWrite"]).substring(0, (installDir + command["payload"]["filePathWrite"]).length - command["payload"]["fileName"].length), ipc.of.world);
+      
+      if (!dirChainExists((installDir + command["payload"]["filePathWrite"]).substring(0, (installDir + command["payload"]["filePathWrite"]).length - command["payload"]["fileName"].length))) {
+        mkDirChain((installDir + command["payload"]["filePathWrite"]).substring(0, (installDir + command["payload"]["filePathWrite"]).length - command["payload"]["fileName"].length));
+      }
+      fx.mkdir((installDir + command["payload"]["filePathWrite"]).substring(0, (installDir + command["payload"]["filePathWrite"]).length - command["payload"]["fileName"].length), function(err) {
+        consoleOutput("Done creating Dir!", ipc.of.world);
+      });
+      var startTime = Date.now();
+      sftp.fastGet(command["payload"]["FilePathRead"], installDir + command["payload"]["filePathWrite"]).then(() => {consoleOutput("Done downloading " + installDir + command["payload"]["filePathWrite"] + "   Total Time: " + (Date.now() - startTime) + " ms", ipc.of.world);});
     }
 
     else if (command["CMDType"] == "downloadFile") {
@@ -744,7 +794,7 @@ function downloadFile() {
   
 }
 
-function uploadFile(filePath, uploadPath, windowID) {
+function uploadFileOLD(filePath, uploadPath, windowID) {
   fs.open(filePath, 'r', (err, fd) => {
     var totalBytesRead = 0;
     var index = 0;
@@ -761,6 +811,52 @@ function uploadFile(filePath, uploadPath, windowID) {
 
 }
 
+function SFTPRecursiveMkDir(dir) {
+    console.log("Attempting to create " + dir + "/");
+    var directories = dir.split("/");
+    var runningDir = "/";
+
+    for (var i = 0; i < directories.length; i++) {
+      runningDir = runningDir + directories[i] + "/";
+      runningDir = runningDir.replace("//", "/");
+      
+      console.log("Creating " + runningDir);
+      sftp.mkdir(runningDir, false).catch(() => {});
+    }
+}
+
+function uploadFile(filePath, uploadPath, windowID) {
+  filePath = filePath.replace (/\\/g, "/");
+  uploadPath = uploadPath.replace(/\\/g, "/");
+
+  if (uploadPath.indexOf("/home/") != -1) {
+    uploadPath = uploadPath.substring(5, uploadPath.length);
+  }
+  consoleOutput("Started uploading of " + filePath + " to " + uploadPath, ipc.of.world);
+  consoleOutput("Making Directory " + uploadPath.substring(0, uploadPath.length - path.basename(uploadPath).length), ipc.of.world);
+  consoleOutput(" ", ipc.of.world);
+  var dirExists = true;
+
+  /*sftp.list(uploadPath.substring(0, uploadPath.length - path.basename(uploadPath).length)).then(() => {
+    sftp.fastPut(filePath, uploadPath).then(() => {
+      consoleOutput("Done uploading", ipc.of.world);
+    });
+  }).catch((rej) => {
+    consoleOutput(JSON.stringify(rej), ipc.of.world);
+  });*/
+
+  sftp.mkdir(uploadPath.substring(0, uploadPath.length - path.basename(uploadPath).length), false).then(() => {
+    sftp.fastPut(filePath, uploadPath).then(() => {
+      consoleOutput("Done uploading", ipc.of.world);
+    });
+  }).catch(() => {
+    sftp.fastPut(filePath, uploadPath).then(() => {
+      consoleOutput("Done uploading", ipc.of.world);
+    });
+  });
+
+}
+
 function uploadDir(dir, serverWriteDir, windowID) {
   if (serverWriteDir != undefined) {
     dirToWrite = serverWriteDir;
@@ -768,15 +864,24 @@ function uploadDir(dir, serverWriteDir, windowID) {
     dirToWrite = serverInstallDir;
   }
 
+  if (dirToWrite.indexOf("/home/") != -1) {
+    dirToWrite = dirToWrite.substring(5, dirToWrite.length);
+  }
+
+  console.log(dirToWrite + path.basename(dir));
+  //SFTPRecursiveMkDir(dirToWrite + path.basename(dir));
+  SFTPRecursiveMkDir(dirToWrite + path.basename(dir));
+
   files = readDir(dir).then(
     function(files) {
       consoleOutput("Uploading Directory: " + dir, ipc.of.world);
       consoleOutput(JSON.stringify(files), ipc.of.world);
       for (var i = 0; i < files.length; i++) {
-        consoleOutput("Uploading " + dirToWrite + path.basename(dir) + "\\" + path.basename(files[i]) + " \n baseDir: " + path.basename(dir) + "\n", ipc.of.world);
-        uploadFile(files[i],  dirToWrite + path.basename(dir) + "\\" + path.basename(files[i]));
+        //consoleOutput("Uploading " + dirToWrite + path.basename(dir) + "/" + path.basename(files[i]) + " \n baseDir: " + path.basename(dir) + "\n", ipc.of.world);
+        uploadFile(files[i],  dirToWrite + path.basename(dir) + "" + files[i].substring(dir.length, files[i].length));
       }
   });
+
 }
 
 

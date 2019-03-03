@@ -38,7 +38,7 @@ import ServerLibraryActions
 programStartTime = datetime.now()
 OSName = platform.platform()
 
-programInstallDirectory = "Z:/AcroFTP/"
+programInstallDirectory = "/home/acronym/amps/"
 
 AccountHandler.DATA_FILE_PATH = programInstallDirectory + "\\data\\data.json"
 AccountHandler.import_data()
@@ -135,8 +135,29 @@ def dump_data():
     f = open(programInstallDirectory + "Data/packages.json", "w")
     f.write(json.dumps(packages_data))
 
-
 def file_download_process(self, packet, isPackage=False, shouldIncludeFinalFolder=True):
+    file_name = packet["data"]["filePath"]
+    actual_file_name = os.path.basename(file_name)
+
+    if programInstallDirectory in packet["data"]["filePath"]:
+        lengthInstallDir = len(programInstallDirectory)
+    else:
+        lengthInstallDir = 3
+
+    filePathToSend = packet["data"]["filePath"][lengthInstallDir:]
+    print(filePathToSend)
+    
+    if isPackage:
+        filePathModifier = filePathToSend[:-len(actual_file_name)]
+        if not shouldIncludeFinalFolder:
+            filePathModifier = os.path.dirname(os.path.dirname(filePathModifier)) + "/"
+    else:
+        filePathModifier = ""
+
+    data_to_send = encryption.encrypt(json.dumps({"CMDType":"sftpFileDownload", "payload":{"FilePathRead":packet["data"]["filePath"], "filePathWrite": filePathToSend, "fileName": actual_file_name, "filePathModifier":filePathModifier}}), self.shared_key)
+    Packet.Packet(data_to_send, "__CMD__").send(self.connection, packet["data"]["windowID"])
+
+def file_download_processOLD(self, packet, isPackage=False, shouldIncludeFinalFolder=True):
     print("Starting file download")
     if isPackage:
         shouldIncludeFinalFolder = False
@@ -298,16 +319,17 @@ class ClientConnection:
                     directory_path = os.path.join(root, directory)
 
 
-            for filename in filenames:
+                for filename in filenames:
+                    print(filename)
 
-                file_path = os.path.join(root,filename).replace("\\", "/")
-                if not isPackage:
-                    filePathModifier = os.path.dirname(file_path)
-                    filePathModifier = filePathModifier[len(os.path.dirname(dir))+1:] + "/"
-                else:
-                    filePathModifier = ""
-                print(filename)
-                file_download_process(self, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":packet["data"]["filePathModifier"] + filePathModifier}}, isPackage)
+                    file_path = os.path.join(root,filename).replace("\\", "/")
+                    if not isPackage:
+                        filePathModifier = os.path.dirname(file_path)
+                        filePathModifier = filePathModifier[len(os.path.dirname(dir))+1:] + "/"
+                    else:
+                        filePathModifier = ""
+                    print(filename)
+                    file_download_process(self, {"data":{"filePath":file_path, "windowID":-1, "filePathModifier":packet["data"]["filePathModifier"] + filePathModifier}}, isPackage)
             
             if isPackage:
                 dataToSend = encryption.encrypt(json.dumps({"CMDType":"packageDownloadComplete", "payload": {"package":packageName}}), self.shared_key)
@@ -505,7 +527,7 @@ class ClientConnection:
 
         elif packet["CMDType"] == "requestUserData":
                 print("Sending a User Their User Data!")
-                dataToSend = encryption.encrypt(json.dumps({"CMDType":"userData", "data":{"username":users_data[self.username]["username"], "statusCardSubs":users_data[self.username]["statusCardSubs"]}}), self.shared_key)
+                dataToSend = encryption.encrypt(json.dumps({"CMDType":"userData", "data":{"userData":{"username":users_data[self.username]["username"], "statusCardSubs":users_data[self.username]["statusCardSubs"]}, "computerData":computers_data[packet["computerName"]] }}), self.shared_key)
                 Packet.Packet(dataToSend, "__CMD__").send(self.connection)
 
         elif packet["CMDType"] == "downloadPackageList":

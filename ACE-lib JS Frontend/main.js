@@ -19,6 +19,7 @@ var packageToDisplay = "StatusCards";
 var config = {};
 var subbedPackages = {};
 var user = {};
+var computerData = {};
 var hasAuthenticated = false;
 let tray = null;
 
@@ -67,14 +68,14 @@ class frontendClass {
       loginWin = null;
       hubWin = createHubWindow();
 
-      mainACE.sendCommand({CMDType:"requestUserData"});
+      mainACE.sendCommand({CMDType:"requestUserData", computerName:config["computerName"]});
     } else {
       loginWin.send("authResult", message["data"]);
     }
   }
 
   genericHandler(message) {
-    console.log("Receiving Generic Command");
+    //console.log("Receiving Generic Command");
     if (message["type"] == "avaliablePackageUpdates") {
       avaliablePackageUpdates = message["data"];
       createUpdateDialog(message["data"]);
@@ -107,7 +108,8 @@ class frontendClass {
       var command = message["data"];
 
       if (command["CMDType"] == "userData") {
-        user = command["data"];
+        user = command["data"]["userData"];
+        computerData = command["data"]["computerData"];
         console.log("Receiving New User Data");
         console.log(command["data"]);
       }
@@ -137,7 +139,7 @@ ipcMain.on('login', (event, arg) => {
 
 ipcMain.on('requestProgramStatusCards', (event, arg) => {
   console.log("Sending a Window Status Card Data");
-  event.sender.send("programStatusCards", {statusCardInstallDir:programInstallDirectory + "/Data/Packages/StatusCards/", subbedStatusCards: user["statusCardSubs"]});
+  event.sender.send("programStatusCards", {statusCardInstallDir:programInstallDirectory + "/Data/Packages/StatusCards/" + computerData["subbedPackages"]["StatusCards"]["version"] + "/", subbedStatusCards: user["statusCardSubs"]});
 });
 
 ipcMain.on('openPackManager', (event, arg) => {

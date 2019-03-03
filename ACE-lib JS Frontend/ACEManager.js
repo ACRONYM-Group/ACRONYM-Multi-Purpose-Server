@@ -26,7 +26,7 @@ class ACE {
         this.ipc.config.silent = true;
         console.log("Creating Node IPC Server");
         this.ipc.serve(() => this.ipc.server.on('command', (message, socket) => {
-            console.log(message);
+            //console.log(message);
             if (message["type"] == "connectionRequest") {
                 if (this.requiredACEs.length > 0) {
                     this.ipc.server.emit(socket, "connectionResponse", {target:message["ID"], hostID:this.randomID, role:this.requiredACEs[0]["type"]});
@@ -46,7 +46,7 @@ class ACE {
                 } 
                 
                 else if (message["type"] == "rawMessage") {
-                  console.log(message["data"]);
+                  // console.log(message["data"]);
                   this.ipc.server.emit(socket, "message", {target:message["ID"], data:"Hello ACE!"});
                 } 
                 
