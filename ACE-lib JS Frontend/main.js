@@ -69,6 +69,7 @@ class frontendClass {
       hubWin = createHubWindow();
 
       mainACE.sendCommand({CMDType:"requestUserData", computerName:config["computerName"]});
+      mainACE.sendCommand({CMDType:"subscribeToEvent", data:{dataTitle:"Notifications"}});
     } else {
       loginWin.send("authResult", message["data"]);
     }
@@ -112,6 +113,23 @@ class frontendClass {
         computerData = command["data"]["computerData"];
         console.log("Receiving New User Data");
         console.log(command["data"]);
+      } 
+      
+      
+      else if (command["CMDType"] == "dataChange") {
+        console.log("DATA CHANGE");
+        if (command["payload"]["key"] == "Notifications") {
+          var notificationInfo = JSON.parse(command["payload"]["newValue"]);
+          if (notificationInfo["destination"] == "broadcast") {
+            var notificationWin = new BrowserWindow({width: 325, height: 250, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
+            notificationWin.loadFile('notification.html');
+            notificationWin.openDevTools();
+
+            notificationWin.webContents.once('dom-ready', () => {
+              notificationWin.webContents.send("notificationInfo", command["payload"]["newValue"])
+            });
+          }
+        }
       }
     }
   }
@@ -283,8 +301,8 @@ ipcMain.on('openNotificationCenter', (event, arg) => {
 });
 
 ipcMain.on('sendNotification', (event, arg) => {
-  dataToSend = {username:username, computerName:config["computerName"], notification:arg};
-  mainACE.sendCommand("sendNotification", dataToSend);
+  dataToSend = {CMDType:"setData", name:"Notifications", value:JSON.stringify({destination:"broadcast", subject:arg["subject"], body:arg["body"]})};
+  mainACE.sendCommand(dataToSend);
 });
 
 ipcMain.on('sendServerCommand', (event, arg) => {

@@ -15,7 +15,7 @@
             <div id="banner" style="-webkit-app-region: drag; width:100%; display:flex;";>
                 <div style="display:flex; height: 26px; width:100%;">
                     <img src="ACRONYM.png" alt="A.C.R.O.N.Y.M. Logo" style="width:30px; margin:4px; margin-left:10px; height:16px;">
-                    <h5 style="margin-left:0px; text-align: center; color:white; padding-top:6px; padding-left: 5px;">Notification Center</h5>
+                    <h5 style="margin-left:0px; text-align: center; color:white; padding-top:6px; padding-left: 5px;">New Notification</h5>
                 </div>
 
                 <div id="MinButton" style=" float: right; padding-bottom: 4px; padding-right: 0px; padding-left: 7px; padding-right: 7px; padding-top: 5px; text-align: center; color: white;">&#xE921;</div>
@@ -26,17 +26,17 @@
         </div>
         
         <div id="bodyGroup" class="wrapper" style="display:inline;">
-            <h4 style="color:white; margin:15px;">Send Notification</h4>
-            <textarea id="subjectBox" rows="1" cols="25" style="margin-left:15px;" placeholder="Subject"></textarea>
-            <textarea id="bodyBox" rows="8" cols="34" style="margin-left:15px;" placeholder="Body"></textarea>
+
+            <div id="subjectBox" style="width: 70%; margin-left:5%; margin-bottom: 5px; margin-top:5px; height:35px; background-color:white; color: black; padding:5px;  border-radius: 5px; border-width: 2px; border-color: white;"></div>
+            <div id="bodyBox" style="width: 85%; margin-left:5%; height:145px; background-color:white; color: black; padding:5px; border-radius: 5px; border-width: 2px; border-color: white;"></div>
             
 
-            <button class="packUpdateButton" onclick="sendNotification()" style="margin-left: 15px; margin-top: 10px;">Send</button>
+            <button class="packUpdateButton" onclick="closeWindow()" style="margin-left: 15px; margin-top: 10px;">Close</button>
         </div>
 
     </div>
     <script src="./renderer.js"></script>
-    <script src="./notificationSend.js"></script>
+    <script src="./notification.js"></script>
     </body>
 
 </html>
