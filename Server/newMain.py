@@ -420,7 +420,7 @@ class ClientConnection:
             print(self.username + " has attempted to login: " + str(self.authenticated))
         
         elif packet["CMDType"] == "setData":
-            print("Set Data", packet["name"], "=", packet["value"])
+            #print("Set Data", packet["name"], "=", packet["value"])
             value = packet["value"]
 
             if packet["name"] in alert_subscriptions:
@@ -433,7 +433,7 @@ class ClientConnection:
 
             global_cache[packet["name"]] = value
 
-            print(global_cache)
+            #print(global_cache)
         
         elif packet["CMDType"] == "getData":
             if packet["name"] in global_cache:
@@ -444,6 +444,16 @@ class ClientConnection:
             data = {"packetType":"__DAT__", "payload":value}
             encr = encryption.encrypt(json.dumps(data), self.shared_key)
             Packet.Packet(encr, "__DAT__").send(self.connection)
+
+        elif packet["CMDType"] == "getDataJS":
+            if packet["name"] in global_cache:
+                value = global_cache[packet["name"]]
+            else:
+                value = ""
+            
+            data = {"packetType":"__CMD__", "CMDType":"getDataResponse", "key":packet["name"], "value":value}
+            encr = encryption.encrypt(json.dumps(data), self.shared_key)
+            Packet.Packet(encr, "__CMD__").send(self.connection)
 
         elif packet["CMDType"] == "downloadFile":
             threading.Thread(target=file_download_process, args=(self, packet)).start()

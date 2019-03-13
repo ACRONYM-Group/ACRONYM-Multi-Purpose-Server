@@ -45,6 +45,10 @@ function openPackManager() {
     ipcRenderer.send('openPackManager', "Ping");
 }
 
+function openServerStatus() {
+    ipcRenderer.send('openServerStatus', "Ping");
+}
+
 function openNotificationCenter() {
     ipcRenderer.send('openNotificationCenter', "Ping");
 }

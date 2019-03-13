@@ -383,7 +383,7 @@ function CarterEncryptWrapperOLD(data, key) {
 function constructPacket(type, payload, addEndStatement, LPWIndex, LPWLen) {
   var packet = {"packetType":type, "payload":payload};
   if (type == "__LPW__") {
-    packet["index"] = LPWIndex;
+    packet["ind"] = LPWIndex;
     packet["len"] = LPWLen;
   }
   packet = JSON.stringify(packet);
@@ -703,7 +703,7 @@ function sendLPWPacket(data) {
         numLPWPackets = index + 1
         LPWPayload = data
       }
-      commandToSend = {LPWPayload:LPWPayload, index:index, LPWID:LPWID, len:numLPWPackets};
+      commandToSend = {LPWPayload:LPWPayload, ind:index, LPWID:LPWID, len:numLPWPackets};
       dataToSend = JSON.stringify(commandToSend);
       client.write(constructPacket("__LPW__", dataToSend, true, index, numLPWPackets));
 
@@ -722,7 +722,7 @@ function sendLPWPacket(data) {
     var numLPWPackets = Math.ceil(data.length/LPWPacketLength);
 
     LPWPayload = data;
-    commandToSend = {LPWPayload:LPWPayload, index:index, LPWID:LPWID, len:numLPWPackets};
+    commandToSend = {LPWPayload:LPWPayload, ind:index, LPWID:LPWID, len:numLPWPackets};
     dataToSend = JSON.stringify(commandToSend);
     client.write(constructPacket("__LPW__",dataToSend));
   }

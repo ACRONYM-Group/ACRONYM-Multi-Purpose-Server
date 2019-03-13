@@ -9,6 +9,37 @@
     width: 50%;
   }
 
+  .processDisplay {
+    height: 110px;
+    width:85%;
+    margin-bottom:20px;
+    margin-left:5%;
+    background-color:#454545;
+    color:white;
+    padding:5px;
+    font-size:12px;
+    padding-bottom:25px;
+    display: flex;
+  }
+
+  .processRAMDisplay {
+      height: 25px;
+      width: 119px;
+      background-color:white;
+      color:black;
+      margin-left:15px;
+      margin-top:5px;
+  }
+
+  .processCPUDisplay {
+    height: 25px;
+    width: 119px;
+    background-color:white;
+    color:black;
+    margin-left:15px;
+    margin-top:5px;
+}
+
   input[type=text], select {
     width: 80%;
     padding: 12px 15px;

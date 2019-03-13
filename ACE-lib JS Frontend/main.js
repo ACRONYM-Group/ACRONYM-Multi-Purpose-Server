@@ -20,6 +20,7 @@ var config = {};
 var subbedPackages = {};
 var user = {};
 var computerData = {};
+var pendingDataReads = [];
 var hasAuthenticated = false;
 let tray = null;
 
@@ -115,7 +116,20 @@ class frontendClass {
         console.log(command["data"]);
       } 
       
-      
+      else if (command["CMDType"] == "getDataResponse") {
+        console.log("Receiving Data for " + command["key"]);
+        for (var i = 0; i < pendingDataReads.length; i++) {
+          if (command["key"] == pendingDataReads[i]["key"]) {
+            try {
+              pendingDataReads[i]["window"].send("dataUpdate", {key:command["key"], data:command["value"]});
+            } catch(c) {
+
+            }
+            pendingDataReads.splice(i, 1);
+          }
+        }
+      }
+
       else if (command["CMDType"] == "dataChange") {
         console.log("DATA CHANGE");
         if (command["payload"]["key"] == "Notifications") {
@@ -221,6 +235,13 @@ ipcMain.on('openPackageEditor', (event, arg) => {
   console.log("Opening Package Editor");
 });
 
+ipcMain.on('openServerStatus', (event, arg) => {
+  processManagerWin = new BrowserWindow({width: 500, height: 200, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
+  processManagerWin.loadFile('serverStatus.html');
+  processManagerWin.webContents.openDevTools();
+  console.log("Opening Server Status");
+});
+
 ipcMain.on('requestPackageToDisplay', (event, arg) => {
   event.sender.send("packageToDisplay", packageToDisplay);
 });
@@ -261,6 +282,13 @@ ipcMain.on('uploadNewVersion', (event, arg) => {
 
   checkForPackageUpdates();
 
+});
+
+ipcMain.on('getData', (event, arg) => {
+  console.log("Requesting data for " + arg);
+  mainACE.sendCommand({CMDType:"getDataJS", name:arg});
+
+  pendingDataReads.push({key:arg, window:event.sender});
 });
 
 ipcMain.on('uploadNewPackage', (event, arg) => {
