@@ -18,9 +18,9 @@ var keyExchangeLargerPrime = 0;
 var keyExchangeSmallerPrime = 0;
 var key = bigInt(0);
 var theirMixed = 0;
-//var ServerIP = "74.127.130.100";
+//var ServerIP = "206.188.224.174";
 //var ServerIP = "192.168.1.104";
-var ServerIP = "192.168.1.11";
+var ServerIP = "192.168.1.142";
 var ServerPort = 4242;
 var MOTD = "Message Of The Day...";
 var loginButtonPushEvent;
@@ -36,7 +36,7 @@ var lastHeartbeatTime = Date.now();
 var randomID = Math.floor(Math.random()*5000)*Date.now();
 var hostID = -1;
 var computerName = "";
-var serverInstallDir = "Z:/AcroFTP/";
+var serverInstallDir = "/home/acronym/amps/";
 var installDir = "Z:/AcroFTPClient/";
 let sftp = new sftpVar();
 
@@ -509,7 +509,7 @@ function packetReceiveHander(data, alreadyDecrypted) {
         consoleOutput(JSON.stringify({Hello:"Hi"}), ipc.of.world);
 
         sftp.connect({
-          host: '192.168.1.11',
+          host: ServerIP,
           port: '22',
           username: 'sftpuser',
           password: 'password',

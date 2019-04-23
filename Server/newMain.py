@@ -29,6 +29,7 @@ from datetime import datetime
 from datetime import timedelta
 
 import hashlib
+import subprocess
 
 import AccountHandler
 
@@ -418,6 +419,9 @@ class ClientConnection:
             self.username = userCredentials["username"]
 
             print(self.username + " has attempted to login: " + str(self.authenticated))
+
+        elif packet["CMDType"] == "startMCServer":
+            subprocess.Popen(["sudo", "/home/acronym/Desktop/MCServer.sh", "&"])
         
         elif packet["CMDType"] == "setData":
             #print("Set Data", packet["name"], "=", packet["value"])

@@ -10,7 +10,7 @@
   }
 
   .processDisplay {
-    height: 110px;
+    height: 45px;
     width:85%;
     margin-bottom:20px;
     margin-left:5%;
@@ -18,7 +18,7 @@
     color:white;
     padding:5px;
     font-size:12px;
-    padding-bottom:25px;
+    padding-bottom:15px;
     display: flex;
   }
 
@@ -29,6 +29,7 @@
       color:black;
       margin-left:15px;
       margin-top:5px;
+      display:block;
   }
 
   .processCPUDisplay {
@@ -38,9 +39,19 @@
     color:black;
     margin-left:15px;
     margin-top:5px;
+    display:block;
 }
 
   input[type=text], select {
+    width: 80%;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    box-sizing: border-box;
+    margin-top:3px;
+  }
+
+  input[type=password], select {
     width: 80%;
     padding: 12px 15px;
     border: 1px solid #ccc;
@@ -85,9 +96,6 @@
       padding-right: 8px;
   }
 
-  .programStatusCard:hover {
-    background-color: black;
-    }
 
 .cardHorizontalSpacer {
     margin-left:5px;

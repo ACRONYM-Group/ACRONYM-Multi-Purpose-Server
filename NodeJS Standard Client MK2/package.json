@@ -14,6 +14,7 @@
     "net": "^1.0.2",
     "node-gyp": "^3.8.0",
     "node-ipc": "^9.1.1",
+    "openmct": "^0.11.4",
     "path": "^0.12.7",
     "rebuild": "^0.1.2",
     "recursive-readdir": "^2.2.2",

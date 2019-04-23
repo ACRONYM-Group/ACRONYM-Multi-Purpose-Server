@@ -67,7 +67,7 @@ function findStatusCardID(name) {
     }
 }
 
-setTimeout(initialLoad, 650);
+setTimeout(initialLoad, 2650);
 
 ipcRenderer.on('programStatusCards', (event, arg) => {
     if (arg["subbedStatusCards"] != undefined) {

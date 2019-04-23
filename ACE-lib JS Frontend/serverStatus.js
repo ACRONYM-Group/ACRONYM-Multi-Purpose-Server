@@ -42,9 +42,11 @@ function createProcessHTML(processInfo) {
     HTD +=  "<h3>" + processInfo["name"] + " <br> " + processInfo["PID"] +"</h3><br>";
     HTD +=  "<div class='processCPUDisplay'>";
     HTD +=      "<canvas id='"+ processInfo["PID"] + "CPUCanvas' width='120' height='25' style='margin-right:10px; margin-left:0px; padding-left:0px;'></canvas>";
+    HTD +=      "<h3 id='" + processInfo["PID"] + "CurrentCPU' style='color:white'><h3>";
     HTD +=  "</div>"; 
     HTD +=  "<div class='processRAMDisplay'>";
     HTD +=      "<canvas id='" + processInfo["PID"] + "RAMCanvas' width='120' height='25' style='margin-right:10px; margin-left:0px;'></canvas>";
+    HTD +=      "<h3 id='" + processInfo["PID"] + "CurrentRAM' style='color:white'><h3>";
     HTD +=  "</div>";
     HTD += "</div>";
 
@@ -63,6 +65,7 @@ function drawCPUandRAM(processInfo) {
         ctx.moveTo(i, 25);
         ctx.lineTo(i, 25-processInfo["CPUHistory"][i]*0.25);
         ctx.stroke();
+        console.log(25-processInfo["CPUHistory"][i]*0.25);
     }
 
 
@@ -78,8 +81,16 @@ function drawCPUandRAM(processInfo) {
         ctx.lineTo(i, 25-processInfo["RAMHistory"][i]*0.25);
         ctx.stroke();
     }
-}
 
+    document.getElementById(processInfo["PID"] + "CurrentCPU").innerText = "CPU: " + processInfo["CPUHistory"][processInfo["CPUHistory"].length-1] + "%";
+    if (processInfo["RAMCurrent"] != undefined) {
+        document.getElementById(processInfo["PID"] + "CurrentRAM").innerText = "RAM: " + processInfo["RAMCurrent"] + "%";
+    } else {
+        document.getElementById(processInfo["PID"] + "CurrentRAM").innerText = "RAM: " + processInfo["RAMHistory"][processInfo["RAMHistory"].length-1] + "%";
+    }
+    
+}
+/*
 function clearDisplays(processInfo) {
     var CPUCanvasName = processInfo["PID"] + "CPUCanvas";
     var c = document.getElementById(CPUCanvasName);
@@ -108,6 +119,7 @@ function updateProcesses(processUpdates) {
         drawCPUandRAM(processes[processUpdates[i]["PID"]]);
     }
 }
+*/
 
 //createProcessHTML(processes[31415]);
 //drawCPUandRAM(processes[31415]);
@@ -121,10 +133,15 @@ ipcRenderer.on('dataUpdate', (event, arg) => {
 
         for (var PID in processesReceived) {
             createProcessHTML(processesReceived[PID]);
+        }
+
+        for (var PID in processesReceived) {
+
             drawCPUandRAM(processesReceived[PID]);
         }
     }
 });
+ipcRenderer.send('getData', "processInfo");
 
 setInterval(function() {
     //updateProcesses([{PID:31415, CPUValue:47, RAMValue:47}]);
