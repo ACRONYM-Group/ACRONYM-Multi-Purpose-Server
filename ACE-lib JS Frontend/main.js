@@ -23,6 +23,7 @@ var computerData = {};
 var pendingDataReads = [];
 var hasAuthenticated = false;
 let tray = null;
+var dataChangeSubs = [];
 
 config = JSON.parse(fs.readFileSync(programInstallDirectory + "data/config.json"));
 
@@ -36,7 +37,7 @@ var avaliablePackages = {};
 function createHubWindow() {
   hubWin = new BrowserWindow({width: 625, height: 340, frame: false, show: true, icon: programInstallDirectory + taskBarLogoDir, webPreferences: {nodeIntegration: true}});
   hubWin.loadFile('hub.html')
-  //hubWin.webContents.openDevTools();
+  hubWin.webContents.openDevTools();
   return hubWin;
 }
 
@@ -53,6 +54,18 @@ function writeSubbedPackagesToDisk() {
 
 function checkForPackageUpdates() {
   mainACE.send("checkForPackageUpdates", {username:username, computerName:config["computerName"]});
+}
+
+function sendDataChangeToWindows(command) {
+  for (var i = 0; i < dataChangeSubs.length; i++) {
+    try {
+      dataChangeSubs[i].send("dataChange", command);
+    } catch(e) {
+      console.log("Unable to send data to dataChange Sub " + i + " removing it from the table.");
+      dataChangeSubs.splice(i, 1);
+    }
+    
+  }
 }
 
 
@@ -132,6 +145,8 @@ class frontendClass {
 
       else if (command["CMDType"] == "dataChange") {
         console.log("DATA CHANGE");
+        sendDataChangeToWindows(command);
+
         if (command["payload"]["key"] == "Notifications") {
           var notificationInfo = JSON.parse(command["payload"]["newValue"]);
           if (notificationInfo["destination"] == "broadcast") {
@@ -331,6 +346,10 @@ ipcMain.on('openNotificationCenter', (event, arg) => {
 ipcMain.on('sendNotification', (event, arg) => {
   dataToSend = {CMDType:"setData", name:"Notifications", value:JSON.stringify({destination:"broadcast", subject:arg["subject"], body:arg["body"]})};
   mainACE.sendCommand(dataToSend);
+});
+
+ipcMain.on('subToAllDataChanges', (event, arg) => {
+  dataChangeSubs.push(event.sender);
 });
 
 ipcMain.on('sendServerCommand', (event, arg) => {

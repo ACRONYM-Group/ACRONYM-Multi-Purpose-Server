@@ -30,7 +30,11 @@ class Packet:
         LPWPacketLength = 2048
         if (len(data) <= LPWPacketLength):
             dataToSend = data.encode() + "-ENDACROFTPPACKET-/".encode()
-            conn.sendall(dataToSend)
+            try:
+                conn.sendall(dataToSend)
+            except:
+                print(dataToSend)
+                print(conn)
 
         if (len(data) > LPWPacketLength):
             numberOfLPWPackets = math.ceil(len(data)/LPWPacketLength)

@@ -421,6 +421,7 @@ class ClientConnection:
             print(self.username + " has attempted to login: " + str(self.authenticated))
 
         elif packet["CMDType"] == "startMCServer":
+            subprocess.Popen(["whoami"])
             subprocess.Popen(["sudo", "/home/acronym/Desktop/MCServer.sh", "&"])
         
         elif packet["CMDType"] == "setData":
