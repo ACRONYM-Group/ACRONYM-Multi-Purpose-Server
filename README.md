@@ -1,5 +1,6 @@
 # ACRONYM-Multi-Purpose-Server
 <b>AMPS</b>
+<b>Legacy Software. Replaced by ACI and associated software.</b>
 ACRONYM Multi Purpose Server
 
 Used for mangement and control of a server (or Virtual Private Server).
