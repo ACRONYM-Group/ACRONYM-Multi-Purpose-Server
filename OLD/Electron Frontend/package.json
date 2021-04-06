@@ -11,7 +11,7 @@
     "node-gyp": "^3.8.0",
     "rebuild": "^0.1.2",
     "seedrandom": "^2.4.4",
-    "systeminformation": "^3.45.6"
+    "systeminformation": "^5.6.4"
   },
   "devDependencies": {
     "electron": "^2.0.12"
